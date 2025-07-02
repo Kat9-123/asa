@@ -1,0 +1,25 @@
+{
+  "name": "subleq",
+  "displayName": "Subleq",
+  "description": "Syntax highlighting for Subleq",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "subleq",
+      "aliases": ["Subleq", "subleq"],
+      "extensions": [".sbl",".subleq"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "subleq",
+      "scopeName": "source.sbl",
+      "path": "./syntaxes/subleq.tmLanguage.json"
+    }]
+  }
+}
