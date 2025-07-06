@@ -1,7 +1,10 @@
+use std::{fs::File, result};
+use std::io::Write;
+
 use crate::{parser::Statement, tokens::Token};
 
 /*
-fn generate_as_bytes(tokens: Vec<Token>) {
+fn to_bytes(tokens: Vec<u16>) {
     let x = 65535_u16;
     let x_bytes = x.to_be_bytes();                  // x_bytes = [0, 0, 255, 255]
     let original_x = u16::from_be_bytes(x_bytes);
@@ -29,10 +32,21 @@ fn generate_as_text(tokens: Vec<Token>) {
     let mut file = File::create("foo.txt").expect("Access denied.");
     let _ = file.write_all(result.as_bytes());
 }
-*/
+ */
 
+pub fn to_text(data: Vec<u16>) -> String {
 
-pub fn generate(statements: Vec<Statement>) {
+    let mut text: String = String::new();
+    for i in data {
+        text.push_str(&i.to_string());
+        text.push(' ');
+    }
+    text.pop();
+
+    return text;
+}
+
+pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
     let mut mem: Vec<u16> = Vec::new();
     for statement in statements {
         match statement {
@@ -47,19 +61,27 @@ pub fn generate(statements: Vec<Statement>) {
                     mem.push(value as u16);
                 }
             }
-            Statement::ScopeControl { x } => {
+            Statement::Control { x } => {
                 continue;
             }
-            Statement::PointerDefinition { label, value: val } => {
-                if let Token::DecLiteral { value } = val {
+            Statement::LabelDefinition { ..} => {
+                continue;
+            }
+            Statement::Literal { x } => {
+                match x {
+                    Token::DecLiteral { value } => {
                     mem.push(value as u16);
+
+                    }
+                    _ => todo!()
                 }
             }
-            Statement::Literal { x: Token } => {
+            _ => {
                 continue;
             }
         }
     }
     println!("{mem:?}");
+    return mem;
 
 }

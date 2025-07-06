@@ -1,0 +1,26 @@
+@Print pointer 
+{
+    pointer -= pointer
+}
+end
+
+
+@PrintChar pointer 
+{
+    0xFFFF -= pointer 
+}
+end
+
+
+@GetChar out 
+{
+    out -= 0xFFFF 
+}
+end
+
+
+@Break  
+{
+    0xFFFF -= 0xA
+}
+end

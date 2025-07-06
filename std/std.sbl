@@ -1,0 +1,13 @@
+Z -> 0
+@Halt  
+{
+    Z -= Z  0xFFFF
+}
+end
+
+
+@Jump _address 
+{
+    Z -= Z  _address
+}
+end

@@ -1,0 +1,5 @@
+#Target3.sbl
+Target2::a -= Target2::a 0
+Target2::a -> 0x0033
+Target2::a -= Target3::p
+;#test ; should be disallowed

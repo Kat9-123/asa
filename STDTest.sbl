@@ -1,0 +1,12 @@
+!Jump _main
+#std/std
+#std/IO
+char -> 'a'
+temp -> 0
+string -> 'a'
+
+
+
+_main ->
+    !IO -= string
+    !Halt

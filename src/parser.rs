@@ -1,9 +1,11 @@
+use crate::asm_error;
 use crate::tokens::{self, Token};
 use core::panic;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::os::windows::thread;
+use std::path::Iter;
 use std::rc::{Rc, Weak};
 use std::thread::current;
 use std::vec;
@@ -14,8 +16,8 @@ use simple_logger::SimpleLogger;
 #[derive(Debug, PartialEq, Eq)]
 pub enum Statement {
     Instruction { a: Token, b: Token, c: Token },
-    ScopeControl { x: Token },
-    PointerDefinition { label: Token, value: Token },
+    Control { x: Token },
+    LabelDefinition {label: Token},
     Literal { x: Token },
 }
 
@@ -23,12 +25,21 @@ impl Statement {
     fn size(&self) -> i32 {
         match self {
             Statement::Instruction { .. } => 3,
-            Statement::PointerDefinition { .. } => 1,
-            Statement::ScopeControl { .. } => 0,
+            Statement::LabelDefinition { .. } => 0,
+            Statement::Control { .. } => 0,
             Statement::Literal { .. } => 1,
         }
     }
 }
+// iterator
+impl Iterator for Statement {
+    type Item = Token;
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
+
 
 #[derive(Debug)]
 struct Macro {
@@ -36,7 +47,6 @@ struct Macro {
     body: Vec<Token>,
 }
 
-// iterator
 
 fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut new_tokens: Vec<Token> = Vec::new();
@@ -76,13 +86,12 @@ fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     continue;
                 }
                 _ => {
-                    panic!(
-                        "Only labels may be used for the macro header of '{}'.",
-                        macro_name
-                    )
+                    asm_error!("Only labels may be used for the macro header of '{macro_name}'.");
+  
                 }
             },
             Mode::BODY => match token {
+                // Token::macrostart error
                 Token::MacroEnd => {
                     let new_macro = Macro {
                         args: macro_args,
@@ -114,7 +123,7 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, String
             match new_name {
                 Some(name) => *body_token = Token::Label { name: name.clone() },
                 None => {
-                    panic!()
+                    continue;
                 }
             }
         }
@@ -140,7 +149,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     let mac = macros.get(&name);
                     match mac {
                         None => {
-                            panic!("No definition found for the macro '{}'", name);
+                            asm_error!("No definition found for the macro '{name}'.");
                         }
                         Some(x) => {
                             current_macro = Some(x);
@@ -154,12 +163,16 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                 }
             },
             Mode::ARGS => {
-                let current_macro = current_macro.expect("Unreachable");
+                let current_macro_safe = current_macro.expect("Unreachable");
                 match token {
                     Token::Label {
                         name: to_replace_name,
                     } => {
-                        let label_to_replace_with = &current_macro.args[label_map.len()];
+                        println!("{:?}", label_map);
+                        if label_map.len() >= current_macro_safe.args.len() {
+                            asm_error!("The macro has not found a definition for '{to_replace_name}'. It may be an argument or a globally accesible label, but it must exist.");
+                        }
+                        let label_to_replace_with = &current_macro_safe.args[label_map.len()];
                         match label_to_replace_with {
                             Token::Label { name } => {
                                 label_map.insert(name.clone(), to_replace_name.clone());
@@ -171,10 +184,12 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                         continue;
                     }
                     Token::StatementEnd => {
-                        let mut body = generate_macro_body(current_macro, &label_map);
+                        let mut body = generate_macro_body(current_macro_safe, &label_map);
                         new_tokens.append(&mut body);
                         has_inserted_macro = true;
                         mode = Mode::NORMAL;
+                        current_macro = None;
+                        label_map = HashMap::new();
                         continue;
                     }
                     _ => {
@@ -206,7 +221,6 @@ fn remove_repeating_statement_ends(tokens: &mut Vec<Token>) -> Vec<Token> {
     }
     return result;
 }
-
 fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
     let mut statements: Vec<Statement> = Vec::new();
     let mut idx = 0;
@@ -216,44 +230,53 @@ fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
             idx += 1;
             continue;
         }
+        match tokens[idx] {
+            Token::Scope | Token::Unscope | Token::Namespace { .. } => {
+                statements.push(Statement::Control {
+                    x: tokens[idx].clone(),
+                });
+                idx += 1;
+                continue;
+            }
 
-        if tokens[idx] == Token::Scope || tokens[idx] == Token::Unscope {
-            statements.push(Statement::ScopeControl {
-                x: tokens[idx].clone(),
-            });
-            idx += 1;
-            continue;
+            _=> {}
         }
 
-        if idx + 2 < tokens.len() && tokens[idx + 1] == Token::Pointer {
-            statements.push(Statement::PointerDefinition {
+
+        if idx + 2 < tokens.len() && tokens[idx + 1] == Token::LabelArrow {
+
+            statements.push(Statement::LabelDefinition {
                 label: tokens[idx].clone(),
-                value: tokens[idx + 2].clone(),
             });
 
-            idx += 3;
+            idx += 2;
             continue;
         }
 
-        if idx + 2 < tokens.len() && tokens[idx + 2] == Token::StatementEnd {
-            statements.push(Statement::Instruction {
-                a: tokens[idx].clone(),
-                b: tokens[idx + 1].clone(),
-                c: Token::Relative { offset: 3 },
-            });
-            idx += 3;
-            continue;
+        if tokens[idx + 1] == Token::Subleq {
+            if idx + 3 < tokens.len() && tokens[idx + 3] == Token::StatementEnd {
+                statements.push(Statement::Instruction {
+                    // Subleq has a and b flipped
+                    a: tokens[idx + 2].clone(),
+                    b: tokens[idx].clone(),
+                    c: Token::Relative { offset: 3 },
+                });
+                idx += 4;
+                continue;
+            }
+            if idx + 4 < tokens.len() && tokens[idx + 4] == Token::StatementEnd {
+                statements.push(Statement::Instruction {
+                    // Subleq has a and b flipped
+                    a: tokens[idx + 2].clone(),
+                    b: tokens[idx].clone(),
+                    c: tokens[idx + 3].clone(),
+                });
+                idx += 5;
+                continue;
+            }
+
         }
 
-        if idx + 3 < tokens.len() && tokens[idx + 3] == Token::StatementEnd {
-            statements.push(Statement::Instruction {
-                a: tokens[idx].clone(),
-                b: tokens[idx + 1].clone(),
-                c: tokens[idx + 2].clone(),
-            });
-            idx += 4;
-            continue;
-        }
 
         if tokens[idx] != Token::StatementEnd {
             statements.push(Statement::Literal {
@@ -265,12 +288,19 @@ fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
     return statements;
 }
 
-fn hex_to_dec(tokens: &mut Vec<Token>) {
+
+
+fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
     for token in tokens.iter_mut() {
         match token {
             Token::HexLiteral { value } => {
                 *token = Token::DecLiteral {
                     value: i32::from_str_radix(value, 16).expect("Should be hex."),
+                };
+            }
+            Token::CharLiteral { value } => {
+                *token = Token::DecLiteral {
+                    value: *value as i32
                 };
             }
             _ => continue,
@@ -283,9 +313,11 @@ fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<String
     let mut address: i32 = 0;
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
+   // let mut namespace: String = String::from("");
+
     for statement in statements {
         match statement {
-            Statement::ScopeControl { x } => match x {
+            Statement::Control { x } => match x {
                 Token::Scope => {
                     scopes.push(HashMap::new());
                     let current_scope_idx = seen_scopes_count + 1;
@@ -297,17 +329,34 @@ fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<String
                     current_scope_indexes.pop();
                     println!("UNSCOPE {:?}", current_scope_indexes);
                 }
+                Token::Namespace { name } => {
+                    println!("set namespace to {name}");
 
-                _ => panic!("Non scope token in scope control."),
+                   // namespace = name.clone();
+                }
+
+                _ => panic!("Non control in control statement."),
             },
 
-            Statement::PointerDefinition { label, value } => match label {
+            Statement::LabelDefinition { label} => match label {
                 Token::Label { name } => {
+                    /*
+                    let mut name_with_scope: String;
+                    if &namespace != "THIS" {
+                        name_with_scope = namespace.clone();
+                        name_with_scope.push_str("::");
+                        name_with_scope.push_str(&name);
+                    } else {
+                        name_with_scope = name.to_string();
+                    } 
+
+                    println!("{name_with_scope}"); */
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), address);
                 }
                 _ => panic!("Invalid token in pointer definition."),
             },
+
             _ => {}
         }
         address += statement.size();
@@ -323,7 +372,7 @@ fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<Hash
 
     for statement in statements {
         match statement {
-            Statement::ScopeControl { x } => match x {
+            Statement::Control { x } => match x {
                 Token::Scope => {
                     let current_scope_idx = seen_scopes_count + 1;
                     current_scope_indexes.push(current_scope_idx);
@@ -332,6 +381,7 @@ fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<Hash
                 Token::Unscope => {
                     current_scope_indexes.pop();
                 }
+                Token::Namespace {..} => {  },
                 _ => panic!("Non scope token in scope control."),
             },
             _ => {}
@@ -361,6 +411,8 @@ fn find_label(
     scoped_label_table: &Vec<HashMap<String, i32>>,
     current_scope_indexes: &Vec<usize>,
 ) -> i32 {
+    println!("{:?}",scoped_label_table);
+    println!("{:?}",current_scope_indexes);
     for scope in current_scope_indexes.iter().rev() {
         match scoped_label_table[*scope].get(name) {
             Some(x) => return *x,
@@ -374,22 +426,35 @@ fn resolve_relatives(statements: &mut Vec<Statement>) {
     let mut address: i32 = 0;
 
     for statement in statements {
-        if let Statement::Instruction { a, b, c } = statement {
-            if let Token::Relative { offset } = a {
-                *a = Token::DecLiteral {
-                    value: address + *offset,
+
+        match statement {
+            Statement::Instruction { a, b, c } => {
+                if let Token::Relative { offset } = a {
+                    *a = Token::DecLiteral {
+                        value: address + *offset,
+                    }
                 }
-            }
-            if let Token::Relative { offset } = b {
-                *b = Token::DecLiteral {
-                    value: address + *offset,
+                if let Token::Relative { offset } = b {
+                    *b = Token::DecLiteral {
+                        value: address + *offset,
+                    }
                 }
-            }
-            if let Token::Relative { offset } = c {
-                *c = Token::DecLiteral {
-                    value: address + *offset,
+                if let Token::Relative { offset } = c {
+                    *c = Token::DecLiteral {
+                        value: address + *offset,
+                    }
                 }
-            }
+            },
+            Statement::Literal { x } => {
+                if let Token::Relative { offset } = x {
+                    *x = Token::DecLiteral {
+                        value: address + *offset,
+                    }
+                }
+            },
+
+            _ => {}
+
         }
         address += statement.size();
     }
@@ -407,37 +472,88 @@ fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> Ve
     }
 }
 
+
+fn expand_strings(tokens: Vec<Token>) -> Vec<Token> {
+    let mut new_tokens: Vec<Token> = Vec::new();
+    for token in tokens {
+        match token {
+            Token::StrLiteral { value } => {
+                for c in value.chars() {
+                    new_tokens.push(Token::CharLiteral { value: c });
+                }
+            }
+            _ => new_tokens.push(token)
+        }
+    }
+
+
+    return new_tokens;
+}
+
 pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
 
-    println!("{:?}", tokens);
+    
 
     let (mut tokens, macros) = read_macros(tokens);
-    println!("{:?}", macros);
+
+    log::debug!("Found macros:");
+    for i in &macros {
+        println!("{i:?}");
+
+    }
+    println!();
+
 
     tokens = loop_insert_macros(tokens, &macros);
 
+    log::debug!("Inserted macros:");
     for token in &tokens {
         println!("{:?}", token);
     }
+    println!();
 
-    //return;
 
-    hex_to_dec(&mut tokens);
+    let mut tokens = expand_strings(tokens);
+    char_and_hex_to_dec(&mut tokens);
+    
+    log::debug!("Converted literals:");
+    for token in &tokens {
+        println!("{:?}", token);
+    }
+    println!();
+
+
+
 
     let mut statements = separate_statements(&tokens);
-    let scoped_label_table = assign_addresses_to_labels(&statements);
+
+    log::debug!("Statements");
     for statement in &statements {
         println!("{:?}", statement);
     }
-
     println!();
+
+
+    let scoped_label_table = assign_addresses_to_labels(&statements);
+
+    log::debug!("Label Table");
+    println!("{:?}", scoped_label_table);
+    println!();
+
+    log::debug!("Label Table");
 
     //   let label_table: HashMap<String, i32> = assign_addresses_to_labels(&statements);
     resolve_labels(&mut statements, &scoped_label_table);
     for statement in &statements {
         println!("{:?}", statement);
     }
+    println!();
+
+
 
     resolve_relatives(&mut statements);
+    for statement in &statements {
+        println!("{:?}", statement);
+    }
     return statements;
 }

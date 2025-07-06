@@ -2,7 +2,8 @@
 pub enum Token {
     DecLiteral { value: i32 },
     HexLiteral { value: String },
-    Pointer,
+    LabelArrow,
+    Subleq,
     StatementEnd,
     Label { name: String },
     Relative { offset: i32 },
@@ -13,4 +14,8 @@ pub enum Token {
     MacroStart { name: String },
     MacroEnd,
     MacroCall { name: String },
+    Namespace {name: String},
+
+    LabelDefintion {name: String},
+    
 }

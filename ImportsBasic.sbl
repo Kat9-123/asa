@@ -1,0 +1,13 @@
+
+#Target.sbl
+
+#Target.sbl
+; asdf asdf
+#Target2
+#Target.sbl
+
+
+
+a -> 3
+Target::f -= Target2::a &1
+a -= a 0xFFFF

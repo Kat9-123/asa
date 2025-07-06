@@ -23,9 +23,14 @@ fn match_token(token_str: &str) -> Token {
             _ => (),
         }
     }
+
+    if token_str == "-=" {
+        return Token::Subleq;
+    }
+
     // Pointers
     if token_str == "->" {
-        return Token::Pointer;
+        return Token::LabelArrow;
     }
     // Relative
     match &token_str[..1] {
@@ -60,6 +65,12 @@ fn match_token(token_str: &str) -> Token {
             return Token::MacroCall {
                 name: token_str[1..].to_string(),
             };
+        }
+        "#" => {
+            if &token_str[token_str.len()-4..] == ".sbl" {
+                return Token::Namespace { name: token_str[1..token_str.len()-4].to_string() };
+            }
+            return Token::Namespace { name: token_str[1..].to_string() };
         }
         _ => {}
     }

@@ -1,0 +1,6 @@
+;#ImportsBasic
+
+
+Target::f -> 5
+Target::z -> 1
+Target::z -= Target::z Target::z
