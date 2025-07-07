@@ -29,7 +29,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
     let mut idx = 0;
 
     while idx < tokens.len() {
-        if tokens[idx] == Token::StatementEnd {
+        if tokens[idx] == Token::Linebreak {
             idx += 1;
             continue;
         }
@@ -57,7 +57,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
         }
 
         if tokens[idx + 1] == Token::Subleq {
-            if idx + 3 < tokens.len() && tokens[idx + 3] == Token::StatementEnd {
+            if idx + 3 < tokens.len() && tokens[idx + 3] == Token::Linebreak { // Maybe something else as tokens[idx + 3]
                 statements.push(Statement::Instruction {
                     // Subleq has a and b flipped
                     a: tokens[idx + 2].clone(),
@@ -67,7 +67,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
                 idx += 4;
                 continue;
             }
-            if idx + 4 < tokens.len() && tokens[idx + 4] == Token::StatementEnd {
+            if idx + 4 < tokens.len() {
                 statements.push(Statement::Instruction {
                     // Subleq has a and b flipped
                     a: tokens[idx + 2].clone(),
@@ -81,7 +81,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
         }
 
 
-        if tokens[idx] != Token::StatementEnd {
+        if tokens[idx] != Token::Linebreak {
             statements.push(Statement::Literal {
                 x: tokens[idx].clone(),
             });

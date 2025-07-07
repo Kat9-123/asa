@@ -411,7 +411,7 @@ _entry ->
 		!Func::Call(draw)
 		
 
-		; input loop. wait untill supported key is pressed.
+		; input loop. wait until supported key is pressed.
 		_input_loop ->
 			!Func::Call(move)
 			!JumpIf::Eq(Func::returnVal, ZERO, _gameLoop)

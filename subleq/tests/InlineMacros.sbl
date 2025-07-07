@@ -10,9 +10,9 @@
     }
 ]
 
-@Test3 a? b? [ a? -= b? ]
+@Test3 a? b? [a? -= b?]
 
-@IO [ 0xFFFF ]
+@IO [0xFFFF]
 
 
 !Test3 a b &2

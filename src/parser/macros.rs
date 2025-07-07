@@ -4,7 +4,7 @@ use crate::tokens::*;
 
 #[derive(Debug)]
 pub struct Macro {
-    args: Vec<Token>,
+    args: Vec<String>,
     body: Vec<Token>,
 }
 
@@ -22,7 +22,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
     let mut macro_name: String = String::new();
     let mut macro_body: Vec<Token> = Vec::new();
-    let mut macro_args: Vec<Token> = Vec::new();
+    let mut macro_args: Vec<String> = Vec::new();
 
     for token in tokens {
         match mode {
@@ -38,11 +38,11 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::ARGS => match &token {
-                Token::StatementEnd => {
+                Token::Linebreak => {
                     continue;
                 }
                 Token::Label { name: name } => {
-                    macro_args.push(token);
+                    macro_args.push(name.clone());
                     continue;
                 }
                 Token::MacroBodyStart => {
@@ -143,15 +143,9 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     continue;
                 }
 
-                let label_to_replace = &current_macro_safe.args[label_map.len()];
-                match label_to_replace {
-                    Token::Label { name } => {
-                        label_map.insert(name.clone(), token.clone());
-                    }
-                    _ => {
-                        panic!("Unreachable");
-                    }
-                }
+                let name_to_replace = &current_macro_safe.args[label_map.len()];
+                label_map.insert(name_to_replace.clone(), token.clone());
+
 
                 continue;
             }

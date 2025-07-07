@@ -1,6 +1,3 @@
-use std::{fs::File, result};
-use std::io::Write;
-
 use crate::{parser::statements::Statement, tokens::Token};
 
 /*
@@ -33,7 +30,6 @@ fn generate_as_text(tokens: Vec<Token>) {
     let _ = file.write_all(result.as_bytes());
 }
  */
-
 pub fn to_text(data: Vec<u16>) -> String {
 
     let mut text: String = String::new();
@@ -45,7 +41,6 @@ pub fn to_text(data: Vec<u16>) -> String {
 
     return text;
 }
-
 pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
     let mut mem: Vec<u16> = Vec::new();
     for statement in statements {
@@ -61,7 +56,7 @@ pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
                     mem.push(value as u16);
                 }
             }
-            Statement::Control { x } => {
+            Statement::Control { .. } => {
                 continue;
             }
             Statement::LabelDefinition { ..} => {

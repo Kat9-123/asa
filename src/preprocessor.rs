@@ -24,7 +24,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<String>, sourc
         }
         let filepath = &split[i][1..];
         println!("{}", &filepath[filepath.len()-4..]);
-        
+
         let mut new_fp = String::from(filepath);
         if &filepath[filepath.len()-4..] != ".sbl" {
             new_fp.push_str(".sbl");

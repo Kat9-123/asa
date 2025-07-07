@@ -5,6 +5,10 @@ use crate::tokens::*;
 use crate::parser::statements::Statement;
 
 
+pub fn parse_braced_label_definitions() {
+    
+}
+
 pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<String, i32>> {
     let mut scopes: Vec<HashMap<String, i32>> = vec![HashMap::new()];
     let mut address: i32 = 0;
@@ -81,25 +85,33 @@ pub fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<
                 Token::Namespace {..} => {  },
                 _ => { asm_error!("Non control in control statement."); }
             },
+            Statement::Instruction { a, b, c } => {
+                if let Token::Label { name } = a {
+                    *a = Token::DecLiteral {
+                        value: find_label(name, scoped_label_table, &current_scope_indexes),
+                    }
+                }
+                if let Token::Label { name } = b {
+                    *b = Token::DecLiteral {
+                        value: find_label(name, scoped_label_table, &current_scope_indexes),
+                    }
+                }
+                if let Token::Label { name } = c {
+                    *c = Token::DecLiteral {
+                        value: find_label(name, scoped_label_table, &current_scope_indexes),
+                    }
+                }
+            }
+            Statement::Literal { x } => {
+                if let Token::Label { name } = x {
+                    *x = Token::DecLiteral {
+                        value: find_label(name, scoped_label_table, &current_scope_indexes),
+                    }
+                }
+            }
             _ => {}
         }
-        if let Statement::Instruction { a, b, c } = statement {
-            if let Token::Label { name } = a {
-                *a = Token::DecLiteral {
-                    value: find_label(name, scoped_label_table, &current_scope_indexes),
-                }
-            }
-            if let Token::Label { name } = b {
-                *b = Token::DecLiteral {
-                    value: find_label(name, scoped_label_table, &current_scope_indexes),
-                }
-            }
-            if let Token::Label { name } = c {
-                *c = Token::DecLiteral {
-                    value: find_label(name, scoped_label_table, &current_scope_indexes),
-                }
-            }
-        }
+
     }
 }
 

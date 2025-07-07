@@ -103,7 +103,7 @@ pub fn lexer(mut text: String) -> Vec<Token> {
             }
             result_tokens.push(match_token(token));
         }
-        result_tokens.push(Token::StatementEnd);
+        result_tokens.push(Token::Linebreak);
     }
     //println!("{:?}", result_tokens);
     return result_tokens;

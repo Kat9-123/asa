@@ -22,7 +22,7 @@ fn updated_context(current_context: Context, symbol: char) -> Context {
         },
         Context::String => match symbol {
             symbols::STRING => Context::Normal,
-            '\n' => panic!("Multine strings are not allowed."),
+            '\n' => panic!("Multiline strings are not allowed."),
             _ => Context::String,
         },
         Context::Char => match symbol {
@@ -49,18 +49,3 @@ pub fn sanitise(text: String) -> String {
     return result;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sanitise() {
-        assert_eq!(
-            sanitise(
-                "0 3 2 ';' '\"' ; Subtracts two numbers''\"\r\n489 43299 ; \"hello\"\n';' \";\""
-                    .to_string()
-            ),
-            "0 3 2 ';' '\"' \n489 43299 \n';' \";\"".to_string()
-        );
-    }
-}

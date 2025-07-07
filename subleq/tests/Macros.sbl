@@ -1,16 +1,9 @@
 
 
-@Gamma F
-[
-F -= 0xAAA
-]
+@Gamma F[F-=0xAAA]
 
-@Beta E
-[
-    {
-        !Gamma E
-        E -= E E
-    }
+@Beta E [
+    {!Gamma E \ E -= E E}
 ]
 
 @Alpha C D
@@ -26,6 +19,6 @@ F -= 0xAAA
 
 !Alpha A B
 
-A -> 4
+A->4
 B -> 3
 

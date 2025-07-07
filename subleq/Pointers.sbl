@@ -1,5 +1,10 @@
+0xFFFF -= (Z -> string) ; 0 -= 0
+
 string -> "Test"
 
-ptr -> 0
 
-0xFFFF -= *ptr
+
+
+
+
+;0xFFFF -= (x->0) 2

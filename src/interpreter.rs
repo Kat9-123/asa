@@ -8,7 +8,7 @@ pub fn interpret(mem: &mut Vec<u16>) {
     loop {
         mem_view::draw_mem(&mem);
 
-        
+
         let a = mem[programme_counter] as usize;
         let b = mem[programme_counter + 1] as usize;
         let c = mem[programme_counter + 2] as usize;

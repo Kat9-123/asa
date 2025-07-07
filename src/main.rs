@@ -1,7 +1,7 @@
 use std::{fs, process::exit};
 
 
-use crate::{codegen::generate, sanitiser::sanitise};
+use crate::{codegen::generate, sanitiser::sanitise, tokens::Token};
 use log::LevelFilter;
 use simple_logger::SimpleLogger;
 
@@ -18,6 +18,7 @@ mod testing;
 mod codegen;
 mod preprocessor;
 mod feedback;
+mod new_lexer;
 fn main() {
     SimpleLogger::new().init().unwrap();
     log::set_max_level(LevelFilter::Debug);
@@ -30,7 +31,7 @@ fn main() {
     // exit(0);
 
 
-    let file_path: &str = "./InlineMacros.sbl";
+    let file_path: &str = "./subleq/Pointers.sbl";
 
     println!("In file {file_path}");
     println!("{}", log::max_level());
@@ -44,12 +45,22 @@ fn main() {
 }
 
 fn assemble(text: String) -> Vec<u16> {
-    let sanitised_text = sanitise(text);
+   // let sanitised_text = sanitise(text);
     let mut currently_imported: Vec<String> = Vec::new();
-    let with_imports = preprocessor::include_imports(sanitised_text, &mut currently_imported, true);
+    let with_imports = preprocessor::include_imports(text, &mut currently_imported, true);
     
-    let tokens = lexer::lexer(with_imports);
-    println!("{:?}", tokens);
+    let tokens = new_lexer::tokenise(with_imports);
+    /* */
+    println!("TOKENS:");
+
+    for i in &tokens {
+        if let Token::Linebreak = i {
+            println!();
+            continue;
+        }
+        print!("{:?}, ", i);
+    }
+
 
     let statements = parser::parse(tokens);
 

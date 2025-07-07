@@ -3,13 +3,18 @@
 mod tests {
     use std::fs;
 
+    use log::{debug, LevelFilter, info};
+    use simple_logger::SimpleLogger;
+
     use crate::{assemble, codegen};
 
     use super::*;
 
     #[test]
     fn test_full() {
-        let paths = fs::read_dir("./tests").unwrap();
+        SimpleLogger::new().init().unwrap();
+        log::set_max_level(LevelFilter::Debug);
+        let paths = fs::read_dir("./subleq/tests").unwrap();
 
         for path in paths {
             let p = path.unwrap().path();
@@ -19,7 +24,7 @@ mod tests {
                 continue;
             }
 
-            println!("Name: {}", p);
+            info!("Name: {}", p);
 
             let contents = fs::read_to_string(&p).unwrap();
             let result = codegen::to_text(assemble(contents));

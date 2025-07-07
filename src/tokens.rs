@@ -2,9 +2,8 @@
 pub enum Token {
     DecLiteral { value: i32 },
     HexLiteral { value: String },
-    LabelArrow,
+    LabelArrow ,
     Subleq,
-    StatementEnd,
     Label { name: String },
     Relative { offset: i32 },
     Scope,
@@ -17,5 +16,10 @@ pub enum Token {
     MacroBodyEnd,
 
     MacroCall { name: String },
-    Namespace {name: String},    
+    Namespace {name: String},
+
+    BraceOpen,
+    BraceClose,
+
+    Linebreak,
 }

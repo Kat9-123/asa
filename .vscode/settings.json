@@ -1,7 +1,11 @@
 {
     "cSpell.words": [
         "codegen",
+        "sanitise",
+        "sanitised",
+        "sanitiser",
         "sblx",
-        "Subleq"
+        "Subleq",
+        "tokenise"
     ]
 }
