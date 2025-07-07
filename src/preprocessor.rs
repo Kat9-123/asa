@@ -7,7 +7,9 @@ use crate::sanitiser;
 
 pub fn include_imports(text: String, currently_imported: &mut Vec<String>, source_level: bool) -> String{
 
-    let str_split = text.split("\n").collect::<Vec<&str>>();
+    let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
+
+    let str_split = cleaned_string.split("\n").collect::<Vec<&str>>();
     let mut split: Vec<String> = str_split.into_iter().map(|x| x.to_string()).collect();
 
     let mut i = 0;
@@ -22,7 +24,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<String>, sourc
             i += 1;
             continue;
         }
-        let filepath = &split[i][1..];
+        let filepath = &format!("./subleq/{}", &split[i][1..]); // Format is temp
         println!("{}", &filepath[filepath.len()-4..]);
 
         let mut new_fp = String::from(filepath);
@@ -34,11 +36,11 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<String>, sourc
 
             continue;
         }
-
+        println!("{}", new_fp);
         currently_imported.push(new_fp.clone());
 
         let contents = fs::read_to_string(new_fp).expect("Should have been able to read the file");
-        let contents = sanitiser::sanitise(contents);
+        let contents = contents.replace("\r\n", "\n").replace("\t", " ");
         let contents = include_imports(contents, currently_imported, false);
 
         split.insert(i + 1, contents);

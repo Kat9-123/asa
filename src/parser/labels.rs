@@ -5,9 +5,7 @@ use crate::tokens::*;
 use crate::parser::statements::Statement;
 
 
-pub fn parse_braced_label_definitions() {
-    
-}
+
 
 pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<String, i32>> {
     let mut scopes: Vec<HashMap<String, i32>> = vec![HashMap::new()];
@@ -39,7 +37,7 @@ pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<St
                 _ => panic!("Non control in control statement."),
             },
 
-            Statement::LabelDefinition { label} => match label {
+            Statement::LabelDefinition { label, offset} => match label {
                 Token::Label { name } => {
                     /*
                     let mut name_with_scope: String;
@@ -53,7 +51,7 @@ pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<St
 
                     println!("{name_with_scope}"); */
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), address);
+                        .insert(name.clone(), address + *offset);
                 }
                 _ => panic!("Invalid token in pointer definition."),
             },

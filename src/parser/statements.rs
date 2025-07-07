@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{LabelOffset, Token};
 
 
 
@@ -6,7 +6,7 @@ use crate::tokens::Token;
 pub enum Statement {
     Instruction { a: Token, b: Token, c: Token },
     Control { x: Token },
-    LabelDefinition {label: Token},
+    LabelDefinition {label: Token, offset: i32},
     Literal { x: Token },
 }
 
@@ -46,10 +46,21 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
         }
 
 
-        if idx + 2 < tokens.len() && tokens[idx + 1] == Token::LabelArrow {
+        if idx + 2 < tokens.len() && let Token::LabelArrow {offset  } = &tokens[idx + 1]   {
+            let label_offset =
+            match offset {
+                LabelOffset::Char(x) => match x {
+                    'a' => 0,
+                    'b' => 1,
+                    'c' => 2,
+                    _ => unreachable!(),
+                }
+                LabelOffset::Int(x) => *x
+            };
 
             statements.push(Statement::LabelDefinition {
                 label: tokens[idx].clone(),
+                offset: label_offset,
             });
 
             idx += 2;

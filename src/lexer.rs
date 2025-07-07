@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{LabelOffset, Token};
 
 pub fn clean(text: String) -> String {
     let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
@@ -28,9 +28,10 @@ fn match_token(token_str: &str) -> Token {
         return Token::Subleq;
     }
 
+
     // Pointers
     if token_str == "->" {
-        return Token::LabelArrow;
+        return Token::LabelArrow {offset: LabelOffset::Int(1)};
     }
 
     if token_str == "[" {

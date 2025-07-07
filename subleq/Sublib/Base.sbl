@@ -1,0 +1,19 @@
+@Halt [
+    W -= W  0xFFFF
+]
+
+
+@Jump _address? [
+    W -= W  _address?
+]
+
+@Clear a? [
+    a?      -= a?
+]
+
+@SubLit a? b? [
+    a?      -= literal_pointer
+    W       -= W             _fin
+    literal_pointer -> b?
+    _fin ->
+]

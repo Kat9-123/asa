@@ -2,7 +2,7 @@
 
 use std::result;
 
-use crate::tokens::Token;
+use crate::tokens::{LabelOffset, Token};
 
 #[derive(Debug)]
 enum Context {
@@ -13,6 +13,7 @@ enum Context {
 
 
     SubleqOrLabelArrow,
+    LabelArrow,
     HexOrDec,
     Hex,
     Dec,
@@ -23,6 +24,8 @@ enum Context {
     MacroDeclaration,
     MacroCall,
     Relative,
+
+    Namespace,
 }
 
 
@@ -55,6 +58,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
 
             '@' => (Context::MacroDeclaration, None, None),
             '!' => (Context::MacroCall, None, None),
+            '#' => (Context::Namespace, None, None),
 
             _ => (Context::None, None, None)
         }
@@ -62,11 +66,28 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
             '\n' => (Context::DontMoveToNextChar, None, None),
             _ => (Context::LineComment, None, None),
         }
+        Context::Namespace => match cur_char {
+            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Namespace { name: buffer.clone() })),
+            _ => (Context::Namespace, Some(cur_char), None)
+        }
 
 
-        Context::SubleqOrLabelArrow => match cur_char {
+        Context::SubleqOrLabelArrow => match cur_char {     // Negative numbers :(
             '=' => (Context::None, None, Some(Token::Subleq)),
-            '>' => (Context::None, None, Some(Token::LabelArrow)),
+
+            'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
+            '>' => (Context::None, None, Some(Token::LabelArrow {offset: LabelOffset::Int(0)})),
+            _ => todo!()
+        }
+
+        Context::LabelArrow => match cur_char {
+            '>' => {
+                let ch: char = buffer.chars().nth(0).unwrap();
+                if ch == 'a' || ch == 'b' || ch == 'c' {
+                    return (Context::None, None, Some(Token::LabelArrow {offset: LabelOffset::Char(ch)}));
+                }
+                todo!(); // Numerical offsets.
+            }
             _ => todo!()
         }
 
@@ -91,7 +112,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
         
         Context::Label => match cur_char {
             '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
-            c if c.is_alphanumeric() || c == '?' => (Context::Label, Some(cur_char), None),
+            c if c.is_alphanumeric() || c == '?' || c == '_' => (Context::Label, Some(cur_char), None),
             _ => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
         }
 
