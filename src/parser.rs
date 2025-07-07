@@ -66,7 +66,7 @@ fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     for token in tokens {
         match mode {
             Mode::NORMAL => match token {
-                Token::MacroStart { name } => {
+                Token::MacroDeclaration { name } => {
                     macro_name = name.clone();
                     mode = Mode::ARGS;
                     continue;
@@ -77,22 +77,25 @@ fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::ARGS => match &token {
+                Token::StatementEnd => {
+                    continue;
+                }
                 Token::Label { name: name } => {
                     macro_args.push(token);
                     continue;
                 }
-                Token::StatementEnd => {
+                Token::MacroBodyStart => {
                     mode = Mode::BODY;
                     continue;
                 }
+
                 _ => {
-                    asm_error!("Only labels may be used for the macro header of '{macro_name}'.");
-  
+                    asm_error!("Only labels may be used as arguments for '{macro_name}'.");
                 }
             },
             Mode::BODY => match token {
                 // Token::macrostart error
-                Token::MacroEnd => {
+                Token::MacroBodyEnd => {
                     let new_macro = Macro {
                         args: macro_args,
                         body: macro_body,
@@ -114,14 +117,14 @@ fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     return (new_tokens, macros);
 }
 
-fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, String>) -> Vec<Token> {
+fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, Token>) -> Vec<Token> {
     let mut body: Vec<Token> = current_macro.body.clone();
     println!("{:?}", label_map);
     for body_token in &mut body {
         if let Token::Label { name } = body_token {
-            let new_name = label_map.get(name);
-            match new_name {
-                Some(name) => *body_token = Token::Label { name: name.clone() },
+            let new_token = label_map.get(name);
+            match new_token {
+                Some(t) => *body_token = t.clone(),
                 None => {
                     continue;
                 }
@@ -140,7 +143,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
     let mut has_inserted_macro = false;
     let mut mode = Mode::NORMAL;
     let mut current_macro: Option<&Macro> = None;
-    let mut label_map: HashMap<String, String> = HashMap::new();
+    let mut label_map: HashMap<String, Token> = HashMap::new();
 
     for token in tokens {
         match mode {
@@ -149,10 +152,11 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     let mac = macros.get(&name);
                     match mac {
                         None => {
-                            asm_error!("No definition found for the macro '{name}'.");
+                            asm_error!("No declaration found for the macro '{name}'.");
                         }
                         Some(x) => {
                             current_macro = Some(x);
+
                             mode = Mode::ARGS;
                         }
                     }
@@ -163,35 +167,32 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                 }
             },
             Mode::ARGS => {
-                let current_macro_safe = current_macro.expect("Unreachable");
-                match token {
-                    Token::Label {
-                        name: to_replace_name,
-                    } => {
-                        let label_to_replace_with = &current_macro_safe.args[label_map.len()];
-                        match label_to_replace_with {
-                            Token::Label { name } => {
-                                label_map.insert(name.clone(), to_replace_name.clone());
-                            }
-                            _ => {
-                                panic!("Unreachable");
-                            }
-                        }
-                        continue;
-                    }
-                    Token::StatementEnd => {
-                        let mut body = generate_macro_body(current_macro_safe, &label_map);
-                        new_tokens.append(&mut body);
-                        has_inserted_macro = true;
-                        mode = Mode::NORMAL;
-                        current_macro = None;
-                        label_map = HashMap::new();
-                        continue;
+
+                let current_macro_safe = current_macro.unwrap();
+
+                if label_map.len() >= current_macro_safe.args.len() {
+                    let mut body = generate_macro_body(current_macro_safe, &label_map);
+                    new_tokens.append(&mut body);
+                    has_inserted_macro = true;
+                    mode = Mode::NORMAL;
+                    current_macro = None;
+                    label_map = HashMap::new();
+                    new_tokens.push(token.clone());
+
+                    continue;
+                }
+
+                let label_to_replace = &current_macro_safe.args[label_map.len()];
+                match label_to_replace {
+                    Token::Label { name } => {
+                        label_map.insert(name.clone(), token.clone());
                     }
                     _ => {
-                        panic!("Only labels may follow a macro call.")
+                        panic!("Unreachable");
                     }
                 }
+
+                continue;
             }
         }
     }

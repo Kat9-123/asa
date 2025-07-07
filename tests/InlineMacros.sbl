@@ -1,0 +1,26 @@
+@Test1 x? y?
+[
+    x? -= Z
+]
+
+@Test2 x? y?
+[
+    {
+        x? -= y?
+    }
+]
+
+@Test3 a? b? [ a? -= b? ]
+
+@IO [ 0xFFFF ]
+
+
+!Test3 a b &2
+0xBEEF
+!Test1 a b
+!Test2 a b
+a -= a !IO
+
+a -> 100
+b -> 200
+Z -> 0

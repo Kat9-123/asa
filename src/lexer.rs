@@ -32,6 +32,14 @@ fn match_token(token_str: &str) -> Token {
     if token_str == "->" {
         return Token::LabelArrow;
     }
+
+    if token_str == "[" {
+        return Token::MacroBodyStart;
+    }
+    if token_str == "]" {
+        return Token::MacroBodyEnd;
+    }
+
     // Relative
     match &token_str[..1] {
         "&" => {
@@ -55,7 +63,7 @@ fn match_token(token_str: &str) -> Token {
             };
         }
         "@" => {
-            return Token::MacroStart {
+            return Token::MacroDeclaration {
                 name: token_str[1..].to_string(),
             };
         }
@@ -73,10 +81,6 @@ fn match_token(token_str: &str) -> Token {
             return Token::Namespace { name: token_str[1..].to_string() };
         }
         _ => {}
-    }
-
-    if token_str == "end" {
-        return Token::MacroEnd;
     }
 
     // Labels

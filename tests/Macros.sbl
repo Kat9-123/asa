@@ -1,21 +1,25 @@
 
-@Gamma F
-F -= 0xAAA
-end
 
-@Beta E 
-{
-    !Gamma E
-    E -= E E
-}
-end
+@Gamma F
+[
+F -= 0xAAA
+]
+
+@Beta E
+[
+    {
+        !Gamma E
+        E -= E E
+    }
+]
 
 @Alpha C D
-{
-    C -= D
-    !Beta C
-}
-end
+[
+    {
+        C -= D
+        !Beta C
+    }
+]
 
 ; Add access to value outside of macro test
 

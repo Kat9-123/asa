@@ -11,8 +11,11 @@ pub enum Token {
     Unscope,
     CharLiteral { value: char },
     StrLiteral { value: String },
-    MacroStart { name: String },
-    MacroEnd,
+
+    MacroDeclaration { name: String },
+    MacroBodyStart,
+    MacroBodyEnd,
+
     MacroCall { name: String },
     Namespace {name: String},
 
