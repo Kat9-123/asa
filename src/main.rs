@@ -5,10 +5,12 @@ use crate::{codegen::generate, sanitiser::sanitise};
 use log::LevelFilter;
 use simple_logger::SimpleLogger;
 
+mod parser;
+
+
 mod interpreter;
 mod lexer;
 mod mem_view;
-mod parser;
 mod sanitiser;
 mod symbols;
 mod tokens;

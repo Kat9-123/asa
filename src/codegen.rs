@@ -1,7 +1,7 @@
 use std::{fs::File, result};
 use std::io::Write;
 
-use crate::{parser::Statement, tokens::Token};
+use crate::{parser::statements::Statement, tokens::Token};
 
 /*
 fn to_bytes(tokens: Vec<u16>) {
