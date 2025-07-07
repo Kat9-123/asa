@@ -7,7 +7,10 @@
 #Target.sbl
 
 
+a -> 0
+{
 
-a -> 3
-Target::f -= Target2::a &1
-a -= a 0xFFFF
+    a -> 3
+    Target::f -= Target2::a &1
+    a -= a 0xFFFF
+}

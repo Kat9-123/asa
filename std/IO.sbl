@@ -1,6 +1,7 @@
 @Print pointer 
 {
     pointer -= pointer
+    P -= P
 }
 end
 

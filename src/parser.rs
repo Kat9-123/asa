@@ -168,10 +168,6 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     Token::Label {
                         name: to_replace_name,
                     } => {
-                        println!("{:?}", label_map);
-                        if label_map.len() >= current_macro_safe.args.len() {
-                            asm_error!("The macro has not found a definition for '{to_replace_name}'. It may be an argument or a globally accesible label, but it must exist.");
-                        }
                         let label_to_replace_with = &current_macro_safe.args[label_map.len()];
                         match label_to_replace_with {
                             Token::Label { name } => {
@@ -203,24 +199,6 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
     return (has_inserted_macro, new_tokens);
 }
 
-fn remove_repeating_statement_ends(tokens: &mut Vec<Token>) -> Vec<Token> {
-    let mut result: Vec<Token> = Vec::new();
-
-    let mut prev: Option<Token> = None;
-    for token in tokens.iter() {
-        match prev {
-            Some(Token::StatementEnd) => {
-                if *token == Token::StatementEnd {
-                    continue;
-                }
-            }
-            _ => {}
-        }
-        result.push(token.clone());
-        prev = Some(token.clone());
-    }
-    return result;
-}
 fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
     let mut statements: Vec<Statement> = Vec::new();
     let mut idx = 0;
@@ -259,7 +237,7 @@ fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
                     // Subleq has a and b flipped
                     a: tokens[idx + 2].clone(),
                     b: tokens[idx].clone(),
-                    c: Token::Relative { offset: 3 },
+                    c: Token::Relative { offset: 1 },
                 });
                 idx += 4;
                 continue;
@@ -382,7 +360,7 @@ fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<Hash
                     current_scope_indexes.pop();
                 }
                 Token::Namespace {..} => {  },
-                _ => panic!("Non scope token in scope control."),
+                _ => { asm_error!("Non control in control statement."); }
             },
             _ => {}
         }
@@ -411,22 +389,20 @@ fn find_label(
     scoped_label_table: &Vec<HashMap<String, i32>>,
     current_scope_indexes: &Vec<usize>,
 ) -> i32 {
-    println!("{:?}",scoped_label_table);
-    println!("{:?}",current_scope_indexes);
+
     for scope in current_scope_indexes.iter().rev() {
         match scoped_label_table[*scope].get(name) {
             Some(x) => return *x,
             None => {}
         }
     }
-    panic!("Label '{}' is undefined.", name)
+    asm_error!("Label '{}' is undefined.", name);
 }
 
 fn resolve_relatives(statements: &mut Vec<Statement>) {
     let mut address: i32 = 0;
 
     for statement in statements {
-
         match statement {
             Statement::Instruction { a, b, c } => {
                 if let Token::Relative { offset } = a {
@@ -436,12 +412,12 @@ fn resolve_relatives(statements: &mut Vec<Statement>) {
                 }
                 if let Token::Relative { offset } = b {
                     *b = Token::DecLiteral {
-                        value: address + *offset,
+                        value: address + 1 + *offset,
                     }
                 }
                 if let Token::Relative { offset } = c {
                     *c = Token::DecLiteral {
-                        value: address + *offset,
+                        value: address + 2 + *offset,
                     }
                 }
             },

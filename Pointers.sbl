@@ -1,0 +1,5 @@
+string -> "Test"
+
+ptr -> 0
+
+0xFFFF -= *ptr

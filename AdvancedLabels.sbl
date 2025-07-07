@@ -1,6 +1,0 @@
-Z -= Z _main
-
-Z -> 0
-
-_main ->
-    Z -= Z 0xFFFF

@@ -1,0 +1,21 @@
+@Test1 x? y? [
+    x? -= y?
+]
+
+@Test2 x? y?
+[
+    {
+        x? -= y?
+    }
+]
+
+@Test3 a? b? [ x? -= y? ]
+
+
+a -> 100
+b -> 200
+
+!Test1 a b &2
+0xBEEF
+!Test2 a b
+!Test3 a b 

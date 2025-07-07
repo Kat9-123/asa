@@ -1,0 +1,16 @@
+Z -= Z _main
+
+Z -> 0
+{
+    Z -> 100
+}
+
+_main -> {
+
+    _main -> {
+        Z -= Z &2
+    }
+    0xBEEF
+    Z -= Z 0xFFFF
+}
+

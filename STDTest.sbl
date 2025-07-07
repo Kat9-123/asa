@@ -8,5 +8,5 @@ string -> 'a'
 
 
 _main ->
-    !IO -= string
+    !Print string
     !Halt

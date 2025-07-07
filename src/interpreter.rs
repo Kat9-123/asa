@@ -29,6 +29,7 @@ pub fn interpret(mem: &mut Vec<u16>) {
 
 
         if result as i16 <= 0 {
+            println!("JUMP!");
             programme_counter = c;
             if c == 0xFFFF {
                 break;
