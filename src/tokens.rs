@@ -17,8 +17,5 @@ pub enum Token {
     MacroBodyEnd,
 
     MacroCall { name: String },
-    Namespace {name: String},
-
-    LabelDefintion {name: String},
-    
+    Namespace {name: String},    
 }
