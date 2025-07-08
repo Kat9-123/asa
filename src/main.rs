@@ -31,7 +31,7 @@ fn main() {
     // exit(0);
 
 
-    let file_path: &str = "./subleq/Pointers.sbl";
+    let file_path: &str = "./subleq/STDTest.sbl";
 
     println!("In file {file_path}");
     println!("{}", log::max_level());

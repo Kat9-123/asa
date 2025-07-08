@@ -1,3 +1,5 @@
+#Sublib/Symbols.sbl
+
 @Halt [
     W -= W  0xFFFF
 ]
@@ -6,6 +8,8 @@
 @Jump _address? [
     W -= W  _address?
 ]
+
+@J _address? [!Jump _address?]
 
 @Clear a? [
     a?      -= a?
@@ -16,4 +20,8 @@
     W       -= W             _fin
     literal_pointer -> b?
     _fin ->
+]
+
+@Inc a? [
+    a? -= N_ONE
 ]

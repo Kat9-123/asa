@@ -1,27 +1,26 @@
-@Print pointer 
-{
-    pointer -= pointer
-    P -= P
-}
-end
+#Sublib/Symbols.sbl
+#Sublib/Base.sbl
+
+@IO::Print string [{
+    !J _loop
+    char -> 0
+    inv_char -> 0
+
+    _loop ->
+        ptr -a>
+        inv_char    -= string ; 0 -= 0
+        char        -= inv_char
+        char        -= ZERO            _fin  ; Null zo we fin
+
+        !IO         -= char
+
+        !Inc ptr
+
+        !Clear inv_char
+        !Clear char
+        Z       -= Z _loop
 
 
-@PrintChar pointer 
-{
-    0xFFFF -= pointer 
-}
-end
+    _fin ->
 
-
-@GetChar out 
-{
-    out -= 0xFFFF 
-}
-end
-
-
-@Break  
-{
-    0xFFFF -= 0xA
-}
-end
+}]

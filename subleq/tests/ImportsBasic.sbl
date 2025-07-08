@@ -1,10 +1,9 @@
+a -= a a
+#ImportsBasicTarget/Target.sbl
+#ImportsBasicTarget
 
-#Target.sbl
-
-#Target.sbl
 ; asdf asdf
-#Target2
-#Target.sbl
+#ImportsBasicTarget/Target.sbl
 
 
 a -> 0

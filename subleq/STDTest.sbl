@@ -1,12 +1,8 @@
-!Jump _main
-#std/std
-#std/IO
-char -> 'a'
-temp -> 0
-string -> 'a'
+!J _main
+#Sublib
 
-
+string -> "Hello!" 0
 
 _main ->
-    !Print string
+    !IO::Print string
     !Halt

@@ -112,7 +112,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
         
         Context::Label => match cur_char {
             '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
-            c if c.is_alphanumeric() || c == '?' || c == '_' => (Context::Label, Some(cur_char), None),
+            c if c.is_alphanumeric() || c == '?' || c == '_'  || c == ':' => (Context::Label, Some(cur_char), None),
             _ => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
         }
 

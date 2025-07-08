@@ -1,4 +1,5 @@
-#Target3.sbl
+#ImportsBasicTarget/Target.sbl
+#ImportsBasicTarget/Target2
 Target2::a -= Target2::a 0
 Target2::a -> 0x0033
 Target2::a -= Target3::p
