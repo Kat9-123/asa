@@ -1,6 +1,18 @@
 W -= W _loop
 
-#Sublib
+
+
+@Clear a? [
+    a?      -= a?
+]
+
+@SubLit a? b? [
+    a?      -= literal_pointer
+    W       -= W             _fin
+    literal_pointer -> b?
+    _fin ->
+]
+
 
 _loop ->
     !Clear iChar
@@ -20,6 +32,7 @@ _loop ->
 char -> 0
 iChar -> 0
 
+W -> 0 \ Z -> 0
 nOne -> 0xFFFF
 string -> "(\'Hello, world!;\')" 0
 

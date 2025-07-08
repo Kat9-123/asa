@@ -1,4 +1,4 @@
-use std::{fs, process::exit};
+use std::{fs, path::PathBuf, process::exit};
 
 
 use crate::{codegen::generate, sanitiser::sanitise, tokens::Token};
@@ -46,7 +46,7 @@ fn main() {
 
 fn assemble(text: String) -> Vec<u16> {
    // let sanitised_text = sanitise(text);
-    let mut currently_imported: Vec<String> = Vec::new();
+    let mut currently_imported: Vec<PathBuf> = Vec::new();
     let with_imports = preprocessor::include_imports(text, &mut currently_imported, true);
     
     let tokens = new_lexer::tokenise(with_imports);

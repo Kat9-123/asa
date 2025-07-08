@@ -1,11 +1,11 @@
 use std::fs;
-
+use std::path::{Path, PathBuf};
 use crate::sanitiser;
 
 
 
 
-pub fn include_imports(text: String, currently_imported: &mut Vec<String>, source_level: bool) -> String{
+pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{
 
     let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
 
@@ -25,21 +25,26 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<String>, sourc
             continue;
         }
         let filepath = &format!("./subleq/{}", &split[i][1..]); // Format is temp
-        println!("{}", &filepath[filepath.len()-4..]);
 
-        let mut new_fp = String::from(filepath);
-        if &filepath[filepath.len()-4..] != ".sbl" {
-            new_fp.push_str(".sbl");
+        let mut fp = Path::new(filepath).to_path_buf();
+
+        if fp.is_dir() {
+            fp.push(fp.clone().file_stem().unwrap());
         }
-        if currently_imported.contains(&new_fp) {
+
+        if fp.extension() == None {
+            fp.set_extension("sbl");
+        }
+        
+        if currently_imported.contains(&fp) {
             split.remove(i);
 
             continue;
         }
-        println!("{}", new_fp);
-        currently_imported.push(new_fp.clone());
+        println!("{:?}", fp);
+        currently_imported.push(fp.clone());
 
-        let contents = fs::read_to_string(new_fp).expect("Should have been able to read the file");
+        let contents = fs::read_to_string(fp).expect("Should have been able to read the file");
         let contents = contents.replace("\r\n", "\n").replace("\t", " ");
         let contents = include_imports(contents, currently_imported, false);
 
