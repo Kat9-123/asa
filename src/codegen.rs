@@ -1,4 +1,4 @@
-use crate::{parser::statements::Statement, tokens::Token};
+use crate::{tokens::Token};
 
 /*
 fn to_bytes(tokens: Vec<u16>) {
@@ -41,35 +41,13 @@ pub fn to_text(data: Vec<u16>) -> String {
 
     return text;
 }
-pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
+pub fn generate(statements: Vec<Token>) -> Vec<u16> {
     let mut mem: Vec<u16> = Vec::new();
     for statement in statements {
         match statement {
-            Statement::Instruction { a,b, c } => {
-                if let Token::DecLiteral { info, value } = a {
-                    mem.push(value as u16);
-                }
-                if let Token::DecLiteral { info, value } = b {
-                    mem.push(value as u16);
-                }
-                if let Token::DecLiteral { info, value } = c {
-                    mem.push(value as u16);
-                }
-            }
-            Statement::Control { .. } => {
-                continue;
-            }
-            Statement::LabelDefinition { ..} => {
-                continue;
-            }
-            Statement::Literal { x } => {
-                match x {
-                    Token::DecLiteral { info, value } => {
-                    mem.push(value as u16);
 
-                    }
-                    _ => todo!()
-                }
+            Token::DecLiteral {info, value} => {
+                mem.push(value as u16);
             }
             _ => {
                 continue;

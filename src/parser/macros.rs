@@ -113,7 +113,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     let mac = macros.get(&name);
                     match mac {
                         None => {
-                            asm_err(&format!("No declaration found for the macro '{name}'."), &info);
+                            asm_err(format!("No declaration found for the macro '{name}'."), &info);
                         }
                         Some(x) => {
                             current_macro = Some(x);

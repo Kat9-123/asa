@@ -2,43 +2,73 @@ use std::collections::HashMap;
 
 use crate::feedback::*;
 use crate::tokens::*;
-use crate::parser::statements::Statement;
 
 
+pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
+    let mut updated_tokens: Vec<Token> = Vec::new();
+    let mut i = 0;
 
+    while i < tokens.len() {
+        if let Token::BraceOpen { info } = &tokens[i] {
+            let name = match &tokens[i + 1] {
+                Token::Label { info, name } => name,
+                _ => todo!(),
+            };
+            let data: IntOrString = match &tokens[i + 3] {
+                Token::DecLiteral { info, value } => IntOrString::Int(*value),
+                Token::Label { info, name  } => IntOrString::Str(name.clone()),
+                _ => todo!()
+            };
 
-pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<String, i32>> {
+            updated_tokens.push(Token::BracedLabelDefinition {
+                info: info.clone(),
+                name: name.clone(),
+                data: data,
+            }
+            );
+            i += 5;
+            continue;
+        }
+        updated_tokens.push(tokens[i].clone());
+        i += 1;
+    }
+
+    return updated_tokens;
+}
+
+pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i32>> {
     let mut scopes: Vec<HashMap<String, i32>> = vec![HashMap::new()];
     let mut address: i32 = 0;
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
    // let mut namespace: String = String::from("");
 
-    for statement in statements {
-        match statement {
-            Statement::Control { x } => match x {
-                Token::Scope {info} => {
-                    scopes.push(HashMap::new());
-                    let current_scope_idx = seen_scopes_count + 1;
-                    current_scope_indexes.push(current_scope_idx);
-                    println!("SCOPE {:?}", current_scope_indexes);
-                    seen_scopes_count += 1;
-                }
-                Token::Unscope {info }=> {
-                    current_scope_indexes.pop();
-                    println!("UNSCOPE {:?}", current_scope_indexes);
-                }
-                Token::Namespace {info, name } => {
-                    println!("set namespace to {name}");
+    for token in tokens {
 
-                   // namespace = name.clone();
-                }
+        match token {
+            Token::Scope {info} => {
+                scopes.push(HashMap::new());
+                let current_scope_idx = seen_scopes_count + 1;
+                current_scope_indexes.push(current_scope_idx);
+                println!("SCOPE {:?}", current_scope_indexes);
+                seen_scopes_count += 1;
+            }
+            Token::Unscope {info }=> {
+                current_scope_indexes.pop();
+                println!("UNSCOPE {:?}", current_scope_indexes);
+            }
+            Token::Namespace {info, name } => {
+                println!("set namespace to {name}");
 
-                _ => panic!("Non control in control statement."),
-            },
+                // namespace = name.clone();
+            }
+            Token::BracedLabelDefinition { info, name, data } => {
+                scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
+                        .insert(name.clone(), address);
+            }
 
-            Statement::LabelDefinition { label, offset} => match label {
-                Token::Label {info, name } => {
+
+            Token::LabelDefinition {info, name, offset} => {
                     /*
                     let mut name_with_scope: String;
                     if &namespace != "THIS" {
@@ -52,71 +82,57 @@ pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<St
                     println!("{name_with_scope}"); */
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), address + *offset);
-                }
-                _ => panic!("Invalid token in pointer definition."),
+
             },
 
             _ => {}
         }
-        address += statement.size();
+        address += token.size();
     }
 
     println!("{:?}", scopes);
     return scopes;
 }
 
-pub fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<HashMap<String, i32>>) {
+pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<String, i32>>) -> Vec<Token> {
+    let mut updated_tokens: Vec<Token> = Vec::new();
+
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
 
-    for statement in statements {
-        match statement {
-            Statement::Control { x } => match x {
-                Token::Scope {info} => {
-                    let current_scope_idx = seen_scopes_count + 1;
-                    current_scope_indexes.push(current_scope_idx);
-                    seen_scopes_count += 1;
-                }
-                Token::Unscope {info} => {
-                    current_scope_indexes.pop();
-                }
-                Token::Namespace {..} => {  },
-                _ => { asm_error!("Non control in control statement."); }
-            },
-            Statement::Instruction { a, b, c } => {
-                if let Token::Label { info,name } = a {
-                    *a = Token::DecLiteral {
+    for token in tokens {
+        match token {
+
+            Token::Scope {info} => {
+                let current_scope_idx = seen_scopes_count + 1;
+                current_scope_indexes.push(current_scope_idx);
+                seen_scopes_count += 1;
+            }
+            Token::Unscope {info} => {
+                current_scope_indexes.pop();
+            }
+            Token::Label { info, name } => {
+                updated_tokens.push(Token::DecLiteral {
                         info: info.clone(), // Probably the wrong info
-                        value: find_label(name, scoped_label_table, &current_scope_indexes),
-                    }
-                }
-                if let Token::Label {info, name } = b {
-                    *b = Token::DecLiteral {
-                        info: info.clone(),
-
-                        value: find_label(name, scoped_label_table, &current_scope_indexes),
-                    }
-                }
-                if let Token::Label {info, name } = c {
-                    *c = Token::DecLiteral {
-                        info: info.clone(),
-
-                        value: find_label(name, scoped_label_table, &current_scope_indexes),
+                        value: find_label(&name, scoped_label_table, &current_scope_indexes),
+                    });
+            }
+            Token::BracedLabelDefinition { info, name, data } => {
+                match data {
+                    IntOrString::Int(x) => updated_tokens.push(Token::DecLiteral { info: info.clone(), value: *x }),
+                    IntOrString::Str(string) => {
+                        updated_tokens.push(Token::DecLiteral {
+                            info: info.clone(), // Probably the wrong info
+                         value: find_label(&string, scoped_label_table, &current_scope_indexes),
+                    });
                     }
                 }
             }
-            Statement::Literal { x } => {
-                if let Token::Label {info, name } = x {
-                    *x = Token::DecLiteral {
-                        info: info.clone(),
-                        value: find_label(name, scoped_label_table, &current_scope_indexes),
-                    }
-                }
-            }
-            _ => {}
+            _ => {updated_tokens.push(token.clone())}
         }
 
     }
+    return updated_tokens;
 }
 
 fn find_label(

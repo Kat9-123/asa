@@ -34,7 +34,7 @@ fn send() {
 
 }
 
-pub fn asm_err(msg: &String, info: &Info) {
+pub fn asm_err(msg: String, info: &Info) {
     log::error!("Line {}: {}", info.line_number, msg);
     panic!();
 }

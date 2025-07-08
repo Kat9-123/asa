@@ -14,55 +14,42 @@ use crate::parser::statements::*;
 
 
 
-fn resolve_relatives(statements: &mut Vec<Statement>) {
+fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     let mut address: i32 = 0;
+    let mut new_tokens: Vec<Token> = Vec::new();
 
-    for statement in statements {
-        match statement {
-            Statement::Instruction { a, b, c } => {
-                if let Token::Relative { info,offset } = a {
-                    *a = Token::DecLiteral {
-                        info: info.clone(),
-                        value: address + *offset,
-                    }
-                }
-                if let Token::Relative {info, offset } = b {
-                    *b = Token::DecLiteral {
-                        info: info.clone(),
-
-                        value: address + 1 + *offset,
-                    }
-                }
-                if let Token::Relative {info, offset } = c {
-                    *c = Token::DecLiteral {
-                        info: info.clone(),
-
-                        value: address + 2 + *offset,
-                    }
-                }
-            },
-            Statement::Literal { x } => {
-                if let Token::Relative { info, offset } = x {
-                    *x = Token::DecLiteral {
-                        info: info.clone(),
-
-                        value: address + *offset,
-                    }
-                }
-            },
-
-            _ => {}
-
+    for token in tokens {
+        match token {
+            Token::Relative { info, offset } => {
+                new_tokens.push(Token::DecLiteral { info: info.clone(), value: address + *offset })
+            }
+            _ => new_tokens.push(token.clone())
         }
-        address += statement.size();
+        address += token.size();
+    }
+    return new_tokens;
+}
+
+
+fn add_relatives(tokens: &Vec<Token>) {
+    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut i = 0;
+
+    while i < tokens.len() {
+
+        // Either B -= A or B -= X -> A
+        if let Token::Subleq { .. } = tokens[i] {
+            if let Token::Linebreak { .. } = tokens[i+2] {
+                new_tokens.push(tokens[i].clone())
+            }
+        }
     }
 }
 
 
 
 
-
-pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
+pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     
 
@@ -95,18 +82,18 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
     println!();
 
 
+    let tokens = grab_braced_label_definitions(tokens);
 
-
-    let mut statements = separate_statements(&tokens);
+    let tokens = separate_statements(&tokens);
 
     log::debug!("Statements");
-    for statement in &statements {
+    for statement in &tokens {
         println!("{:?}", statement);
     }
     println!();
 
 
-    let scoped_label_table = assign_addresses_to_labels(&statements);
+    let scoped_label_table = assign_addresses_to_labels(&tokens);
 
     log::debug!("Label Table");
     println!("{:?}", scoped_label_table);
@@ -115,17 +102,17 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
     log::debug!("Label Table");
 
     //   let label_table: HashMap<String, i32> = assign_addresses_to_labels(&statements);
-    resolve_labels(&mut statements, &scoped_label_table);
-    for statement in &statements {
+    let tokens = resolve_labels(&tokens, &scoped_label_table);
+    for statement in &tokens {
         println!("{:?}", statement);
     }
     println!();
 
 
 
-    resolve_relatives(&mut statements);
-    for statement in &statements {
+    let tokens = resolve_relatives(&tokens);
+    for statement in &tokens {
         println!("{:?}", statement);
     }
-    return statements;
+    return tokens;
 }

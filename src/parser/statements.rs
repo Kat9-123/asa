@@ -1,31 +1,12 @@
-use crate::tokens::{LabelOffset, Token};
-
-
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Statement {
-    Instruction { a: Token, b: Token, c: Token },
-    Control { x: Token },
-    LabelDefinition {label: Token, offset: i32},
-    Literal { x: Token },
-}
-
-impl Statement {
-    pub fn size(&self) -> i32 {
-        match self {
-            Statement::Instruction { .. } => 3,
-            Statement::LabelDefinition { .. } => 0,
-            Statement::Control { .. } => 0,
-            Statement::Literal { .. } => 1,
-        }
-    }
-}
+use crate::{feedback::asm_err, tokens::{LabelOffset, Token}};
 
 
 
 
-pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
-    let mut statements: Vec<Statement> = Vec::new();
+
+
+pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
+    let mut new_tokens: Vec<Token> = Vec::new();
     let mut idx = 0;
 
     while idx < tokens.len() {
@@ -33,22 +14,11 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
             idx += 1;
             continue;
         }
-        match tokens[idx] {
-            Token::Scope { ..} | Token::Unscope { ..} | Token::Namespace {.. } => {
-                statements.push(Statement::Control {
-                    x: tokens[idx].clone(),
-                });
-                idx += 1;
-                continue;
-            }
 
-            _=> {}
-        }
 
 
         if idx + 2 < tokens.len() && let Token::LabelArrow {info, offset  } = &tokens[idx + 1]   {
-            let label_offset =
-            match offset {
+            let label_offset = match offset {
                 LabelOffset::Char(x) => match x {
                     'a' => 0,
                     'b' => 1,
@@ -58,47 +28,54 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
                 LabelOffset::Int(x) => *x
             };
 
-            statements.push(Statement::LabelDefinition {
-                label: tokens[idx].clone(),
+            let name = match &tokens[idx] {
+                Token::Label { info, name } => name,
+                _ => { asm_err(format!("Only a label may precede a label arrow"), info); unreachable!() },
+            };
+
+            new_tokens.push(Token::LabelDefinition {
+                info: info.clone(),
+                name: name.clone(),
                 offset: label_offset,
             });
 
             idx += 2;
             continue;
         }
+        /*
+            B -= A
+            B -= A C
+
+            X->B -= A
+            B -= Y->A 
+            X->B -= Y->A
+         */
 
         if let Token::Subleq {info } = &tokens[idx + 1]   {
             if idx + 3 < tokens.len() && let Token::Linebreak {info} = &tokens[idx + 3] { // Maybe something else as tokens[idx + 3]
-                statements.push(Statement::Instruction {
                     // Subleq has a and b flipped
-                    a: tokens[idx + 2].clone(),
-                    b: tokens[idx].clone(),
-                    c: Token::Relative { info: info.clone(), offset: 1 },
-                });
+                new_tokens.push(tokens[idx + 2].clone());
+                new_tokens.push(tokens[idx].clone());
+                new_tokens.push(Token::Relative { info: info.clone(), offset: 1 });
+
                 idx += 4;
                 continue;
             }
             if idx + 4 < tokens.len() {
-                statements.push(Statement::Instruction {
-                    // Subleq has a and b flipped
-                    a: tokens[idx + 2].clone(),
-                    b: tokens[idx].clone(),
-                    c: tokens[idx + 3].clone(),
-                });
+                // Subleq has a and b flipped
+                new_tokens.push(tokens[idx + 2].clone());
+                new_tokens.push(tokens[idx].clone());
+                new_tokens.push(tokens[idx + 3].clone());
+
                 idx += 5;
                 continue;
             }
 
         }
 
-        // ???
-        if let Token::Linebreak {info} = &tokens[idx] {
-        } else {
-            statements.push(Statement::Literal {
-                x: tokens[idx].clone(),
-            });
-        }
+        new_tokens.push(tokens[idx].clone());
+
         idx += 1;
     }
-    return statements;
+    return new_tokens;
 }

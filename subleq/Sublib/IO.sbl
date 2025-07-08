@@ -10,8 +10,7 @@
     inv_char -> 0
 
     _loop ->
-        ptr -a>
-        inv_char    -= string ; 0 -= 0
+        inv_char    -= (ptr -> string) ; 0 -= 0
         char        -= inv_char
         char        -= ZERO            _fin  ; Null zo we fin
 
