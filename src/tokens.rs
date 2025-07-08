@@ -4,34 +4,35 @@ pub enum LabelOffset {
     Char(char),
     Int(i32)
 }
+#[derive(Debug, PartialEq, Eq, Clone)]
 
 pub struct Info {
-    line_number: i32,
+    pub line_number: i32,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
-    DecLiteral { value: i32 },
-    HexLiteral { value: String },
-    LabelArrow { offset: LabelOffset},
-    Subleq,
-    Label { name: String },
-    Relative { offset: i32 },
-    Scope,
-    Unscope,
-    CharLiteral { value: char },
-    StrLiteral { value: String },
+    DecLiteral { info: Info, value: i32 },
+    HexLiteral { info: Info, value: String },
+    LabelArrow { info: Info, offset: LabelOffset},
+    Subleq {info: Info},
+    Label {info: Info, name: String },
+    Relative { info: Info, offset: i32 },
+    Scope {info: Info},
+    Unscope {info: Info},
+    CharLiteral {info: Info,  value: char },
+    StrLiteral {info: Info, value: String },
 
-    MacroDeclaration { name: String },
-    MacroBodyStart,
-    MacroBodyEnd,
+    MacroDeclaration {info: Info, name: String },
+    MacroBodyStart {info: Info},
+    MacroBodyEnd {info: Info},
 
-    MacroCall { name: String },
-    Namespace {name: String},
+    MacroCall {info: Info, name: String },
+    Namespace {info: Info, name: String},
 
-    BraceOpen,
-    BraceClose,
+    BraceOpen {info: Info},
+    BraceClose {info: Info},
 
-    Linebreak,
+    Linebreak {info: Info},
 
 }

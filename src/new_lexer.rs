@@ -2,7 +2,7 @@
 
 use std::result;
 
-use crate::tokens::{LabelOffset, Token};
+use crate::tokens::{Info, LabelOffset, Token};
 
 #[derive(Debug)]
 enum Context {
@@ -29,27 +29,27 @@ enum Context {
 }
 
 
-fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Context, Option<char>, Option<Token>) {
+fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &Info) -> (Context, Option<char>, Option<Token>) {
     match context {
         Context::DontMoveToNextChar => unreachable!(),
 
 
         Context::None => match cur_char {
-            '\n' => (Context::None, None, Some(Token::Linebreak)),
+            '\n' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
             ' ' => (Context::None, None, None),
             ';' => (Context::LineComment, None, None),
             '-' => (Context::SubleqOrLabelArrow, None, None),
             c if c.is_ascii_digit() => (Context::HexOrDec, Some(c), None),// This will cause hex numbers to have leading zeros
             c if c.is_ascii_alphabetic() || c == '_' => (Context::Label, Some(c), None),
 
-            '{' => (Context::None, None, Some(Token::Scope)),
-            '}' => (Context::None, None, Some(Token::Unscope)),
-            '[' => (Context::None, None, Some(Token::MacroBodyStart)),
-            ']' => (Context::None, None, Some(Token::MacroBodyEnd)),
-            '\\' => (Context::None, None, Some(Token::Linebreak)),
+            '{' => (Context::None, None, Some(Token::Scope {info: info.clone()})),
+            '}' => (Context::None, None, Some(Token::Unscope {info: info.clone()})),
+            '[' => (Context::None, None, Some(Token::MacroBodyStart {info: info.clone()})),
+            ']' => (Context::None, None, Some(Token::MacroBodyEnd {info: info.clone()})),
+            '\\' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
 
-            '(' => (Context::None, None, Some(Token::BraceOpen)),
-            ')' => (Context::None, None, Some(Token::BraceClose)),
+            '(' => (Context::None, None, Some(Token::BraceOpen {info: info.clone()})),
+            ')' => (Context::None, None, Some(Token::BraceClose {info: info.clone()})),
             '&' => (Context::Relative, None, None),
 
 
@@ -67,16 +67,16 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
             _ => (Context::LineComment, None, None),
         }
         Context::Namespace => match cur_char {
-            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Namespace { name: buffer.clone() })),
+            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Namespace { info: info.clone(), name: buffer.clone() })),
             _ => (Context::Namespace, Some(cur_char), None)
         }
 
 
         Context::SubleqOrLabelArrow => match cur_char {     // Negative numbers :(
-            '=' => (Context::None, None, Some(Token::Subleq)),
+            '=' => (Context::None, None, Some(Token::Subleq {info: info.clone()})),
 
             'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
-            '>' => (Context::None, None, Some(Token::LabelArrow {offset: LabelOffset::Int(0)})),
+            '>' => (Context::None, None, Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
             _ => todo!()
         }
 
@@ -84,7 +84,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
             '>' => {
                 let ch: char = buffer.chars().nth(0).unwrap();
                 if ch == 'a' || ch == 'b' || ch == 'c' {
-                    return (Context::None, None, Some(Token::LabelArrow {offset: LabelOffset::Char(ch)}));
+                    return (Context::None, None, Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Char(ch)}));
                 }
                 todo!(); // Numerical offsets.
             }
@@ -95,46 +95,46 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char) -> (Conte
         Context::HexOrDec => match cur_char {
             'x' => (Context::Hex, None, None),
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { value: buffer.parse::<i32>().unwrap() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
             _ => todo!()
         }
 
         Context::Hex => match cur_char {
             c if c.is_ascii_hexdigit() => (Context::Hex, Some(c), None),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::HexLiteral { value: buffer.clone() })),    // may cause issues
+            _ => (Context::DontMoveToNextChar, None, Some(Token::HexLiteral {info: info.clone(),  value: buffer.clone() })),    // may cause issues
         }
 
         Context::Dec => match cur_char {
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { value: buffer.parse::<i32>().unwrap() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
             _=> todo!()
         }
         
         Context::Label => match cur_char {
-            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
+            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
             c if c.is_alphanumeric() || c == '?' || c == '_'  || c == ':' => (Context::Label, Some(cur_char), None),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::Label { name: buffer.clone() })),
+            _ => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
         }
 
         Context::MacroDeclaration => match cur_char {
-            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroDeclaration { name: buffer.clone() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroDeclaration { info: info.clone(), name: buffer.clone() })),
             _ => (Context::MacroDeclaration, Some(cur_char), None),
         }
         Context::MacroCall => match cur_char {
-            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroCall { name: buffer.clone() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroCall { info: info.clone(), name: buffer.clone() })),
             _ => (Context::MacroCall, Some(cur_char), None),
         }
         Context::Char => match cur_char {   // Not great
-            '\'' => (Context::None, None, Some(Token::CharLiteral { value: buffer.chars().nth(0).unwrap() })),
+            '\'' => (Context::None, None, Some(Token::CharLiteral { info: info.clone(), value: buffer.chars().nth(0).unwrap() })),
             _ => (Context::Char, Some(cur_char), None),
         }
         Context::String => match cur_char {
-            '"' => (Context::None, None, Some(Token::StrLiteral { value: buffer.clone() })),
+            '"' => (Context::None, None, Some(Token::StrLiteral {info: info.clone(),  value: buffer.clone() })),
             _ => (Context::String, Some(cur_char), None),
         }
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::Relative { offset: buffer.parse::<i32>().unwrap() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::Relative { info: info.clone(), offset: buffer.parse::<i32>().unwrap() })),
             _ => todo!()
         }
 
@@ -147,7 +147,7 @@ pub fn clean(text: String) -> String {
     return cleaned_string;
 }
 
-pub fn tokenise(mut text: String) -> Vec<Token> {
+pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
     text = clean(text);
     text.push('\n');
 
@@ -155,11 +155,12 @@ pub fn tokenise(mut text: String) -> Vec<Token> {
 
     let mut context: Context = Context::None;
     let mut buffer: String = String::new();
+    let mut info: Info = Info { line_number: 1 - delta_line_number };
 
     for c in text.chars() {
         loop {
 
-            let (new_context, add_to_buffer, token_to_add) = updated_context(&context, &buffer, c);
+            let (new_context, add_to_buffer, token_to_add) = updated_context(&context, &buffer, c, &info);
             println!("{:?}, {:?}, {:?}", new_context, add_to_buffer, token_to_add);
 
             context = new_context;
@@ -170,6 +171,9 @@ pub fn tokenise(mut text: String) -> Vec<Token> {
 
             match token_to_add {
                 Some(tok) => {
+                    if let Token::Linebreak { .. } = tok {
+                        info.line_number += 1;
+                    }
                     result_tokens.push(tok);
                     buffer.clear();
                 }

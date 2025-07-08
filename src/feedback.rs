@@ -28,6 +28,13 @@ macro_rules! info {
 
 
 pub(crate) use asm_error;
+
+use crate::tokens::Info;
 fn send() {
 
+}
+
+pub fn asm_err(msg: &String, info: &Info) {
+    log::error!("Line {}: {}", info.line_number, msg);
+    panic!();
 }

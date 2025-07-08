@@ -27,7 +27,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     for token in tokens {
         match mode {
             Mode::NORMAL => match token {
-                Token::MacroDeclaration { name } => {
+                Token::MacroDeclaration { info, name } => {
                     macro_name = name.clone();
                     mode = Mode::ARGS;
                     continue;
@@ -38,14 +38,14 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::ARGS => match &token {
-                Token::Linebreak => {
+                Token::Linebreak {..} => {
                     continue;
                 }
-                Token::Label { name: name } => {
+                Token::Label { info, name: name } => {
                     macro_args.push(name.clone());
                     continue;
                 }
-                Token::MacroBodyStart => {
+                Token::MacroBodyStart {info}=> {
                     mode = Mode::BODY;
                     continue;
                 }
@@ -56,7 +56,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             },
             Mode::BODY => match token {
                 // Token::macrostart error
-                Token::MacroBodyEnd => {
+                Token::MacroBodyEnd {info} => {
                     let new_macro = Macro {
                         args: macro_args,
                         body: macro_body,
@@ -82,7 +82,7 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, Token>
     let mut body: Vec<Token> = current_macro.body.clone();
     println!("{:?}", label_map);
     for body_token in &mut body {
-        if let Token::Label { name } = body_token {
+        if let Token::Label { info, name } = body_token {
             let new_token = label_map.get(name);
             match new_token {
                 Some(t) => *body_token = t.clone(),
@@ -109,11 +109,11 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
     for token in tokens {
         match mode {
             Mode::NORMAL => match token {
-                Token::MacroCall { name } => {
+                Token::MacroCall { info, name } => {
                     let mac = macros.get(&name);
                     match mac {
                         None => {
-                            asm_error!("No declaration found for the macro '{name}'.");
+                            asm_err(&format!("No declaration found for the macro '{name}'."), &info);
                         }
                         Some(x) => {
                             current_macro = Some(x);

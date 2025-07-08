@@ -29,12 +29,12 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
     let mut idx = 0;
 
     while idx < tokens.len() {
-        if tokens[idx] == Token::Linebreak {
+        if let Token::Linebreak {..} = tokens[idx]  {
             idx += 1;
             continue;
         }
         match tokens[idx] {
-            Token::Scope | Token::Unscope | Token::Namespace { .. } => {
+            Token::Scope { ..} | Token::Unscope { ..} | Token::Namespace {.. } => {
                 statements.push(Statement::Control {
                     x: tokens[idx].clone(),
                 });
@@ -46,7 +46,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
         }
 
 
-        if idx + 2 < tokens.len() && let Token::LabelArrow {offset  } = &tokens[idx + 1]   {
+        if idx + 2 < tokens.len() && let Token::LabelArrow {info, offset  } = &tokens[idx + 1]   {
             let label_offset =
             match offset {
                 LabelOffset::Char(x) => match x {
@@ -67,13 +67,13 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
             continue;
         }
 
-        if tokens[idx + 1] == Token::Subleq {
-            if idx + 3 < tokens.len() && tokens[idx + 3] == Token::Linebreak { // Maybe something else as tokens[idx + 3]
+        if let Token::Subleq {info } = &tokens[idx + 1]   {
+            if idx + 3 < tokens.len() && let Token::Linebreak {info} = &tokens[idx + 3] { // Maybe something else as tokens[idx + 3]
                 statements.push(Statement::Instruction {
                     // Subleq has a and b flipped
                     a: tokens[idx + 2].clone(),
                     b: tokens[idx].clone(),
-                    c: Token::Relative { offset: 1 },
+                    c: Token::Relative { info: info.clone(), offset: 1 },
                 });
                 idx += 4;
                 continue;
@@ -91,8 +91,9 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Statement> {
 
         }
 
-
-        if tokens[idx] != Token::Linebreak {
+        // ???
+        if let Token::Linebreak {info} = &tokens[idx] {
+        } else {
             statements.push(Statement::Literal {
                 x: tokens[idx].clone(),
             });

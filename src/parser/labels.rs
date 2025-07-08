@@ -17,18 +17,18 @@ pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<St
     for statement in statements {
         match statement {
             Statement::Control { x } => match x {
-                Token::Scope => {
+                Token::Scope {info} => {
                     scopes.push(HashMap::new());
                     let current_scope_idx = seen_scopes_count + 1;
                     current_scope_indexes.push(current_scope_idx);
                     println!("SCOPE {:?}", current_scope_indexes);
                     seen_scopes_count += 1;
                 }
-                Token::Unscope => {
+                Token::Unscope {info }=> {
                     current_scope_indexes.pop();
                     println!("UNSCOPE {:?}", current_scope_indexes);
                 }
-                Token::Namespace { name } => {
+                Token::Namespace {info, name } => {
                     println!("set namespace to {name}");
 
                    // namespace = name.clone();
@@ -38,7 +38,7 @@ pub fn assign_addresses_to_labels(statements: &Vec<Statement>) -> Vec<HashMap<St
             },
 
             Statement::LabelDefinition { label, offset} => match label {
-                Token::Label { name } => {
+                Token::Label {info, name } => {
                     /*
                     let mut name_with_scope: String;
                     if &namespace != "THIS" {
@@ -72,37 +72,43 @@ pub fn resolve_labels(statements: &mut Vec<Statement>, scoped_label_table: &Vec<
     for statement in statements {
         match statement {
             Statement::Control { x } => match x {
-                Token::Scope => {
+                Token::Scope {info} => {
                     let current_scope_idx = seen_scopes_count + 1;
                     current_scope_indexes.push(current_scope_idx);
                     seen_scopes_count += 1;
                 }
-                Token::Unscope => {
+                Token::Unscope {info} => {
                     current_scope_indexes.pop();
                 }
                 Token::Namespace {..} => {  },
                 _ => { asm_error!("Non control in control statement."); }
             },
             Statement::Instruction { a, b, c } => {
-                if let Token::Label { name } = a {
+                if let Token::Label { info,name } = a {
                     *a = Token::DecLiteral {
+                        info: info.clone(), // Probably the wrong info
                         value: find_label(name, scoped_label_table, &current_scope_indexes),
                     }
                 }
-                if let Token::Label { name } = b {
+                if let Token::Label {info, name } = b {
                     *b = Token::DecLiteral {
+                        info: info.clone(),
+
                         value: find_label(name, scoped_label_table, &current_scope_indexes),
                     }
                 }
-                if let Token::Label { name } = c {
+                if let Token::Label {info, name } = c {
                     *c = Token::DecLiteral {
+                        info: info.clone(),
+
                         value: find_label(name, scoped_label_table, &current_scope_indexes),
                     }
                 }
             }
             Statement::Literal { x } => {
-                if let Token::Label { name } = x {
+                if let Token::Label {info, name } = x {
                     *x = Token::DecLiteral {
+                        info: info.clone(),
                         value: find_label(name, scoped_label_table, &current_scope_indexes),
                     }
                 }

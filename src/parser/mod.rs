@@ -20,25 +20,32 @@ fn resolve_relatives(statements: &mut Vec<Statement>) {
     for statement in statements {
         match statement {
             Statement::Instruction { a, b, c } => {
-                if let Token::Relative { offset } = a {
+                if let Token::Relative { info,offset } = a {
                     *a = Token::DecLiteral {
+                        info: info.clone(),
                         value: address + *offset,
                     }
                 }
-                if let Token::Relative { offset } = b {
+                if let Token::Relative {info, offset } = b {
                     *b = Token::DecLiteral {
+                        info: info.clone(),
+
                         value: address + 1 + *offset,
                     }
                 }
-                if let Token::Relative { offset } = c {
+                if let Token::Relative {info, offset } = c {
                     *c = Token::DecLiteral {
+                        info: info.clone(),
+
                         value: address + 2 + *offset,
                     }
                 }
             },
             Statement::Literal { x } => {
-                if let Token::Relative { offset } = x {
+                if let Token::Relative { info, offset } = x {
                     *x = Token::DecLiteral {
+                        info: info.clone(),
+
                         value: address + *offset,
                     }
                 }

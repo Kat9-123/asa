@@ -46,13 +46,13 @@ pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
     for statement in statements {
         match statement {
             Statement::Instruction { a,b, c } => {
-                if let Token::DecLiteral { value } = a {
+                if let Token::DecLiteral { info, value } = a {
                     mem.push(value as u16);
                 }
-                if let Token::DecLiteral { value } = b {
+                if let Token::DecLiteral { info, value } = b {
                     mem.push(value as u16);
                 }
-                if let Token::DecLiteral { value } = c {
+                if let Token::DecLiteral { info, value } = c {
                     mem.push(value as u16);
                 }
             }
@@ -64,7 +64,7 @@ pub fn generate(statements: Vec<Statement>) -> Vec<u16> {
             }
             Statement::Literal { x } => {
                 match x {
-                    Token::DecLiteral { value } => {
+                    Token::DecLiteral { info, value } => {
                     mem.push(value as u16);
 
                     }
