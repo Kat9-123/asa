@@ -4,6 +4,11 @@ pub enum LabelOffset {
     Char(char),
     Int(i32)
 }
+
+pub struct Info {
+    line_number: i32,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     DecLiteral { value: i32 },
@@ -29,5 +34,4 @@ pub enum Token {
 
     Linebreak,
 
-    BracedLabelDefinition {label: &'static Token}
 }

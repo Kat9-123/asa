@@ -6,5 +6,3 @@ N_ONE -> 0xFFFF
 ONE -> 1
 ZERO -> 0
 
-
-@IO [0xFFFF]

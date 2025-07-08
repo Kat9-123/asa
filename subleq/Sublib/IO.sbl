@@ -1,6 +1,9 @@
 #Sublib/Symbols.sbl
 #Sublib/Base.sbl
 
+@IO [0xFFFF]
+
+
 @IO::Print string [{
     !J _loop
     char -> 0
@@ -16,8 +19,8 @@
 
         !Inc ptr
 
-        !Clear inv_char
-        !Clear char
+        !Clr inv_char
+        !Clr char
         Z       -= Z _loop
 
 

@@ -1,7 +1,7 @@
 #Sublib/Symbols.sbl
 
 @Halt [
-    W -= W  0xFFFF
+    W -= W  !IO
 ]
 
 
@@ -14,6 +14,7 @@
 @Clear a? [
     a?      -= a?
 ]
+@Clr a? [!Clear a? ]
 
 @SubLit a? b? [
     a?      -= literal_pointer
