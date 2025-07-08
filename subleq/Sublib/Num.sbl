@@ -1,17 +1,17 @@
-@SubLit val? lit? [{
+@SubLit val? lit? {
     val?      -= literal_pointer
     W       -= W             _fin
     literal_pointer -> lit?
     _fin ->
-}]
-@AddLit val? lit? [{
+}
+@AddLit val? lit? {
     inv -= literal_pointer
     val?      -= inv
     inv       -= inv             _fin
     literal_pointer -> lit?
     inv -> 0
     _fin ->
-}]
+}
 
 
 @Inc a? [

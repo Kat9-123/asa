@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::thread::scope;
 use crate::feedback::*;
 use crate::tokens::*;
 
@@ -17,8 +18,11 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
         NORMAL,
         ARGS,
         BODY,
+        BODY_BOUNDED_BY_SCOPES,
     }
     let mut mode: Mode = Mode::NORMAL;
+    let mut scope_tracker = 0;
+
 
     let mut macro_name: String = String::new();
     let mut macro_body: Vec<Token> = Vec::new();
@@ -49,6 +53,12 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     mode = Mode::BODY;
                     continue;
                 }
+                Token::Scope { info } => {
+                    mode = Mode::BODY_BOUNDED_BY_SCOPES;
+                    macro_body.push(token.clone());
+                    scope_tracker += 1;
+                    continue;
+                }
 
                 _ => {
                     asm_error!("Only labels may be used as arguments for '{macro_name}'.");
@@ -73,6 +83,39 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     continue;
                 }
             },
+            Mode::BODY_BOUNDED_BY_SCOPES => match &token {
+                Token::Scope {info} => {
+
+                    macro_body.push(token.clone());
+                    scope_tracker += 1;
+                    continue;
+                }
+
+
+                Token::Unscope {info} => {
+                    macro_body.push(token.clone());
+                    scope_tracker -= 1;
+                    if scope_tracker != 0 {
+
+                        continue;
+                    }
+
+                    let new_macro = Macro {
+                        args: macro_args,
+                        body: macro_body,
+                    };
+                    macros.insert(macro_name, new_macro);
+                    macro_body = Vec::new();
+                    macro_args = Vec::new();
+                    macro_name = String::new();
+                    mode = Mode::NORMAL;
+                    continue;
+                }
+                _ => {
+                    macro_body.push(token.clone());
+                    continue;
+                }
+            }
         }
     }
     return (new_tokens, macros);

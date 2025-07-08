@@ -4,7 +4,7 @@
 @IO [0xFFFF]
 
 
-@IO::Print string [{
+@IO::Print string {
     !J _loop
     char -> 0
     inv_char -> 0
@@ -25,4 +25,4 @@
 
     _fin ->
 
-}]
+}

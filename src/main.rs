@@ -30,7 +30,7 @@ fn main() {
     // exit(0);
 
 
-    let file_path: &str = "./subleq/STDTest.sbl";
+    let file_path: &str = "./subleq/tests/SublibTest.sbl";
 
     println!("In file {file_path}");
     println!("{}", log::max_level());
