@@ -1,6 +1,4 @@
-use std::io;
 use std::num::Wrapping;
-use crate::mem_view;
 
 pub fn interpret(mem: &mut Vec<u16>) {
     let mut programme_counter = 0;

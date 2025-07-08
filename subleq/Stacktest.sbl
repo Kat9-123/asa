@@ -1,0 +1,7 @@
+#Sublib
+#Sublib/Stack
+
+!Stack::Create test 10
+
+
+test -= Z

@@ -1,8 +1,8 @@
 
 
-use std::result;
+use std::{result};
 
-use crate::{println_debug, tokens::{Info, LabelOffset, Token}};
+use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token}};
 
 #[derive(Debug)]
 enum Context {
@@ -11,6 +11,7 @@ enum Context {
     String,
     Char,
 
+    BlockComment,
 
     SubleqOrLabelArrow,
     LabelArrow,
@@ -26,6 +27,9 @@ enum Context {
     Relative,
 
     Namespace,
+
+    MultOrBlockComment,
+    PossibleBlockCommentEnd,
 }
 
 
@@ -41,6 +45,8 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '-' => (Context::SubleqOrLabelArrow, None, None),
             c if c.is_ascii_digit() => (Context::HexOrDec, Some(c), None),// This will cause hex numbers to have leading zeros
             c if c.is_ascii_alphabetic() || c == '_' => (Context::Label, Some(c), None),
+
+            '*' => (Context::MultOrBlockComment, None, None),
 
             '{' => (Context::None, None, Some(Token::Scope {info: info.clone()})),
             '}' => (Context::None, None, Some(Token::Unscope {info: info.clone()})),
@@ -60,8 +66,23 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '!' => (Context::MacroCall, None, None),
             '#' => (Context::Namespace, None, None),
 
-            _ => (Context::None, None, None)
+            _ => asm_error!(info, "Unexpected character"),
         }
+
+        Context::MultOrBlockComment => match cur_char {
+            '*' => (Context::BlockComment, None, None),
+            _ => (Context::DontMoveToNextChar, None, Some(Token::Mult {info: info.clone()}))
+        }
+
+        Context::BlockComment => match cur_char {
+            '*' => (Context::PossibleBlockCommentEnd, None, None),
+            _ => (Context::BlockComment, None, None),
+        }
+        Context::PossibleBlockCommentEnd => match cur_char {
+            '*' => (Context::None, None, None,),
+            _ => (Context::BlockComment, None, None)
+        }
+
         Context::LineComment => match cur_char {
             '\n' => (Context::DontMoveToNextChar, None, None),
             _ => (Context::LineComment, None, None),
@@ -77,7 +98,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
 
             'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
             '>' => (Context::None, None, Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
-            _ => todo!()
+            _ => { asm_error!(info, "Unexpected character, for Subleq use '-=', for label use ->") },
         }
 
         Context::LabelArrow => match cur_char {
@@ -95,24 +116,24 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
         Context::HexOrDec => match cur_char {
             'x' => (Context::Hex, None, None),
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
-            _ => todo!()
+            c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Hex or Dec literal {}", hint!("Labels may not start with a number")),
+            _ => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
         }
 
         Context::Hex => match cur_char {
             c if c.is_ascii_hexdigit() => (Context::Hex, Some(c), None),
+            c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Hex literal"),
             _ => (Context::DontMoveToNextChar, None, Some(Token::HexLiteral {info: info.clone(),  value: buffer.clone() })),    // may cause issues
         }
 
         Context::Dec => match cur_char {
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
-            _=> todo!()
+            c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Dec literal"),
+            _ => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
         }
-        
         Context::Label => match cur_char {
             '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
-            c if c.is_alphanumeric() || c == '?' || c == '_'  || c == ':' => (Context::Label, Some(cur_char), None),
+            c if c.is_alphanumeric() || c == '?' || c == '_'  || c == ':' || c == '.' => (Context::Label, Some(cur_char), None),
             _ => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
         }
 
@@ -135,7 +156,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
             ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::Relative { info: info.clone(), offset: buffer.parse::<i32>().unwrap() })),
-            _ => todo!()
+            _ => asm_error!(info, "Unexpected character"),
         }
 
     }
@@ -170,17 +191,21 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
             }
             match token_to_add {
                 Some(tok) => {
+
                     if let Token::Linebreak { .. } = tok {
                         info.line_number += 1;
-                        info.start_char = 0;
-                        info.end_char = 0;
+                        info.start_char = 1;
+                        info.end_char = 2;
+                    } else {
+                        info.start_char = info.end_char;
                     }
+
                     result_tokens.push(tok);
                     buffer.clear();
-                    info.start_char = info.end_char;
                 }
                 None => {}
             }
+
             if let Context::DontMoveToNextChar = context {
                 context = Context::None;
                 continue;
@@ -189,6 +214,7 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
             if buffer == "" {
                 info.start_char += 1;
             }
+
 
             break;
         }

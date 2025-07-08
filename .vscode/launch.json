@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["STDTest.sbl"],
+            "args": ["Stacktest.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {

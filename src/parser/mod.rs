@@ -31,7 +31,27 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
 }
 
 
-
+fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
+    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut i = 0;
+    while i < tokens.len() {
+        if i + 1 < tokens.len() && let Token::Mult {..} = tokens[i + 1] {
+            match &tokens[i] {
+                Token::DecLiteral { info, value: count } => {
+                    for mult_i in 0..*count {
+                        new_tokens.push(tokens[i + 2].clone());
+                    }
+                    i += 3;
+                    continue;
+                }
+                _ => todo!(),
+            }
+        }
+        new_tokens.push(tokens[i].clone());
+        i += 1;
+    }
+    return new_tokens;
+}
 
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
@@ -59,7 +79,8 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     let mut tokens = expand_strings(tokens);
     char_and_hex_to_dec(&mut tokens);
-    
+    let tokens = expand_mults(&tokens);
+
     log::debug!("Converted literals:");
     for token in &tokens {
         println_debug!("{:?}", token);

@@ -13,7 +13,7 @@ mod tests {
     #[test]
     fn test_full() {
         SimpleLogger::new().init().unwrap();
-        log::set_max_level(LevelFilter::Debug);
+        log::set_max_level(LevelFilter::Info);
         let paths = fs::read_dir("./subleq/tests").unwrap();
 
         for path in paths {
@@ -31,10 +31,9 @@ mod tests {
 
             let mut sblx_path = p[..p.len() - 4].to_string();
             sblx_path.push_str(".sblx");
-            println!("{sblx_path}");
             let expected = fs::read_to_string(sblx_path).unwrap();
             assert_eq!(result, expected);
-
+            println!();
 
          //   let should_be = fs::read_to_string(.unwrap();            
 

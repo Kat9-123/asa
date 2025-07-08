@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::thread::scope;
 use crate::feedback::*;
+use crate::hint;
 use crate::println_debug;
 use crate::tokens::*;
 
@@ -37,6 +38,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     mode = Mode::ARGS;
                     continue;
                 }
+                Token::MacroBodyStart { info } | Token::MacroBodyEnd { info } => {
+                    asm_error!(&info, "Unexpected token");
+                }
                 _ => {
                     new_tokens.push(token);
                     continue;
@@ -49,7 +53,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 Token::Label { info, name: name } => {
                     macro_args.push(name.clone());
                     if !name.ends_with('?') {
-                        asm_warn(format!("Notate macro arguments with a trailing question mark ('{}' -> '{}?')", name, name), info);
+                        asm_warn!(info, "Notate macro arguments with a trailing question mark {}", hint!("'{name}' -> '{name}?'"));
                     }
                     continue;
                 }
@@ -64,8 +68,8 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     continue;
                 }
 
-                _ => {
-                    panic!("Only labels may be used as arguments for '{macro_name}'.");
+                tok => {
+                    asm_error!(tok.get_info(), "Only labels may be used as arguments for '{macro_name}'");
                 }
             },
             Mode::BODY => match token {
@@ -160,7 +164,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     let mac = macros.get(&name);
                     match mac {
                         None => {
-                            asm_err(format!("No declaration found for the macro '{name}'."), &info);
+                            asm_error!(&info, "No declaration found for the macro '{name}'.");
                         }
                         Some(x) => {
                             current_macro = Some(x);
@@ -203,7 +207,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
 }
 
 pub fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> Vec<Token> {
-    let mut has_inserted = false;
+    let mut has_inserted ;
     let mut t = tokens;
 
     loop {

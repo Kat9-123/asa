@@ -1,18 +1,19 @@
 
 
-@Gamma F[F-=0xAAA]
+@Gamma F?[F?-=0xAAA]
 
-@Beta E [
-    {!Gamma E \ E -= E E}
-]
+@Beta E?
+    {!Gamma E? \ E? -= E? E?}
 
-@Alpha C D
+
+@Alpha C? D?
 [
     {
-        C -= D
-        !Beta C
-    }
-]
+        C? -= D?
+        !Beta C?
+    }** block comment
+**]
+
 
 ; Add access to value outside of macro test
 

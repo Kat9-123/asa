@@ -19,6 +19,8 @@ pub enum IntOrString {
     Int(i32),
 }
 
+
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     DecLiteral { info: Info, value: i32 },
@@ -45,7 +47,9 @@ pub enum Token {
 
     Linebreak {info: Info},
 
-    BracedLabelDefinition {info: Info, name: String, data: IntOrString}
+    BracedLabelDefinition {info: Info, name: String, data: IntOrString},
+
+    Mult {info: Info},
 
 }
 
@@ -56,6 +60,31 @@ impl Token {
             Token::DecLiteral { .. } | Token::Relative {..} | Token::Label {.. } | Token::BracedLabelDefinition { .. } => 1,
             Token::HexLiteral { .. } | Token::CharLiteral {..} | Token::StrLiteral {..} => todo!(),
             _ => 0,
+        }
+    }
+    pub fn get_info(&self) -> &Info {
+        match self {
+            Token::DecLiteral { info, .. } => info,
+            Token::HexLiteral { info, .. } => info,
+            Token::LabelArrow { info, .. } => info,
+            Token::Subleq { info } => info,
+            Token::Label { info, .. } => info,
+            Token::LabelDefinition { info, .. } => info,
+            Token::Relative { info, .. } => info,
+            Token::Scope { info } => info,
+            Token::Unscope { info } => info,
+            Token::CharLiteral { info, .. } => info,
+            Token::StrLiteral { info, .. } => info,
+            Token::MacroDeclaration { info, .. } => info,
+            Token::MacroBodyStart { info } => info,
+            Token::MacroBodyEnd { info } => info,
+            Token::MacroCall { info, .. } => info,
+            Token::Namespace { info, .. } => info,
+            Token::BraceOpen { info } => info,
+            Token::BraceClose { info } => info,
+            Token::Linebreak { info } => info,
+            Token::BracedLabelDefinition { info, .. } => info,
+            Token::Mult { info } => info,
         }
     }
 }

@@ -115,7 +115,7 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
             Token::Label { info, name } => {
                 updated_tokens.push(Token::DecLiteral {
                         info: info.clone(), // Probably the wrong info
-                        value: find_label(&name, scoped_label_table, &current_scope_indexes),
+                        value: find_label(&name, scoped_label_table, &current_scope_indexes, info),
                     });
             }
             Token::BracedLabelDefinition { info, name, data } => {
@@ -124,7 +124,7 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
                     IntOrString::Str(string) => {
                         updated_tokens.push(Token::DecLiteral {
                             info: info.clone(), // Probably the wrong info
-                         value: find_label(&string, scoped_label_table, &current_scope_indexes),
+                         value: find_label(&string, scoped_label_table, &current_scope_indexes, info),
                     });
                     }
                 }
@@ -140,6 +140,7 @@ fn find_label(
     name: &String,
     scoped_label_table: &Vec<HashMap<String, i32>>,
     current_scope_indexes: &Vec<usize>,
+    info: &Info
 ) -> i32 {
 
     for scope in current_scope_indexes.iter().rev() {
@@ -147,6 +148,6 @@ fn find_label(
             Some(x) => return *x,
             None => {}
         }
-    }
-    asm_error!("Label '{}' is undefined.", name);
+    };
+    asm_error!(info, "No definition for label '{name}' found");
 }

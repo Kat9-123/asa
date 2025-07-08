@@ -18,11 +18,13 @@ mod codegen;
 mod preprocessor;
 mod feedback;
 mod new_lexer;
+use std::time::Instant;
 
 
 fn main() {
+
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
     let args: Vec<String> = env::args().collect();
 
 
@@ -33,7 +35,6 @@ fn main() {
     //let mut mem: Vec<u16> = vec![6, 7, 3, 4, 4, 0xFFFF, 4, 5];
     // interpreter::interpret(&mut mem);
     // exit(0);
-
     let file_path = format!("./subleq/{}", args[1]);
 
     info!("{file_path}");
@@ -46,6 +47,8 @@ fn main() {
 }
 
 fn assemble(text: String) -> Vec<u16> {
+    let before = Instant::now();
+
    // let sanitised_text = sanitise(text);
     let mut currently_imported: Vec<PathBuf> = Vec::new();
 
@@ -70,7 +73,8 @@ fn assemble(text: String) -> Vec<u16> {
 
 
     let statements = parser::parse(tokens);
-
-    return codegen::generate(statements);
+    let result = codegen::generate(statements);
+    info!("Assembled in: {:.3?}", before.elapsed());
+    return result;
 
 }

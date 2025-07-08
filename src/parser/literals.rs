@@ -5,9 +5,14 @@ pub fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
     for token in tokens.iter_mut() {
         match token {
             Token::HexLiteral {info, value } => {
+                let val = match i32::from_str_radix(value, 16) {
+                    Err(x) => asm_error!(info, "Invalid hex literal"),
+                    Ok(x) => x
+                };
+
                 *token = Token::DecLiteral {
                     info: info.clone(),
-                    value: i32::from_str_radix(value, 16).expect("Should be hex."),
+                    value: val,
                 };
             }
             Token::CharLiteral { info, value } => {

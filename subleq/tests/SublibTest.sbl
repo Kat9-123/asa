@@ -1,4 +1,4 @@
-!J _main
+!J .main
 string2 -> "is cool!" 0
 
 
@@ -7,7 +7,7 @@ string2 -> "is cool!" 0
 string -> "Subleq " 0
 
 
-_main ->
+.main ->
     !IO::Print string
     !IO::Print string2
     !Halt

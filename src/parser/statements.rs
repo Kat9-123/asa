@@ -1,4 +1,4 @@
-use crate::{feedback::asm_err, tokens::{LabelOffset, Token}};
+use crate::{asm_error, feedback::asm_err, tokens::{LabelOffset, Token}};
 
 
 
@@ -30,7 +30,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
 
             let name = match &tokens[idx] {
                 Token::Label { info, name } => name,
-                _ => { asm_err(format!("Only a label may precede a label arrow"), info); unreachable!() },
+                _ => asm_error!(info, "Only a label may precede a label arrow")
             };
 
             new_tokens.push(Token::LabelDefinition {
@@ -51,7 +51,7 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
             X->B -= Y->A
          */
 
-        if let Token::Subleq {info } = &tokens[idx + 1]   {
+        if idx + 1 < tokens.len() && let Token::Subleq {info } = &tokens[idx + 1]   {
             if idx + 3 < tokens.len() && let Token::Linebreak {info} = &tokens[idx + 3] { // Maybe something else as tokens[idx + 3]
                     // Subleq has a and b flipped
                 new_tokens.push(tokens[idx + 2].clone());

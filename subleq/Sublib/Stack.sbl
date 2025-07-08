@@ -1,0 +1,18 @@
+#Sublib
+
+@Stack::Create name? l_size? [
+    name? -> l_size? * 0x0000
+]
+
+@Stack::Push stack? val? {
+    !J .
+    i_val -> 0
+
+    . ->
+    i_val -= val?
+
+    (stack_ptr -> stack?) -= i_val
+
+    !Inc stack?
+    !Clear i_val
+}
