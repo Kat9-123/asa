@@ -3,16 +3,15 @@
 
 @IO [0xFFFF]
 
-
-@IO::Print string {
+@IO::Print string? {
     !J _loop
-    char -> 0
-    inv_char -> 0
+    char        -> 0
+    inv_char    -> 0
 
     _loop ->
-        inv_char    -= (ptr -> string) ; 0 -= 0
+        inv_char    -= (ptr -> string?) ; 0 -= 0
         char        -= inv_char
-        char        -= ZERO            _fin  ; Null zo we fin
+        char        -= ZERO            _fin  ; Null so we fin
 
         !IO         -= char
 
@@ -20,7 +19,7 @@
 
         !Clr inv_char
         !Clr char
-        Z       -= Z _loop
+        Z           -= Z _loop
 
 
     _fin ->

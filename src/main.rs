@@ -2,9 +2,9 @@ use std::{fs, path::PathBuf, process::exit};
 
 
 use crate::{codegen::generate, sanitiser::sanitise, tokens::Token};
-use log::LevelFilter;
+use log::{trace, LevelFilter};
 use simple_logger::SimpleLogger;
-
+use std::env;
 mod parser;
 
 
@@ -18,9 +18,14 @@ mod codegen;
 mod preprocessor;
 mod feedback;
 mod new_lexer;
+
+
 fn main() {
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Debug);
+    log::set_max_level(LevelFilter::Info);
+    let args: Vec<String> = env::args().collect();
+
+
     //let args: Vec<String> = env::args().collect();
     // let query = &args[1];
     // let file_path = &args[2];
@@ -29,13 +34,10 @@ fn main() {
     // interpreter::interpret(&mut mem);
     // exit(0);
 
+    let file_path = format!("./subleq/{}", args[1]);
 
-    let file_path: &str = "./subleq/tests/SublibTest.sbl";
-
-    println!("In file {file_path}");
-    println!("{}", log::max_level());
+    info!("{file_path}");
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
-    
 
     let mut data = assemble(contents);
     interpreter::interpret(&mut data);
@@ -53,17 +55,17 @@ fn assemble(text: String) -> Vec<u16> {
 
     let with_imports = preprocessor::include_imports(cleaned_string, &mut currently_imported, true);
 
-    let delta_line_number =   (with_imports.matches('\n').count() as i32) -start_line_number - 1;
+    let delta_line_number =   (with_imports.matches('\n').count() as i32) -start_line_number - 1;   // HACK
     let tokens = new_lexer::tokenise(with_imports, delta_line_number);
     /* */
-    println!("TOKENS:");
+    println_debug!("TOKENS:");
 
     for i in &tokens {
         if let Token::Linebreak {..} = i {
-            println!();
+            println_debug!();
             continue;
         }
-        print!("{:?}, ", i);
+        print_debug!("{:?}, ", i);
     }
 
 

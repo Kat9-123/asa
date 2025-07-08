@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::feedback::*;
+use crate::println_debug;
 use crate::tokens::*;
 
 
@@ -50,15 +51,15 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                 scopes.push(HashMap::new());
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
-                println!("SCOPE {:?}", current_scope_indexes);
+                println_debug!("SCOPE {:?}", current_scope_indexes);
                 seen_scopes_count += 1;
             }
             Token::Unscope {info }=> {
                 current_scope_indexes.pop();
-                println!("UNSCOPE {:?}", current_scope_indexes);
+                println_debug!("UNSCOPE {:?}", current_scope_indexes);
             }
             Token::Namespace {info, name } => {
-                println!("set namespace to {name}");
+                println_debug!("set namespace to {name}");
 
                 // namespace = name.clone();
             }
@@ -79,7 +80,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                         name_with_scope = name.to_string();
                     } 
 
-                    println!("{name_with_scope}"); */
+                    println_debug!("{name_with_scope}"); */
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), address + *offset);
 
@@ -90,7 +91,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
         address += token.size();
     }
 
-    println!("{:?}", scopes);
+    println_debug!("{:?}", scopes);
     return scopes;
 }
 

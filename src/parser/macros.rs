@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::thread::scope;
 use crate::feedback::*;
+use crate::println_debug;
 use crate::tokens::*;
 
 #[derive(Debug)]
@@ -47,6 +48,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
                 Token::Label { info, name: name } => {
                     macro_args.push(name.clone());
+                    if !name.ends_with('?') {
+                        asm_warn(format!("Notate macro arguments with a trailing question mark ('{}' -> '{}?')", name, name), info);
+                    }
                     continue;
                 }
                 Token::MacroBodyStart {info}=> {
@@ -61,7 +65,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
 
                 _ => {
-                    asm_error!("Only labels may be used as arguments for '{macro_name}'.");
+                    panic!("Only labels may be used as arguments for '{macro_name}'.");
                 }
             },
             Mode::BODY => match token {
@@ -123,7 +127,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
 fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, Token>) -> Vec<Token> {
     let mut body: Vec<Token> = current_macro.body.clone();
-    println!("{:?}", label_map);
+    println_debug!("{:?}", label_map);
     for body_token in &mut body {
         if let Token::Label { info, name } = body_token {
             let new_token = label_map.get(name);

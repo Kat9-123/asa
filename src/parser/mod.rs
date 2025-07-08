@@ -4,7 +4,7 @@ mod literals;
 mod macros;
 pub mod statements;
 
-use crate::asm_error;
+use crate::{asm_error, println_debug};
 use crate::tokens::{self, Token};
 use crate::parser::labels::*;
 use crate::parser::literals::*;
@@ -31,21 +31,6 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
 }
 
 
-fn add_relatives(tokens: &Vec<Token>) {
-    let mut new_tokens: Vec<Token> = Vec::new();
-    let mut i = 0;
-
-    while i < tokens.len() {
-
-        // Either B -= A or B -= X -> A
-        if let Token::Subleq { .. } = tokens[i] {
-            if let Token::Linebreak { .. } = tokens[i+2] {
-                new_tokens.push(tokens[i].clone())
-            }
-        }
-    }
-}
-
 
 
 
@@ -57,19 +42,19 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     log::debug!("Found macros:");
     for i in &macros {
-        println!("{i:?}");
+        println_debug!("{i:?}");
 
     }
-    println!();
+    println_debug!();
 
 
     tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");
     for token in &tokens {
-        println!("{:?}", token);
+        println_debug!("{:?}", token);
     }
-    println!();
+    println_debug!();
 
 
     let mut tokens = expand_strings(tokens);
@@ -77,9 +62,9 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     
     log::debug!("Converted literals:");
     for token in &tokens {
-        println!("{:?}", token);
+        println_debug!("{:?}", token);
     }
-    println!();
+    println_debug!();
 
 
     let tokens = grab_braced_label_definitions(tokens);
@@ -88,31 +73,31 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     log::debug!("Statements");
     for statement in &tokens {
-        println!("{:?}", statement);
+        println_debug!("{:?}", statement);
     }
-    println!();
+    println_debug!();
 
 
     let scoped_label_table = assign_addresses_to_labels(&tokens);
 
     log::debug!("Label Table");
-    println!("{:?}", scoped_label_table);
-    println!();
+    println_debug!("{:?}", scoped_label_table);
+    println_debug!();
 
     log::debug!("Label Table");
 
     //   let label_table: HashMap<String, i32> = assign_addresses_to_labels(&statements);
     let tokens = resolve_labels(&tokens, &scoped_label_table);
     for statement in &tokens {
-        println!("{:?}", statement);
+        println_debug!("{:?}", statement);
     }
-    println!();
+    println_debug!();
 
 
 
     let tokens = resolve_relatives(&tokens);
     for statement in &tokens {
-        println!("{:?}", statement);
+        println_debug!("{:?}", statement);
     }
     return tokens;
 }

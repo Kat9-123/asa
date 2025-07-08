@@ -1,8 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::sanitiser;
-
-
+use crate::{print_debug, println_debug, sanitiser};
 
 
 pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{
@@ -14,7 +12,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
 
     let mut i = 0;
     while i < split.len() {
-        println!("{:?}", split);
+        println_debug!("{:?}", split);
         if split[i].len() < 1 {
             i += 1;
             continue;
@@ -41,7 +39,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
 
             continue;
         }
-        println!("{:?}", fp);
+        println_debug!("{:?}", fp);
         currently_imported.push(fp.clone());
 
         let contents = fs::read_to_string(fp).expect("Should have been able to read the file");
@@ -62,7 +60,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         result.push('\n');
     }
 
-    print!("{}", result);
+    print_debug!("{}", result);
     return result;
 
 }

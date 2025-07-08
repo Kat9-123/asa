@@ -1,9 +1,11 @@
 !J _main
+string2 -> "is cool!" 0
+
+
 #Sublib
 
 string -> "Subleq " 0
 
-string2 -> "is cool!" 0
 
 _main ->
     !IO::Print string

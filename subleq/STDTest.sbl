@@ -1,8 +1,13 @@
 !J _main
 #Sublib
 
+@test wappeldap 0x20 {
+    wappeldap -= wappeldap
+}
+
 string -> "Subleq!" 0
 
 _main ->
     !IO::Print string
     !Halt
+    !AAAA

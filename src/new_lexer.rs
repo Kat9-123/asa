@@ -2,7 +2,7 @@
 
 use std::result;
 
-use crate::tokens::{Info, LabelOffset, Token};
+use crate::{println_debug, tokens::{Info, LabelOffset, Token}};
 
 #[derive(Debug)]
 enum Context {
@@ -155,27 +155,29 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
 
     let mut context: Context = Context::None;
     let mut buffer: String = String::new();
-    let mut info: Info = Info { line_number: 1 - delta_line_number };
+    let mut info: Info = Info { start_char: 0, end_char: 0, line_number: 1 - delta_line_number };
 
     for c in text.chars() {
         loop {
 
             let (new_context, add_to_buffer, token_to_add) = updated_context(&context, &buffer, c, &info);
-            println!("{:?}, {:?}, {:?}", new_context, add_to_buffer, token_to_add);
+            println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, token_to_add);
 
             context = new_context;
             match add_to_buffer {
                 Some(ch) => buffer.push(ch),
                 None => {}
             }
-
             match token_to_add {
                 Some(tok) => {
                     if let Token::Linebreak { .. } = tok {
                         info.line_number += 1;
+                        info.start_char = 0;
+                        info.end_char = 0;
                     }
                     result_tokens.push(tok);
                     buffer.clear();
+                    info.start_char = info.end_char;
                 }
                 None => {}
             }
@@ -183,6 +185,11 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
                 context = Context::None;
                 continue;
             }
+            info.end_char += 1;
+            if buffer == "" {
+                info.start_char += 1;
+            }
+
             break;
         }
 

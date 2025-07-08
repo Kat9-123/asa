@@ -7,6 +7,8 @@ pub enum LabelOffset {
 #[derive(Debug, PartialEq, Eq, Clone)]
 
 pub struct Info {
+    pub start_char: i32,
+    pub end_char: i32,
     pub line_number: i32,
 }
 
