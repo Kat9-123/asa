@@ -2,7 +2,7 @@ Z -> 0 ; Temp register, use discouraged
 W -> 0 ; Always empty register
 
 
-N_ONE -> 0xFFFF
+N_ONE -> -1
 ONE -> 1
 ZERO -> 0
 

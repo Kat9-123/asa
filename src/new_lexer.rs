@@ -13,7 +13,7 @@ enum Context {
 
     BlockComment,
 
-    SubleqOrLabelArrow,
+    SubleqOrNegativeOrLabelArrow,
     LabelArrow,
     HexOrDec,
     Hex,
@@ -42,8 +42,9 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '\n' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
             ' ' => (Context::None, None, None),
             ';' => (Context::LineComment, None, None),
-            '-' => (Context::SubleqOrLabelArrow, Some(cur_char), None),
-            c if c.is_ascii_digit() => (Context::HexOrDec, Some(c), None),// This will cause hex numbers to have leading zeros
+            '-' => (Context::SubleqOrNegativeOrLabelArrow, Some(cur_char), None),
+            '0' => (Context::HexOrDec, Some(cur_char), None),// This will cause hex numbers to have leading zeros
+            c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
             c if c.is_ascii_alphabetic() || c == '_' || c == '.' => (Context::Label, Some(c), None),
 
             '*' => (Context::MultOrBlockComment, None, None),
@@ -96,9 +97,10 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
         }
 
 
-        Context::SubleqOrLabelArrow => match cur_char {     // Negative numbers :(
+        Context::SubleqOrNegativeOrLabelArrow => match cur_char {     // Negative numbers :(
             '=' => (Context::None, None, Some(Token::Subleq {info: info.clone()})),
-
+            '0' => (Context::HexOrDec, Some(cur_char), None),
+            c if c.is_ascii_digit() => (Context::Dec, Some(cur_char), None),
             'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
             '>' => (Context::None, Some(cur_char), Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
             _ => { asm_error!(info, "Unexpected character, for Subleq use '-=', for label use ->") },
