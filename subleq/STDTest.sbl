@@ -4,7 +4,7 @@
 @test wappeldap pliep? {
     wappeldap? -= wappe
 }
-string -> &1 "Subleq!" 0
+string -> &"Subleq!" 0
 
 .main ->
     !IO::Print string

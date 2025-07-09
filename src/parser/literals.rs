@@ -33,7 +33,7 @@ pub fn expand_strings(tokens: Vec<Token>) -> Vec<Token> {
         match token {
             Token::StrLiteral {info, value } => {
                 for c in value.chars() {
-                    new_tokens.push(Token::CharLiteral {info: info.clone(), value: c });
+                    new_tokens.push(Token::DecLiteral  {info: info.clone(), value: c as i32 });
                 }
             }
             _ => new_tokens.push(token)

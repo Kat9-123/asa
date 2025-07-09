@@ -71,8 +71,13 @@ pub fn asm_err(msg: String, info: &Info, file_name: &str, line: u32) {
 fn asm_msg(msg: String, info: &Info, t: Type) {
     let contents =  get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
-    println!("{: >4} | {}", format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
-    println!("{: >4} | {}", format!("{}", info.line_number - 1).bright_cyan(),  lines[(info.line_number - 2) as usize]);
+    if info.line_number - 3 >= 0 {
+        println!("{: >4} | {}", format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
+
+    }
+    if info.line_number - 2 >= 0 {
+        println!("{: >4} | {}", format!("{}", info.line_number - 1).bright_cyan(),  lines[(info.line_number - 2) as usize]);
+    }
 
     match t {
         Type::ERROR => println!("{: >4} | {}",  format!("{}", info.line_number).red() , lines[(info.line_number - 1) as usize]),
@@ -82,11 +87,11 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
     // Very very messy
     let start = info.start_char;
     let length = info.length;
-    println!("{}, {}", start, length);
+    //println!("{}, {}", start, length);
     
-    print!("   8 | ");
+    print!("       ");
     for _ in 0..start-1 {
-        print!("=");
+        print!(" ");
     }
     for _ in 0..length {
         match t {

@@ -4,12 +4,12 @@
 
 return_stack -> !Stack::Create 32
 
-@Subroutine::Def name? [
+@Routine name? [
     name? ->
 ]
 
 
-@Subroutine::Call name? {
+@Routine::Call name? {
 
 
     !Stack::Push return_stack _return_address
@@ -20,7 +20,7 @@ return_stack -> !Stack::Create 32
 }
 
 
-@Subroutine::Return {
+@Routine::Return {
     !Stack::Pop return_stack return_addr
 
     W -= W (return_addr -> 0x0000)

@@ -4,9 +4,10 @@ use crate::{asm_error, mem_view, tokens::Token};
 
 
 
-pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>) {
+pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -> Option<String> {
     let mut programme_counter = 0;
     let mut prev_programme_counter = 0;
+    let mut buf = String::new();
 
     loop {
       //  mem_view::draw_mem(&mem);
@@ -35,7 +36,9 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>) {
 
         if b == 0xFFFF {
             result = mem[a];
-            print!("{}", result as u8 as char );
+            let ch = result as u8 as char;
+            buf.push(ch);
+            print!("{}", ch );
             io::stdout().flush();
 
         } else if a == 0xFFFF {
@@ -62,6 +65,10 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>) {
             continue;
         }
         programme_counter += 3;
-        let mut buf = String::new();
     }
+    if return_output {
+        return Some(buf);
+    }
+    return None;
+
 }

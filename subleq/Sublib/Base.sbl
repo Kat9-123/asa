@@ -55,13 +55,18 @@
 ]
 
 
-@Ref target? ptr? {
-    !Clr ptr?
 
 
+@SubleqDerefA p_a? b? {
+    !Copy p_a? p_local
+    b? -= (p_local -> 0)
+}
+@SubleqDerefB a? p_b?{
+    !Copy p_a? p_local
+    (p_local -> 0) -= a?
 }
 
-
-@Deref {
-    
+@SubleqDerefC a? b? p_c? {
+    !Copy p_c? p_local
+    b? -= a? (p_local -> 0)
 }

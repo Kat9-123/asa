@@ -1,0 +1,19 @@
+!J .main
+string2 -> &"is cool! " 0
+
+
+#Sublib
+
+string -> &"Subleq " 0
+
+i -> 1
+
+.main ->
+    !IO::Print string
+    !IO::Print string2
+    !IO::Print string
+    !IO::Print string2
+    i -= ZERO 0xFFFF
+    i -= ONE
+    !J .main
+    !Halt

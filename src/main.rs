@@ -2,7 +2,7 @@ use std::path::Path;
 use std::{fs, path::PathBuf, process::exit};
 
 
-use crate::{codegen::generate, sanitiser::sanitise, tokens::Token};
+use crate::{codegen::generate, tokens::Token};
 use log::{trace, LevelFilter};
 use simple_logger::SimpleLogger;
 use std::env;
@@ -11,7 +11,6 @@ mod parser;
 
 mod interpreter;
 mod mem_view;
-mod sanitiser;
 mod symbols;
 mod tokens;
 mod testing;
@@ -42,7 +41,7 @@ fn main() {
     let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
     let (mut mem, tokens) = assemble(contents, file_path);
-    interpreter::interpret(&mut mem, &tokens);
+    interpreter::interpret(&mut mem, &tokens, false);
 
     //lexer::lexer(contents);
 }

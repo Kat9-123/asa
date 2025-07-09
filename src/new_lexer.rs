@@ -157,8 +157,14 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
         }
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
-            ' ' | '\n' => (Context::DontMoveToNextChar, None, Some(Token::Relative { info: info.clone(), offset: buffer.parse::<i32>().unwrap() })),
-            _ => asm_error!(info, "Unexpected character"),
+            _ => {
+                let mut offset= 1;
+                if buffer != "" {
+                    offset =  buffer.parse::<i32>().unwrap();
+                }
+                (Context::DontMoveToNextChar, None, Some(Token::Relative { info: info.clone(), offset  }))
+            }
+
         }
 
     }

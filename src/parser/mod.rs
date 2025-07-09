@@ -56,9 +56,10 @@ fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
-    
-    let mut tokens = expand_strings(tokens);
+    let mut tokens= tokens;
+
     char_and_hex_to_dec(&mut tokens);
+    
 
     log::debug!("Converted literals:");
     for token in &tokens {
@@ -87,6 +88,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
+    let mut tokens = expand_strings(tokens);
 
     let tokens = expand_mults(&tokens);
 

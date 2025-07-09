@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::{print_debug, println_debug, sanitiser};
+use crate::{print_debug, println_debug};
 
 
 pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{

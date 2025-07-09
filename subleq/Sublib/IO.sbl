@@ -30,7 +30,7 @@
 
 @IO::PrintLit l_string? {
     !J .
-    string -> &1 l_string? 0
+    string -> &l_string? 0
     . ->
     !IO::Print string
 }

@@ -30,7 +30,7 @@ fn generate_as_text(tokens: Vec<Token>) {
     let _ = file.write_all(result.as_bytes());
 }
  */
-pub fn to_text(data: Vec<u16>) -> String {
+pub fn to_text(data: &Vec<u16>) -> String {
 
     let mut text: String = String::new();
     for i in data {

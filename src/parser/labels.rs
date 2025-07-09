@@ -16,7 +16,7 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
                 _ => todo!(),
             };
             let data: IntOrString = match &tokens[i + 3] {
-                Token::DecLiteral { info, value } => IntOrString::Int(*value),
+                Token::DecLiteral { info, value } => IntOrString::Int(*value),  
                 Token::Label { info, name  } => IntOrString::Str(name.clone()),
                 _ => todo!()
             };
@@ -37,8 +37,8 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     return updated_tokens;
 }
 
-pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i32>> {
-    let mut scopes: Vec<HashMap<String, i32>> = vec![HashMap::new()];
+pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i32, Info)>> {
+    let mut scopes: Vec<HashMap<String, (i32, Info)>> = vec![HashMap::new()];
     let mut address: i32 = 0;
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
@@ -68,7 +68,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                     asm_warn!(info, "The label called '{name}' has already been defined in this scope");
                 }
                 scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), address);
+                        .insert(name.clone(), (address, info.clone()));
             }
 
 
@@ -89,7 +89,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                     }
 
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), address + *offset);
+                        .insert(name.clone(), (address + *offset, info.clone()));
 
             },
 
@@ -102,7 +102,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
     return scopes;
 }
 
-pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<String, i32>>) -> Vec<Token> {
+pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<String, (i32, Info)>>) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::new();
 
     let mut current_scope_indexes: Vec<usize> = vec![0];
@@ -119,20 +119,23 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
             Token::Unscope {info} => {
                 current_scope_indexes.pop();
             }
-            Token::Label { info, name } => {
+            Token::Label { info: _info, name } => {
+                let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, _info);
                 updated_tokens.push(Token::DecLiteral {
-                        info: info.clone(), // Probably the wrong info
-                        value: find_label(&name, scoped_label_table, &current_scope_indexes, info),
-                    });
+                        info: _info.clone(),
+                        value: val,
+                });
             }
-            Token::BracedLabelDefinition { info, name, data } => {
+            Token::BracedLabelDefinition { info: info, name, data } => {
                 match data {
                     IntOrString::Int(x) => updated_tokens.push(Token::DecLiteral { info: info.clone(), value: *x }),
                     IntOrString::Str(string) => {
+
+                        let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, info);
                         updated_tokens.push(Token::DecLiteral {
-                            info: info.clone(), // Probably the wrong info
-                         value: find_label(&string, scoped_label_table, &current_scope_indexes, info),
-                    });
+                                info: info.clone(),
+                                value: val,
+                        });
                     }
                 }
             }
@@ -145,14 +148,14 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
 
 fn find_label(
     name: &String,
-    scoped_label_table: &Vec<HashMap<String, i32>>,
+    scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
     current_scope_indexes: &Vec<usize>,
     info: &Info
-) -> i32 {
+) -> (i32, Info) {
 
     for scope in current_scope_indexes.iter().rev() {
         match scoped_label_table[*scope].get(name) {
-            Some(x) => return *x,
+            Some(x) => return x.clone(),
             None => {}
         }
     };

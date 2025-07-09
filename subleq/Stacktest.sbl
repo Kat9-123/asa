@@ -1,24 +1,35 @@
 !J .main
-test -> 6969
+test -> 420
 test2 -> 1003
 #Sublib
 #Sublib/Stack
-#Sublib/Subroutines
+#Sublib/Routines
 
 
 
 
 
-STR -> &1 "Test" 0
+STR -> &"AA" 0
 
-!Subroutine::Def test_routine {
+!Routine test_routine {
     !IO::Print STR
 
-    !Subroutine::Return
+    !Routine::Return
+}
+
+!Routine test2_routine {
+    !IO::PrintLit "BB"
+    !Routine::Call test_routine
+
+    !Routine::Return
 }
 
 
 
 .main ->
-    !Subroutine::Call test_routine
+    !Routine::Call test_routine
+
+    !Routine::Call test_routine
+    !Routine::Call test2_routine
+    !Routine::Call test_routine
     !Halt
