@@ -1,18 +1,35 @@
 #Sublib
+#Sublib/Base.sbl
 
-@Stack::Create name? l_size? [
-    name? -> l_size? * 0x0000
+@Stack::Create l_size? [
+    &1 0xDEAD l_size? * 0x0000
 ]
 
-@Stack::Push stack? val? {
+@Stack::Push p_stack? val? {
     !J .
     i_val -> 0
 
     . ->
+    !Inc p_stack?
+
+    !Clear i_val
+    !Copy p_stack? p
+
+
     i_val -= val?
 
-    (stack_ptr -> stack?) -= i_val
+    (p -> 0) -= i_val
 
-    !Inc stack?
-    !Clear i_val
+}
+
+@Stack::Pop p_stack? out? {
+
+
+    !Copy p_stack? p_write
+    !Copy p_stack? p_read
+
+    !Copy (p_read -> 0) out?
+    (p_write -> 0) -= out?
+
+    !Dec p_stack?
 }

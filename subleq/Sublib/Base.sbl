@@ -26,3 +26,42 @@
 @Inc a? [
     a? -= N_ONE
 ]
+@Dec a? [
+    a? -= ONE
+]
+
+@Copy from? to? [
+    !Clr Z
+    !Clr to?
+
+    Z -= from?
+    to? -= Z
+]
+
+
+; a += b
+@Add a? b? [
+    !Clr Z
+    Z -= b?
+    a -= Z
+]
+
+@Assign value? target? [
+    !Clr Z
+
+    target? -= target?
+    Z -= value?
+    target -= Z
+]
+
+
+@Ref target? ptr? {
+    !Clr ptr?
+
+
+}
+
+
+@Deref {
+    
+}

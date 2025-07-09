@@ -1,6 +1,6 @@
 
 
-use std::{result};
+use std::{env, result};
 
 use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token}};
 
@@ -42,9 +42,9 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '\n' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
             ' ' => (Context::None, None, None),
             ';' => (Context::LineComment, None, None),
-            '-' => (Context::SubleqOrLabelArrow, None, None),
+            '-' => (Context::SubleqOrLabelArrow, Some(cur_char), None),
             c if c.is_ascii_digit() => (Context::HexOrDec, Some(c), None),// This will cause hex numbers to have leading zeros
-            c if c.is_ascii_alphabetic() || c == '_' => (Context::Label, Some(c), None),
+            c if c.is_ascii_alphabetic() || c == '_' || c == '.' => (Context::Label, Some(c), None),
 
             '*' => (Context::MultOrBlockComment, None, None),
 
@@ -53,6 +53,8 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '[' => (Context::None, None, Some(Token::MacroBodyStart {info: info.clone()})),
             ']' => (Context::None, None, Some(Token::MacroBodyEnd {info: info.clone()})),
             '\\' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
+
+            '/' => (Context::None, None, Some(Token::NamespaceEnd {info: info.clone()})),
 
             '(' => (Context::None, None, Some(Token::BraceOpen {info: info.clone()})),
             ')' => (Context::None, None, Some(Token::BraceClose {info: info.clone()})),
@@ -97,17 +99,17 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '=' => (Context::None, None, Some(Token::Subleq {info: info.clone()})),
 
             'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
-            '>' => (Context::None, None, Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
+            '>' => (Context::None, Some(cur_char), Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
             _ => { asm_error!(info, "Unexpected character, for Subleq use '-=', for label use ->") },
         }
 
         Context::LabelArrow => match cur_char {
             '>' => {
-                let ch: char = buffer.chars().nth(0).unwrap();
+                let ch: char = buffer.chars().nth(1).unwrap();
                 if ch == 'a' || ch == 'b' || ch == 'c' {
-                    return (Context::None, None, Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Char(ch)}));
+                    return (Context::None, Some(cur_char), Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Char(ch)}));
                 }
-                todo!(); // Numerical offsets.
+                asm_error!(info, "Unexpected character");
             }
             _ => todo!()
         }
@@ -168,15 +170,17 @@ pub fn clean(text: String) -> String {
     return cleaned_string;
 }
 
-pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
+pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
     text = clean(text);
     text.push('\n');
 
+    let mut name_space_stack : Vec<String> = vec![path.clone()];
+    let mut line_number_stack: Vec<i32> = Vec::new();
     let mut result_tokens: Vec<Token> = Vec::new();
 
     let mut context: Context = Context::None;
     let mut buffer: String = String::new();
-    let mut info: Info = Info { start_char: 0, end_char: 0, line_number: 1 - delta_line_number };
+    let mut info: Info = Info { start_char: 0, length: 0, line_number: 1, file: path };
 
     for c in text.chars() {
         loop {
@@ -189,18 +193,35 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
                 Some(ch) => buffer.push(ch),
                 None => {}
             }
+            info.length = buffer.len() as i32 + 1;
+
             match token_to_add {
                 Some(tok) => {
 
-                    if let Token::Linebreak { .. } = tok {
+                    if let Token::Linebreak { .. } = tok  {
+
                         info.line_number += 1;
-                        info.start_char = 1;
-                        info.end_char = 2;
+                        info.start_char = 0;
+                        info.length = 1;
+
                     } else {
-                        info.start_char = info.end_char;
+                        info.start_char += (info.length - 1);
+                    }
+
+                    if let Token::Namespace { info: _info, name  } = &tok {
+                        name_space_stack.push(name.clone());
+                        line_number_stack.push(info.line_number);
+                        info.line_number = 0;
+                        info.file = name.clone();
+                    }
+                    if let Token::NamespaceEnd { info: _info } = &tok {
+                        name_space_stack.pop();
+                        info.file = name_space_stack.last().unwrap().clone();
+                        info.line_number = line_number_stack.pop().unwrap();
                     }
 
                     result_tokens.push(tok);
+
                     buffer.clear();
                 }
                 None => {}
@@ -210,7 +231,6 @@ pub fn tokenise(mut text: String, delta_line_number: i32) -> Vec<Token> {
                 context = Context::None;
                 continue;
             }
-            info.end_char += 1;
             if buffer == "" {
                 info.start_char += 1;
             }

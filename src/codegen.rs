@@ -41,13 +41,15 @@ pub fn to_text(data: Vec<u16>) -> String {
 
     return text;
 }
-pub fn generate(statements: Vec<Token>) -> Vec<u16> {
+pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::new();
+    let mut final_tokens: Vec<Token> = Vec::new();
     for statement in statements {
-        match statement {
+        match &statement {
 
             Token::DecLiteral {info, value} => {
-                mem.push(value as u16);
+                mem.push(*value as u16);
+                final_tokens.push(statement.clone());
             }
             _ => {
                 continue;
@@ -55,6 +57,6 @@ pub fn generate(statements: Vec<Token>) -> Vec<u16> {
         }
     }
     println!("{mem:?}");
-    return mem;
+    return (mem, final_tokens);
 
 }

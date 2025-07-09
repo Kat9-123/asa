@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{fs, path::PathBuf, process::exit};
 
 
@@ -24,7 +25,7 @@ use std::time::Instant;
 fn main() {
 
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Debug);
+    log::set_max_level(LevelFilter::Info);
     let args: Vec<String> = env::args().collect();
 
 
@@ -38,28 +39,26 @@ fn main() {
     let file_path = format!("./subleq/{}", args[1]);
 
     info!("{file_path}");
-    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+    let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
-    let mut data = assemble(contents);
-    interpreter::interpret(&mut data);
+    let (mut mem, tokens) = assemble(contents, file_path);
+    interpreter::interpret(&mut mem, &tokens);
 
     //lexer::lexer(contents);
 }
 
-fn assemble(text: String) -> Vec<u16> {
+fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
     let before = Instant::now();
 
    // let sanitised_text = sanitise(text);
-    let mut currently_imported: Vec<PathBuf> = Vec::new();
+    let mut currently_imported: Vec<PathBuf> = vec![Path::new(&path).to_path_buf()];
 
     let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
 
-    let start_line_number = cleaned_string.matches('\n').count() as i32;
 
     let with_imports = preprocessor::include_imports(cleaned_string, &mut currently_imported, true);
 
-    let delta_line_number =   (with_imports.matches('\n').count() as i32) -start_line_number - 1;   // HACK
-    let tokens = new_lexer::tokenise(with_imports, delta_line_number);
+    let tokens = new_lexer::tokenise(with_imports, path);
     /* */
     println_debug!("TOKENS:");
 

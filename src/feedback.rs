@@ -43,7 +43,7 @@ macro_rules! info {
 }
 
 
-use std::{collections::btree_map::Range, env, fs, process::exit};
+use std::{collections::btree_map::Range, env, fs, path::Path, process::exit};
 
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
@@ -51,26 +51,25 @@ pub(crate) use asm_warn;
 use crate::tokens::Info;
 
 
-fn get_file_contents() -> String {
-    let args: Vec<String> = env::args().collect();
+fn get_file_contents(path: &String) -> String {
 
-    let file_path = format!("./subleq/{}", args[1]);
 
-   // info!("{file_path}");
-    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+
+    info!("{path}");
+    let contents = fs::read_to_string(path).expect("Should have been able to read the file");
     return contents;
 }
 
 pub fn asm_err(msg: String, info: &Info, file_name: &str, line: u32) {
-    log::error!("({file_name}:{line}) Line {}", info.line_number);
+    log::error!("({file_name}:{line}) {}:{}", info.file, info.line_number);
 
     asm_msg(msg, info, Type::ERROR);
-    panic!();
+    exit(1);
 }
 
 
 fn asm_msg(msg: String, info: &Info, t: Type) {
-    let contents =  get_file_contents();
+    let contents =  get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
     println!("{: >4} | {}", format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
     println!("{: >4} | {}", format!("{}", info.line_number - 1).bright_cyan(),  lines[(info.line_number - 2) as usize]);
@@ -82,14 +81,14 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
     }
     // Very very messy
     let start = info.start_char;
-    let end = info.end_char;
-
+    let length = info.length;
+    println!("{}, {}", start, length);
     
-    print!("      ");
+    print!("   8 | ");
     for _ in 0..start-1 {
-        print!(" ");
+        print!("=");
     }
-    for _ in start-1..end-1 {
+    for _ in 0..length {
         match t {
             Type::ERROR => print!("{}", "~".red()),
             Type::WARN =>print!("{}", "~".yellow()),
@@ -103,7 +102,7 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
 }
 
 pub fn asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
-    log::warn!("({file_name}:{line}) Line {}", info.line_number);
+    log::warn!("({file_name}:{line}) {}:{}", info.file, info.line_number);
     asm_msg(msg, info, Type::WARN);
 }
 

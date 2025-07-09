@@ -64,6 +64,9 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                 // namespace = name.clone();
             }
             Token::BracedLabelDefinition { info, name, data } => {
+                if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
+                    asm_warn!(info, "The label called '{name}' has already been defined in this scope");
+                }
                 scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), address);
             }
@@ -81,6 +84,10 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, i3
                     } 
 
                     println_debug!("{name_with_scope}"); */
+                    if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
+                        asm_warn!(info, "The label called '{name}' has already been defined in this scope");
+                    }
+
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), address + *offset);
 

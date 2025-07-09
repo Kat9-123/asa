@@ -1,7 +1,24 @@
+!J .main
+test -> 6969
+test2 -> 1003
 #Sublib
 #Sublib/Stack
+#Sublib/Subroutines
 
-!Stack::Create test 10
 
 
-test -= Z
+
+
+STR -> &1 "Test" 0
+
+!Subroutine::Def test_routine {
+    !IO::Print STR
+
+    !Subroutine::Return
+}
+
+
+
+.main ->
+    !Subroutine::Call test_routine
+    !Halt

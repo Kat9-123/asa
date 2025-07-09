@@ -57,6 +57,17 @@ fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     
+    let mut tokens = expand_strings(tokens);
+    char_and_hex_to_dec(&mut tokens);
+
+    log::debug!("Converted literals:");
+    for token in &tokens {
+        println_debug!("{:?}", token);
+    }
+    println_debug!();
+
+
+    let tokens = grab_braced_label_definitions(tokens);
 
     let (mut tokens, macros) = read_macros(tokens);
 
@@ -77,18 +88,8 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     println_debug!();
 
 
-    let mut tokens = expand_strings(tokens);
-    char_and_hex_to_dec(&mut tokens);
     let tokens = expand_mults(&tokens);
 
-    log::debug!("Converted literals:");
-    for token in &tokens {
-        println_debug!("{:?}", token);
-    }
-    println_debug!();
-
-
-    let tokens = grab_braced_label_definitions(tokens);
 
     let tokens = separate_statements(&tokens);
 

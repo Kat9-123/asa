@@ -35,6 +35,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::NORMAL => match token {
                 Token::MacroDeclaration { info, name } => {
                     macro_name = name.clone();
+                    if macros.contains_key(&macro_name) {
+                        asm_warn!(&info, "A macro with this name has already been defined");
+                    }
                     mode = Mode::ARGS;
                     continue;
                 }
@@ -72,7 +75,12 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     asm_error!(tok.get_info(), "Only labels may be used as arguments for '{macro_name}'");
                 }
             },
-            Mode::BODY => match token {
+            Mode::BODY => match &token {
+                Token::LabelArrow { info, offset } => {
+                    macro_body.push(token.clone());
+                    asm_warn!(info, "Label definitions in non-scoped macros may cause undesired behaviour {}", hint!("Use '{{' and '}}' instead of '[' and ']'"));
+                }
+
                 // Token::macrostart error
                 Token::MacroBodyEnd {info} => {
                     let new_macro = Macro {

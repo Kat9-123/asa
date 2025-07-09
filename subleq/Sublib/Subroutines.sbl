@@ -1,2 +1,27 @@
+#Sublib/Stack
+#Sublib
 
 
+return_stack -> !Stack::Create 32
+
+@Subroutine::Def name? [
+    name? ->
+]
+
+
+@Subroutine::Call name? {
+
+
+    !Stack::Push return_stack _return_address
+
+    !J name?
+
+    _return_address -> &1
+}
+
+
+@Subroutine::Return {
+    !Stack::Pop return_stack return_addr
+
+    W -= W (return_addr -> 0x0000)
+}

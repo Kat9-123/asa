@@ -8,8 +8,9 @@ pub enum LabelOffset {
 
 pub struct Info {
     pub start_char: i32,
-    pub end_char: i32,
+    pub length: i32,
     pub line_number: i32,
+    pub file: String,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -50,6 +51,7 @@ pub enum Token {
     BracedLabelDefinition {info: Info, name: String, data: IntOrString},
 
     Mult {info: Info},
+    NamespaceEnd {info: Info},
 
 }
 
@@ -85,6 +87,7 @@ impl Token {
             Token::Linebreak { info } => info,
             Token::BracedLabelDefinition { info, .. } => info,
             Token::Mult { info } => info,
+            Token::NamespaceEnd { info} => info,
         }
     }
 }

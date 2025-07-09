@@ -33,21 +33,26 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         if fp.extension() == None {
             fp.set_extension("sbl");
         }
-        
-        if currently_imported.contains(&fp) {
-            split.remove(i);
+        split[i] = "#".to_owned() + fp.clone().to_str().unwrap();
 
+        if currently_imported.contains(&fp) {
+            split.insert(i + 1, "/".to_owned());
+
+            i += 2;
             continue;
         }
         println_debug!("{:?}", fp);
         currently_imported.push(fp.clone());
 
-        let contents = fs::read_to_string(fp).expect("Should have been able to read the file");
+        let contents = fs::read_to_string(&fp).expect("Should have been able to read the file");
         let contents = contents.replace("\r\n", "\n").replace("\t", " ");
         let contents = include_imports(contents, currently_imported, false);
 
+
+
         split.insert(i + 1, contents);
-        i += 2;
+        split.insert(i + 2, "/".to_owned());
+        i += 3;
 
       //  if source_level {
      //       split.insert(i, String::from("#THIS"));

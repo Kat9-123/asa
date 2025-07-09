@@ -1,10 +1,10 @@
 !J .main
-string2 -> "is cool!" 0
+string2 -> &1 "is cool!" 0
 
 
 #Sublib
 
-string -> "Subleq " 0
+string -> &1 "Subleq " 0
 
 
 .main ->

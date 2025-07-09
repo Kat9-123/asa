@@ -4,12 +4,13 @@
 @IO [0xFFFF]
 
 @IO::Print string? {
+    !Copy string? ptr
     !J _loop
     char        -> 0
     inv_char    -> 0
 
     _loop ->
-        inv_char    -= (ptr -> string?) ; 0 -= 0
+        inv_char    -= (ptr -> 0) ; 0 -= 0
         char        -= inv_char
         char        -= ZERO            _fin  ; Null so we fin
 
@@ -24,4 +25,12 @@
 
     _fin ->
 
+}
+
+
+@IO::PrintLit l_string? {
+    !J .
+    string -> &1 l_string? 0
+    . ->
+    !IO::Print string
 }
