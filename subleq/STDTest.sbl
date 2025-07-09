@@ -1,9 +1,12 @@
+
 !J .main
 
 #Sublib
+
 @test wappeldap pliep? {
     wappeldap? -= wappe
 }
+
 string -> &"Subleq!" 0
 
 .main ->

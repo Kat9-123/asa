@@ -6,3 +6,4 @@ N_ONE -> 0xFFFF
 ONE -> 1
 ZERO -> 0
 
+LINEBREAK -> 0xA

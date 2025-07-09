@@ -59,7 +59,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens= tokens;
 
     char_and_hex_to_dec(&mut tokens);
-    
 
     log::debug!("Converted literals:");
     for token in &tokens {

@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf, process::exit};
 
 
 use crate::{codegen::generate, tokens::Token};
-use log::{trace, LevelFilter};
+use log::{debug, info, trace, LevelFilter};
 use simple_logger::SimpleLogger;
 use std::env;
 mod parser;
@@ -56,10 +56,12 @@ fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
 
 
     let with_imports = preprocessor::include_imports(cleaned_string, &mut currently_imported, true);
+    debug!("With imports: ");
+    print_debug!("{}", with_imports);
 
     let tokens = new_lexer::tokenise(with_imports, path);
     /* */
-    println_debug!("TOKENS:");
+    println_debug!("Tokens:");
 
     for i in &tokens {
         if let Token::Linebreak {..} = i {

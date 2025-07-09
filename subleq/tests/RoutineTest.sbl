@@ -18,7 +18,7 @@ STR -> &"AA" 0
 }
 
 !Routine test2_routine {
-    !IO::PrintLit "BB"
+    !IO::PrintLnLit "BB"
     !Routine::Call test_routine
 
     !Routine::Return

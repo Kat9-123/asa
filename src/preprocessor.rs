@@ -3,16 +3,20 @@ use std::path::{Path, PathBuf};
 use crate::{print_debug, println_debug};
 
 
+pub fn generic_sanitisation(text: &String) -> String {
+    return text.replace("\r\n", "\n").replace("\t", "    ");
+}
+
 pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{
 
-    let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
+    let cleaned_string: String = generic_sanitisation(&text);
 
     let str_split = cleaned_string.split("\n").collect::<Vec<&str>>();
     let mut split: Vec<String> = str_split.into_iter().map(|x| x.to_string()).collect();
 
     let mut i = 0;
     while i < split.len() {
-        println_debug!("{:?}", split);
+        //println_debug!("{:?}", split);
         if split[i].len() < 1 {
             i += 1;
             continue;
@@ -41,7 +45,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
             i += 2;
             continue;
         }
-        println_debug!("{:?}", fp);
+        //println_debug!("{:?}", fp);
         currently_imported.push(fp.clone());
 
         let contents = fs::read_to_string(&fp).expect("Should have been able to read the file");
@@ -65,7 +69,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         result.push('\n');
     }
 
-    print_debug!("{}", result);
+    //print_debug!("{}", result);
     return result;
 
 }

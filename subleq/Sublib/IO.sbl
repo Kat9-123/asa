@@ -28,6 +28,21 @@
 }
 
 
+@IO::PutChar char? {
+    !IO -= char?
+}
+
+@IO::PrintLn string? {
+    !IO::Print string?
+    !IO::PutChar LINEBREAK
+}
+
+
+@IO::PrintLnLit l_string? {
+    !IO::PrintLit l_string?
+    !IO::PutChar LINEBREAK
+}
+
 @IO::PrintLit l_string? {
     !J .
     string -> &l_string? 0

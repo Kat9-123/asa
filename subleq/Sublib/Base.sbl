@@ -70,3 +70,12 @@
     !Copy p_c? p_local
     b? -= a? (p_local -> 0)
 }
+
+@AssertEq a? b? {
+    !JumpIf::Eq a? b? .fin
+
+    !IO::PrintLit "Assertion failed."
+    !Halt
+
+    .fin ->
+}

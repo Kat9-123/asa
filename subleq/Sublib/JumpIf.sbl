@@ -1,0 +1,115 @@
+; Zero comp
+@JumpIf::GrZero val? .address?
+{
+    val? -= ZERO  .not_greater
+    !J .address?
+
+    .not_greater ->
+}
+
+
+
+@JumpIf::LeZero num? .address?
+{
+    ; If this doesnt branch  it isnt <= 0
+    num? -= ZERO  .leq
+
+    !J .fin
+
+    ; It is leq
+    .leq ->
+    !JumpIf::EqZero num? .fin
+
+    ; its < 0 !
+    !Jump .address?
+
+
+
+
+
+    .fin ->
+}
+
+
+@JumpIf::EqZero num? .address?
+{
+    !Clear A
+    ; jump if x is great than or equal to zero
+    A -= num? .greaterThanOrEqual
+    !Jump .notZero
+
+
+
+    .greaterThanOrEqual ->
+    !Clear B
+    ; jump if x is smaller than or equal to zero
+
+    B -= A .address?   ; If x is leq and geq zero it must be zero.
+
+    !Jump .notZero
+
+
+    A -> 0xA000
+    B -> 0xB000
+
+
+    .notZero ->
+}
+
+
+
+; N comp
+
+@JumpIf::Le a? b? .address?
+{
+    !JumpIf::Geq a? b? .notLess
+    !Jump .address?
+
+    .notLess ->
+}
+
+
+
+@JumpIf::Geq a? b? .address?
+{
+
+    !Copy b? temp
+
+    temp -= a? .address?
+
+
+    !Jump .less
+
+    temp -> 0x0000
+    .less ->
+}
+
+
+
+@JumpIf::Eq a? b? .address?
+{
+    !Clear temp
+    !Clear checkZeroValue
+    ; checkzeroval = -a + b
+    checkZeroValue -= a?
+    temp -= b?
+    checkZeroValue -= temp
+
+
+    ; If zero  a = b
+    !JumpIf::EqZero checkZeroValue .address?
+    !Jump .fin
+
+    checkZeroValue -> 0x0000
+    temp -> 0x0000
+    .fin ->
+}
+
+
+@JumpIf::NotEq a? b? .address?
+{
+    !JumpIf::Eq a? b? .equal
+    !Jump .address?
+
+    .equal ->
+}

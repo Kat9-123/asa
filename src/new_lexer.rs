@@ -78,6 +78,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
 
         Context::BlockComment => match cur_char {
             '*' => (Context::PossibleBlockCommentEnd, None, None),
+            '\n' => (Context::BlockComment, None, Some(Token::Linebreak { info: info.clone() })),
             _ => (Context::BlockComment, None, None),
         }
         Context::PossibleBlockCommentEnd => match cur_char {

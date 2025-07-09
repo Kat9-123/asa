@@ -11,18 +11,53 @@ enum Type {
 macro_rules! asm_error {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::asm_err(format!($($arg)*), $info, file!(), line!());
-            panic!();
+            crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
+            std::process::exit(1);
+
         }
     };
 }
+
+#[macro_export]
+macro_rules! asm_info {
+    ($info:expr, $($arg:tt)*) => {
+        {
+            crate::feedback::_asm_info(format!($($arg)*), $info, file!(), line!());
+        }
+    };
+}
+#[macro_export]
+macro_rules! asm_details {
+    ($info:expr, $($arg:tt)*) => {
+        {
+            crate::feedback::_asm_details(format!($($arg)*), $info, file!(), line!());
+        }
+    };
+}
+
+
+pub fn terminate() {
+    exit(1);
+}
+
+#[macro_export]
+macro_rules! asm_error_no_terminate {
+    ($info:expr, $($arg:tt)*) => {
+        {
+            crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
+
+        }
+    };
+}
+
+
 
 
 #[macro_export]
 macro_rules! asm_warn {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::asm_warning(format!($($arg)*), $info, file!(), line!());
+            crate::feedback::_asm_warning(format!($($arg)*), $info, file!(), line!());
         }
     };
 }
@@ -35,12 +70,6 @@ macro_rules! hint {
 }
 
 
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {
-        log::info!($($arg)*);
-    };
-}
 
 
 use std::{collections::btree_map::Range, env, fs, path::Path, process::exit};
@@ -55,16 +84,15 @@ fn get_file_contents(path: &String) -> String {
 
 
 
-    info!("{path}");
+   // info!("{path}");
     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
     return contents;
 }
 
-pub fn asm_err(msg: String, info: &Info, file_name: &str, line: u32) {
+pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
     log::error!("({file_name}:{line}) {}:{}", info.file, info.line_number);
 
     asm_msg(msg, info, Type::ERROR);
-    exit(1);
 }
 
 
@@ -82,7 +110,7 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
     match t {
         Type::ERROR => println!("{: >4} | {}",  format!("{}", info.line_number).red() , lines[(info.line_number - 1) as usize]),
         Type::WARN =>  println!("{: >4} | {}",  format!("{}", info.line_number).yellow() , lines[(info.line_number - 1) as usize]),
-        _ => todo!()
+        Type::INFO =>  println!("{: >4} | {}",  format!("{}", info.line_number).blue() , lines[(info.line_number - 1) as usize]),
     }
     // Very very messy
     let start = info.start_char;
@@ -97,7 +125,7 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
         match t {
             Type::ERROR => print!("{}", "~".red()),
             Type::WARN =>print!("{}", "~".yellow()),
-            _ => todo!()
+            Type::INFO => print!("{}", "~".blue()),
         }
     }
     println!();
@@ -106,10 +134,22 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
     println!();
 }
 
-pub fn asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
+pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
     log::warn!("({file_name}:{line}) {}:{}", info.file, info.line_number);
     asm_msg(msg, info, Type::WARN);
 }
+
+pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
+    log::info!("({file_name}:{line}) {}:{}", info.file, info.line_number);
+    asm_msg(msg, info, Type::INFO);
+}
+
+
+pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
+    println!("{} ({file_name}:{line}) {}:{}", "DETAILS".blue(), info.file, info.line_number);
+    asm_msg(msg, info, Type::INFO);
+}
+
 
 #[macro_export]
 macro_rules! println_debug {

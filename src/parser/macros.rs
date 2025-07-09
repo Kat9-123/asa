@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::thread::scope;
+use crate::asm_info;
 use crate::feedback::*;
 use crate::hint;
 use crate::println_debug;
@@ -56,7 +57,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 Token::Label { info, name: name } => {
                     macro_args.push(name.clone());
                     if !name.ends_with('?') {
-                        asm_warn!(info, "Notate macro arguments with a trailing question mark {}", hint!("'{name}' -> '{name}?'"));
+                        asm_info!(info, "Notate macro arguments with a trailing question mark {}", hint!("'{name}' -> '{name}?'"));
                     }
                     continue;
                 }

@@ -1,0 +1,39 @@
+!J .main
+#Sublib
+
+a-> 5
+b -> 0xFFFF
+c -> 0
+
+
+
+.err ->
+    !IO::PrintLit "Failed"
+
+    !Halt
+
+.main ->
+
+    !JumpIf::GrZero c .err
+    !JumpIf::GrZero b .err
+
+    !JumpIf::LeZero a .err
+    !JumpIf::LeZero c .err
+
+    !JumpIf::EqZero a .err
+    !JumpIf::EqZero b .err
+
+    !JumpIf::Le a c .err
+
+
+    !JumpIf::Geq c a .err
+
+    !JumpIf::Eq a b .err
+    !JumpIf::Eq b c .err
+    
+    !IO::PrintLit "Succes!"
+
+    !Halt
+
+
+
