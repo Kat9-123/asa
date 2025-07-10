@@ -8,15 +8,11 @@ a -> -15662
 
 .main ->
 
-    !JumpIf::GeqZero TEST .main
-    !Halt
+
 
 
     !Not x
-    !IO::PrintLit "test"
-
     !Debug x
-    !IO::PrintLit "test"
     !Halt
 
     x -> 24937
@@ -47,7 +43,7 @@ a -> -15662
         .continue ->
         !LShift1 a?
         !Debug result
-        !Repeat 0 16
+        !Repeat 0 16 .repeat
     !Copy result a?
 }
 

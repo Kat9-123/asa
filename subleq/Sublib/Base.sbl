@@ -91,12 +91,12 @@
         ...
     !Repeat 0 16
 **
-@Repeat l_start? l_end? {
+@Repeat l_start? l_end? .loop_addr {
     !Inc i
 
     !JumpIf::Geq i END .reset_and_finish
 
-    !J .repeat
+    !J .loop_addr
 
 
     i -> l_start?

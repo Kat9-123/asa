@@ -25,7 +25,7 @@ use std::time::Instant;
 fn main() {
 
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
     let args: Vec<String> = env::args().collect();
 
     println!("{}", 0b0110_0001_0110_1001u16);

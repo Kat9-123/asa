@@ -8,8 +8,10 @@ use crate::tokens::*;
 
 #[derive(Debug)]
 pub struct Macro {
+    name: String,
     args: Vec<String>,
     body: Vec<Token>,
+    labels_defined_in_macro: Vec<String>
 }
 
 
@@ -30,8 +32,10 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut macro_name: String = String::new();
     let mut macro_body: Vec<Token> = Vec::new();
     let mut macro_args: Vec<String> = Vec::new();
+    let mut in_macro_label_definitions: Vec<String> = Vec::new();
 
-    for token in tokens {
+    for i in 0..(&tokens).len() {
+        let token: &Token = &tokens[i];
         match mode {
             Mode::NORMAL => match token {
                 Token::MacroDeclaration { info, name } => {
@@ -46,7 +50,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     asm_error!(&info, "Unexpected token");
                 }
                 _ => {
-                    new_tokens.push(token);
+                    new_tokens.push(token.clone());
                     continue;
                 }
             },
@@ -85,8 +89,10 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 // Token::macrostart error
                 Token::MacroBodyEnd {info} => {
                     let new_macro = Macro {
+                        name: macro_name.clone(),
                         args: macro_args,
                         body: macro_body,
+                        labels_defined_in_macro: in_macro_label_definitions.clone(),
                     };
                     macros.insert(macro_name, new_macro);
                     macro_body = Vec::new();
@@ -101,6 +107,17 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::BODY_BOUNDED_BY_SCOPES => match &token {
+
+                // HACK
+                Token::LabelArrow { info, offset } => {
+                    macro_body.push(token.clone());
+                    match &tokens[i - 1] {
+                        Token::Label { info, name } => {
+                            in_macro_label_definitions.push(name.clone());
+                        }
+                        _ => todo!()
+                    }
+                }
                 Token::Scope {info} => {
 
                     macro_body.push(token.clone());
@@ -118,8 +135,10 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     }
 
                     let new_macro = Macro {
+                        name: macro_name.clone(),
                         args: macro_args,
                         body: macro_body,
+                        labels_defined_in_macro: in_macro_label_definitions.clone(),
                     };
                     macros.insert(macro_name, new_macro);
                     macro_body = Vec::new();
@@ -143,6 +162,11 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, Token>
     println_debug!("{:?}", label_map);
     for body_token in &mut body {
         if let Token::Label { info, name } = body_token {
+            if current_macro.labels_defined_in_macro.contains(name) {
+                *name = format!("?{}?{}", current_macro.name, name);
+            }
+
+
             let new_token = label_map.get(name);
             match new_token {
                 Some(t) => *body_token = t.clone(),

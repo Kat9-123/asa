@@ -13,6 +13,6 @@
         .msb_is_1
 
 
-        !Repeat 0 16
+        !Repeat 0 16 .repeat
 }
 

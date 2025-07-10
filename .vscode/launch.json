@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["MacroIssue.sbl"],
+            "args": ["Testing.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {

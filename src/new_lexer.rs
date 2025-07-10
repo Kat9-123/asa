@@ -69,6 +69,8 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '!' => (Context::MacroCall, None, None),
             '#' => (Context::Namespace, None, None),
 
+
+            '?' => asm_error!(info, "Unexpected character {}", hint!("Labels may not start with a '?'")),
             _ => asm_error!(info, "Unexpected character"),
         }
 
