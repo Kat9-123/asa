@@ -10,7 +10,8 @@
 string -> &"Subleq!" 0
 
 .main ->
-    !IO::Print string
-    !J .main
+    .repeat ->
+        !IO::Print string
+        !Repeat 0 3
     !Halt
     0x123E

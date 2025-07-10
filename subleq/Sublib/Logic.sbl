@@ -1,3 +1,4 @@
+#Sublib
 @LShift1 a? [
     !Add a? a?
 ]
@@ -5,9 +6,13 @@
 @Not a? {
     result -> 0
 
-    !JumpIf::LeZero a? .msb_is_1
-    ; msb_is_0
+    .repeat ->
+        !JumpIf::LeZero a? .msb_is_1
+        ; msb_is_0
 
-    .msb_is_1
-    !Inc
+        .msb_is_1
+
+
+        !Repeat 0 16
 }
+

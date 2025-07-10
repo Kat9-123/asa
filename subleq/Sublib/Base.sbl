@@ -43,7 +43,7 @@
 @Add a? b? [
     !Clr Z
     Z -= b?
-    a -= Z
+    a? -= Z
 ]
 
 @Assign value? target? [
@@ -78,4 +78,31 @@
     !Halt
 
     .fin ->
+}
+
+
+**
+    Assumes .repeat exists
+    l_start? is inclusive, l_end? is exclusive
+
+    Usage:
+
+    .repeat ->
+        ...
+    !Repeat 0 16
+**
+@Repeat l_start? l_end? {
+    !Inc i
+
+    !JumpIf::Geq i END .reset_and_finish
+
+    !J .repeat
+
+
+    i -> l_start?
+    BASE -> l_start?
+    END -> l_end?
+    .reset_and_finish ->
+    !Copy BASE i
+
 }

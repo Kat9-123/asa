@@ -1,0 +1,19 @@
+!Macro a
+!Macro b
+
+0 -= 0 0xFFFF
+
+a -> 100
+b -> 200
+Z -> 0
+
+@Macro x?
+{
+    x? -= a
+    Z -= Z &2
+    a -> 40
+}
+
+
+
+

@@ -1,3 +1,4 @@
+use std::num::Wrapping;
 use std::path::Path;
 use std::{fs, path::PathBuf, process::exit};
 
@@ -27,6 +28,9 @@ fn main() {
     log::set_max_level(LevelFilter::Info);
     let args: Vec<String> = env::args().collect();
 
+    println!("{}", 0b0110_0001_0110_1001u16);
+    println!("{}", !0b0110_0001_0110_1001u16);
+    println!("{}", 0b1001_1110_1001_0110u16);
 
     //let args: Vec<String> = env::args().collect();
     // let query = &args[1];

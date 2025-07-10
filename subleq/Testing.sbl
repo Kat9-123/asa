@@ -1,0 +1,54 @@
+!J .main
+#Sublib
+
+
+TEST -> 0x8000
+
+a -> -15662
+
+.main ->
+
+    !JumpIf::GeqZero TEST .main
+    !Halt
+
+
+    !Not x
+    !IO::PrintLit "test"
+
+    !Debug x
+    !IO::PrintLit "test"
+    !Halt
+
+    x -> 24937
+
+@LShift1 a? [
+    !Add a? a?
+]
+
+@Not a? {
+    !J .repeat
+    result -> 0
+
+    .repeat ->
+        !LShift1 result
+
+        !JumpIf::GeqZero a? .msb_is_0
+        !IO::PrintLit "MSB=1 "
+        !Debug a?
+
+        !J .continue
+        .msb_is_0 ->
+            !IO::PrintLit "MSB=0 "
+            !Debug a?
+            !Inc result
+            !J .continue
+        ; msb_is_1
+
+        .continue ->
+        !LShift1 a?
+        !Debug result
+        !Repeat 0 16
+    !Copy result a?
+}
+
+

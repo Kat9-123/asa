@@ -218,11 +218,15 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
 pub fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> Vec<Token> {
     let mut has_inserted ;
     let mut t = tokens;
-
+    let mut i = 0;
     loop {
         (has_inserted, t) = insert_macros(t, &macros);
         if !has_inserted {
             return t;
+        }
+        i += 1;
+        if i > 100 {
+            panic!();
         }
     }
 }

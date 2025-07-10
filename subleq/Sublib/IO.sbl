@@ -49,3 +49,8 @@
     . ->
     !IO::Print string
 }
+
+
+@Debug x? {
+    0xFFFE -= x?
+}
