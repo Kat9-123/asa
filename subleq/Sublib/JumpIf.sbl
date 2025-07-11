@@ -1,3 +1,95 @@
+
+
+; https://gist.github.com/howerj/4e0741370bd22b3181443bf3e0ba6697
+@JumpIf::Le a? b? .address {
+    !Cpy a? a_plus_one
+    !Cpy b? b_plus_one
+    !Cpy a? l
+    a_plus_one -= N_ONE
+    b_plus_one -= N_ONE
+
+    a? -= ZERO .a_not_b
+    !J .not_a_b
+
+.a_not_b ->   ; a<=0 && !b<=0
+    b? -= ZERO .a_b
+    !J .address
+
+.not_a_b ->   ; !a<=0 && b<=0
+    b? -= ZERO .fin
+    !J .a_b
+
+.a_b ->   ; a<=0 && b<=0
+    a? -= ZERO S
+    !J .final
+S ->
+    b? -= ZERO N
+    !J .final
+N ->
+
+
+    a_plus_one -= ZERO .final
+    b_plus_one -= ZERO .fin
+
+
+.final ->
+    l -= b? TN
+    !J .fin
+
+
+TN ->
+
+    a_plus_one -= b? .address
+
+    !J .fin
+
+a_plus_one -> 0
+b_plus_one -> 0
+l -> 0
+
+.fin ->
+}
+
+@JumpIf::Ge a? b? .address {
+    !JumpIf::Le b? a? .address
+}
+
+@JumpIf::Eq a? b? .address {
+    !JumpIf::Le a? b? .fin
+    !JumpIf::Ge a? b? .fin
+    !J .address
+
+    .fin ->
+}
+
+@JumpIf::Geq a? b? .address {
+    !JumpIf::Le a? b? .fin
+    !J .address
+
+    .fin ->
+}
+
+@JumpIf::Neq a? b? .address {
+    !JumpIf::Eq a? b? .fin
+    !J .address
+
+    .fin ->
+}
+
+
+; Can be optimised
+@JumpIf::LeZero a? .address {
+    !JumpIf::Le a? ZERO .address
+}
+
+@JumpIf::GeqZero a? .address? {
+    !JumpIf::Le a? ZERO .fin
+    !J .address
+    .fin ->
+}
+
+**
+
 ; Zero comp
 @JumpIf::GrZero val? .address?
 {
@@ -12,8 +104,6 @@
 @JumpIf::GeqZero val? .address? {
     !JumpIf::Eq val? SMALLEST_NEGATIVE .fin
 
-    !Debug val?
-    !Debug SMALLEST_NEGATIVE
     !Clear i_val
     i_val -= val?
     i_val -= ZERO .address?
@@ -50,8 +140,9 @@
 
 @JumpIf::EqZero num? .address?
 {
-    !JumpIf::Eq num? SMALLEST_NEGATIVE .notZero
+    !Debug num?
 
+    !JumpIf::Eq num? SMALLEST_NEGATIVE .notZero
     !Clear A
     ; jump if x is great than or equal to zero
 
@@ -80,15 +171,6 @@
 
 
 
-; N comp
-
-@JumpIf::Le a? b? .address?
-{
-    !JumpIf::Geq a? b? .notLess
-    !Jump .address?
-
-    .notLess ->
-}
 
 
 
@@ -107,28 +189,59 @@
 }
 
 
-
-@JumpIf::Eq a? b? .address?
+@JumpIf::EqSNEG a? .address?
 {
-    !Clear i_a
-    !Clear i_b
-    i_a -= a?
-    i_b -= b?
+    !Cpy a? i_a1
+    !Cpy SNEG i_b
+    !Cpy a? i_a2
+
+    !Inc i_b
+    !Inc i_a1
+    !Inc i_a2
 
 
-    i_a -= i_b .first_check_success
+    i_a1 -= i_b .first_check_success
     !J .fin
 
     .first_check_success ->
-    i_b -= i_a .address?
+
+    
+    i_b -= i_a2 .address?
     !J .fin
+
+    i_a1 -> 0
+    i_b -> 0
+
+    i_a2 -> 0
+    .fin ->
+}
+
+@JumpIf::Eq a? b? .address?
+{
+    !JumpIf::EqSNEG a? .sneg_test
+
+    .normal ->
+    !Cpy a? i_a
+    !Cpy b? i_b
+
+
+    i_a -= b? .first_check_success
+    !J .fin
+
+.first_check_success ->
+
+    
+    i_b -= a? .address?
+    !J .fin
+
+.sneg_test ->
+    !JumpIf::EqSNEG b? .address?
+    !J .normal
 
     i_a -> 0
     i_b -> 0
 
-
-
-    .fin ->
+.fin ->
 }
 
 
@@ -139,3 +252,4 @@
 
     .equal ->
 }
+**

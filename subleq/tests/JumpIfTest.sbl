@@ -1,0 +1,125 @@
+!J .main
+#Sublib
+
+
+
+
+
+
+
+.err ->
+    !IO::PrintLit "Failed"
+
+    !Halt
+
+a -> 1234
+b -> -0x847
+c -> 0
+d -> 1233
+
+
+@Flip .lbl? [&4 W -= W .lbl? ]
+.main ->
+
+    !JumpIf::Le a b .err
+    !JumpIf::Le b a .T1
+    !J .err
+    .T1 ->
+
+    !JumpIf::Le c b .err
+    !JumpIf::Le b c .T2
+    !J .err
+    .T2 ->
+
+    !JumpIf::Le a c .err
+    !JumpIf::Le c a .T3
+    !J .err
+    .T3 ->
+
+    !JumpIf::Le a SNEG .err
+    !JumpIf::Le SNEG a .T4
+    !J .err
+    .T4 ->
+
+    !JumpIf::Le b SNEG .err
+    !JumpIf::Le SNEG b .T5
+    !J .err
+    .T5 ->
+
+    !JumpIf::Le c SNEG .err
+    !JumpIf::Le SNEG c .T6
+    !J .err
+    .T6 ->
+
+
+    !JumpIf::Le a a .err
+    !JumpIf::Le b b .err
+    !JumpIf::Le c c .err
+
+    !JumpIf::Le SNEG SNEG .err
+    
+    !IO::PrintLnLit "LE (basis) success"
+
+    !JumpIf::Eq SNEG ZERO .err
+
+    !JumpIf::Eq a b .err
+    !JumpIf::Eq a d .err
+    !JumpIf::Neq b b .err
+    !JumpIf::Neq SNEG SNEG .err
+
+    !JumpIf::Geq SNEG ZERO .err
+
+
+
+    !JumpIf::LeZero a .err
+    !JumpIf::LeZero c .err
+    !JumpIf::LeZero SNEG .T7
+    !J .err
+
+    .T7 ->
+
+    !IO::PrintLit "Success"
+
+    !Halt
+**
+.main ->
+    !JumpIf::EqSNEG c .suc
+
+    !Halt
+
+    !JumpIf::GrZero a .next_1       ; 1234 > 0
+    !J .err
+.next_1 ->
+    !JumpIf::GrZero b .err          ; 0xFFEE > 0
+    !JumpIf::GrZero c .err          ;  0 > 0
+    !JumpIf::GrZero EVIL .err       ;  0x8000 > 0
+
+    !JumpIf::EqZero a .err          ; 1234 == 0
+    !JumpIf::EqZero b .err          ; 0xFFFE == 0
+    !JumpIf::EqZero c .next_2       ; 0 == 0
+    
+    !J .err
+.next_2 ->
+    !JumpIf::EqZero EVIL .err       ; 0x8000 == 0
+
+
+    !JumpIf::LeZero a .err
+    !JumpIf::LeZero c .err
+
+
+
+
+    !JumpIf::Le a c .err
+
+
+    !JumpIf::Geq c a .err
+
+    !JumpIf::Eq a b .err
+    !JumpIf::Eq b c .err
+
+    !IO::PrintLit "Success"
+
+    !Halt
+**
+
+

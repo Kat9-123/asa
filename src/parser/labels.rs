@@ -73,17 +73,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
 
 
             Token::LabelDefinition {info, name, offset} => {
-                    /*
-                    let mut name_with_scope: String;
-                    if &namespace != "THIS" {
-                        name_with_scope = namespace.clone();
-                        name_with_scope.push_str("::");
-                        name_with_scope.push_str(&name);
-                    } else {
-                        name_with_scope = name.to_string();
-                    } 
 
-                    println_debug!("{name_with_scope}"); */
                     if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
                         asm_warn!(info, "The label called '{name}' has already been defined in this scope");
                     }

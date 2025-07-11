@@ -16,7 +16,6 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
 
     let mut i = 0;
     while i < split.len() {
-        //println_debug!("{:?}", split);
         if split[i].len() < 1 {
             i += 1;
             continue;
@@ -26,42 +25,40 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
             i += 1;
             continue;
         }
-        let filepath = &format!("./subleq/{}", &split[i][1..]); // Format is temp
+        let path_str = &format!("./subleq/{}", &split[i][1..]); // Format is temp
 
-        let mut fp = Path::new(filepath).to_path_buf();
+        let mut path = Path::new(path_str).to_path_buf();
 
-        if fp.is_dir() {
-            fp.push(fp.clone().file_stem().unwrap());
+        // When trying to import a folder, it looks for a .sbl file with the same name inside of the folder
+        if path.is_dir() {
+            path.push(path.clone().file_stem().unwrap());
         }
 
-        if fp.extension() == None {
-            fp.set_extension("sbl");
+        if path.extension() == None {
+            path.set_extension("sbl");
         }
-        split[i] = "#".to_owned() + fp.clone().to_str().unwrap();
+        // Write out the full path into the import character
+        split[i] = "#".to_owned() + path.clone().to_str().unwrap();
 
-        if currently_imported.contains(&fp) {
-            split.insert(i + 1, "/".to_owned());
+        if currently_imported.contains(&path) {
+            split.insert(i + 1, "/".to_owned());    // '/' is used to delimit EOF
 
             i += 2;
             continue;
         }
         //println_debug!("{:?}", fp);
-        currently_imported.push(fp.clone());
+        currently_imported.push(path.clone());
 
-        let contents = fs::read_to_string(&fp).expect("Should have been able to read the file");
-        let contents = contents.replace("\r\n", "\n").replace("\t", " ");
+        let contents = fs::read_to_string(&path).expect("Should have been able to read the file");
+        let contents = generic_sanitisation(&contents);
         let contents = include_imports(contents, currently_imported, false);
 
 
 
         split.insert(i + 1, contents);
-        split.insert(i + 2, "/".to_owned());
+        split.insert(i + 2, "/".to_owned());  // '/' is used to delimit EOF
         i += 3;
 
-      //  if source_level {
-     //       split.insert(i, String::from("#THIS"));
-     //       i += 1;
-    //    }
     }
     let mut result = String::new();
     for i in split {
@@ -69,7 +66,6 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         result.push('\n');
     }
 
-    //print_debug!("{}", result);
     return result;
 
 }

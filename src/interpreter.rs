@@ -68,7 +68,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
         } else if b == 0xFFFE {
             result = mem[a];
-            let ch = (result).to_string();
+            let ch = (result as i16).to_string();
             buf.push_str(&ch);
             println!("{}", ch );
             io::stdout().flush();

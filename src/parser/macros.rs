@@ -92,12 +92,13 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         name: macro_name.clone(),
                         args: macro_args,
                         body: macro_body,
-                        labels_defined_in_macro: in_macro_label_definitions.clone(),
+                        labels_defined_in_macro: in_macro_label_definitions,
                     };
                     macros.insert(macro_name, new_macro);
                     macro_body = Vec::new();
                     macro_args = Vec::new();
                     macro_name = String::new();
+                    in_macro_label_definitions = Vec::new();
                     mode = Mode::NORMAL;
                     continue;
                 }
@@ -138,12 +139,13 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         name: macro_name.clone(),
                         args: macro_args,
                         body: macro_body,
-                        labels_defined_in_macro: in_macro_label_definitions.clone(),
+                        labels_defined_in_macro: in_macro_label_definitions,
                     };
                     macros.insert(macro_name, new_macro);
                     macro_body = Vec::new();
                     macro_args = Vec::new();
                     macro_name = String::new();
+                    in_macro_label_definitions = Vec::new();
                     mode = Mode::NORMAL;
                     continue;
                 }
@@ -163,7 +165,7 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, Token>
     for body_token in &mut body {
         if let Token::Label { info, name } = body_token {
             if current_macro.labels_defined_in_macro.contains(name) {
-                *name = format!("?{}?{}", current_macro.name, name);
+                *name = format!("?{}?{}", current_macro.name, name);    // MACRO HYGIENE HACK
             }
 
 
@@ -215,6 +217,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
 
                 let current_macro_safe = current_macro.unwrap();
 
+                // Last argument
                 if label_map.len() >= current_macro_safe.args.len() {
                     let mut body = generate_macro_body(current_macro_safe, &label_map);
                     new_tokens.append(&mut body);

@@ -27,7 +27,7 @@ pub fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
     }
 }
 
-pub fn expand_strings(tokens: Vec<Token>) -> Vec<Token> {
+pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
     for token in tokens {
         match token {

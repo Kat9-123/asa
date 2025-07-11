@@ -2,9 +2,7 @@
 #Sublib
 
 
-TEST -> 0x8000
 
-a -> -15662
 
 .main ->
 
@@ -12,10 +10,22 @@ a -> -15662
 
 
     !Not x
-    !Debug x
+    !Debug x ; -24937
+    !Not y
+    !Debug y ; 1236
+
+    !And a b
+    !Debug a ; 8201
+
     !Halt
 
-    x -> 24937
+
+
+    x -> 24936
+    y -> -1237
+
+    a -> 8399
+    b -> -487
 
 @LShift1 a? [
     !Add a? a?
@@ -28,23 +38,41 @@ a -> -15662
     .repeat ->
         !LShift1 result
 
-        !JumpIf::GeqZero a? .msb_is_0
-        !IO::PrintLit "MSB=1 "
-        !Debug a?
+        !JumpIf::LeZero a? .msb_is_1
+; .msb_is_0 ->
+        !Inc result
 
-        !J .continue
-        .msb_is_0 ->
-            !IO::PrintLit "MSB=0 "
-            !Debug a?
-            !Inc result
-            !J .continue
         ; msb_is_1
-
-        .continue ->
+        .msb_is_1 ->
         !LShift1 a?
-        !Debug result
         !Repeat 0 16 .repeat
     !Copy result a?
 }
 
+
+; a? &= b?
+@And a? b? {
+    !J .repeat
+    result -> 0
+
+    .repeat ->
+
+        !LShift1 result
+        !JumpIf::LeZero a? .msb_a_is_1
+
+        !J .continue
+
+        .msb_a_is_1 ->
+        !JumpIf::LeZero b? .msb_a_b_is_1
+        !J .continue
+        .msb_a_b_is_1 ->
+
+        !Inc result
+
+        .continue ->
+            !LShift1 a?
+            !LShift1 b?
+            !Repeat 0 16 .repeat
+    !Cpy result a?
+}
 

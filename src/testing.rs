@@ -6,7 +6,7 @@ mod tests {
     use log::{debug, LevelFilter, info};
     use simple_logger::SimpleLogger;
 
-    use crate::{assemble, codegen, interpreter::{self, interpret}};
+    use crate::{assemble, codegen, interpreter::{self, interpret}, preprocessor::generic_sanitisation};
 
     use super::*;
 
@@ -49,6 +49,7 @@ mod tests {
                 continue;
             }
             let expected_out= fs::read_to_string(fp).unwrap();
+            let expected_out = generic_sanitisation(&expected_out);
             let out = interpret(&mut mem, &tokens, true).unwrap();
             assert_eq!(out, expected_out);
 

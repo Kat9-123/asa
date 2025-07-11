@@ -4,6 +4,5 @@ pub const LINE_COMMENT: char = ';';
 
 pub const CHAR: char = '\'';
 pub const STRING: char = '"';
-pub const SOURCE_NAMESPACE: &str = "THIS";
 pub const SUBLEQ: &str = "-=";
 pub const BLOCK_COMMENT: &str = "**";

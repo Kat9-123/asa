@@ -116,7 +116,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
                 }
                 asm_error!(info, "Unexpected character");
             }
-            _ => todo!()
+            _ => asm_error!(info, "Unexpected character")
         }
 
 
@@ -206,37 +206,37 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
             }
             info.length = buffer.len() as i32 + 1;
 
-            match token_to_add {
-                Some(tok) => {
+            if let Some(tok) = token_to_add {
 
-                    if let Token::Linebreak { .. } = tok  {
+                if let Token::Linebreak { .. } = tok  {
 
-                        info.line_number += 1;
-                        info.start_char = 0;
-                        info.length = 1;
+                    info.line_number += 1;
+                    info.start_char = 0;
+                    info.length = 1;
 
-                    } else {
-                        info.start_char += (info.length - 1);
-                    }
-
-                    if let Token::Namespace { info: _info, name  } = &tok {
+                } else {
+                    info.start_char += (info.length - 1);
+                }
+                match &tok {
+                    Token::Namespace { info: _info, name  } => {
                         name_space_stack.push(name.clone());
                         line_number_stack.push(info.line_number);
                         info.line_number = 0;
                         info.file = name.clone();
+                    },
+                    Token::NamespaceEnd { info: _info } => {
+                            name_space_stack.pop();
+                            info.file = name_space_stack.last().unwrap().clone();
+                            info.line_number = line_number_stack.pop().unwrap();
                     }
-                    if let Token::NamespaceEnd { info: _info } = &tok {
-                        name_space_stack.pop();
-                        info.file = name_space_stack.last().unwrap().clone();
-                        info.line_number = line_number_stack.pop().unwrap();
-                    }
-
-                    result_tokens.push(tok);
-
-                    buffer.clear();
+                    _ => {}
                 }
-                None => {}
+
+                result_tokens.push(tok);
+
+                buffer.clear();
             }
+
 
             if let Context::DontMoveToNextChar = context {
                 context = Context::None;

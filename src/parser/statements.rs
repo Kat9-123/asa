@@ -42,21 +42,17 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
             idx += 2;
             continue;
         }
-        /*
-            B -= A
-            B -= A C
 
-            X->B -= A
-            B -= Y->A 
-            X->B -= Y->A
-         */
 
-        if idx + 1 < tokens.len() && let Token::Subleq {info } = &tokens[idx + 1]   {
+        if idx + 1 < tokens.len() && let Token::Subleq {info: _info } = &tokens[idx + 1]   {
             if idx + 3 < tokens.len() && let Token::Linebreak {info} = &tokens[idx + 3] { // Maybe something else as tokens[idx + 3]
                     // Subleq has a and b flipped
+
+                let mut updated_info = info.clone();
+                updated_info.start_char += 4; // Clones linebreak info
                 new_tokens.push(tokens[idx + 2].clone());
                 new_tokens.push(tokens[idx].clone());
-                new_tokens.push(Token::Relative { info: info.clone(), offset: 1 });
+                new_tokens.push(Token::Relative { info:updated_info, offset: 1 });
 
                 idx += 4;
                 continue;

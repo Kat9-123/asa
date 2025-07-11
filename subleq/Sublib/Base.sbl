@@ -38,6 +38,7 @@
     to? -= Z
 ]
 
+@Cpy from? to? [!Copy from? to?]
 
 ; a += b
 @Add a? b? [

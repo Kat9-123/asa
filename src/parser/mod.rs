@@ -87,7 +87,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
-    let mut tokens = expand_strings(tokens);
+    let tokens = convert_strings(tokens);
 
     let tokens = expand_mults(&tokens);
 
@@ -109,7 +109,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     log::debug!("Label Table");
 
-    //   let label_table: HashMap<String, i32> = assign_addresses_to_labels(&statements);
     let tokens = resolve_labels(&tokens, &scoped_label_table);
     for statement in &tokens {
         println_debug!("{:?}", statement);
