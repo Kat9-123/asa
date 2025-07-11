@@ -1,10 +1,12 @@
 #Sublib/Symbols.sbl
 #Sublib/Base.sbl
 
-@IO [0xFFFF]
+@IO [-1]
+@DEBUG_ADDR [-2]
+@PERF_ADDR [-3]
 
 @IO::Print string? {
-    !Copy string? ptr
+    !Cpy string? ptr
     !J _loop
     char        -> 0
     inv_char    -> 0
@@ -51,6 +53,13 @@
 }
 
 
+@BreakPoint {
+    !J !DEBUG_ADDR
+}
+
 @Debug x? {
-    0xFFFE -= x?
+    !DEBUG_ADDR -= x?
+}
+@Perf {
+    !J !PERF_ADDR
 }

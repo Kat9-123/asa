@@ -2,6 +2,7 @@
 
 ; https://gist.github.com/howerj/4e0741370bd22b3181443bf3e0ba6697
 @JumpIf::Le a? b? .address {
+
     !Cpy a? a_plus_one
     !Cpy b? b_plus_one
     !Cpy a? l
@@ -50,6 +51,8 @@ l -> 0
 .fin ->
 }
 
+
+
 @JumpIf::Ge a? b? .address {
     !JumpIf::Le b? a? .address
 }
@@ -69,8 +72,12 @@ l -> 0
     .fin ->
 }
 
-@JumpIf::Neq a? b? .address {
-    !JumpIf::Eq a? b? .fin
+@JumpIf::Leq A? B? .address? {
+    !JumpIf::Geq B? A? .address?
+}
+
+@JumpIf::Neq A? B? .address {
+    !JumpIf::Eq A? B? .fin
     !J .address
 
     .fin ->
@@ -87,6 +94,8 @@ l -> 0
     !J .address
     .fin ->
 }
+
+
 
 **
 

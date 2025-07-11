@@ -5,6 +5,10 @@ use log::info;
 use crate::{asm_details, asm_error, asm_error_no_terminate, asm_info, asm_warn, feedback::terminate, mem_view, tokens::Token};
 
 
+const IO_ADDR: i16 = -1;
+const DEBUG_ADDR: i16 = -2;
+const PERF_ADDR: i16 = -3;
+
 fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
     asm_error_no_terminate!(&tokens[prev_pc + 2].info, "Jump outside of memory bounds");
     asm_details!(&tokens[prev_pc].info, "'A' part");
@@ -33,11 +37,24 @@ fn trace(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>) {
     }
 }
 
+
+/*
+pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usize, reason: (usize, &str), first: (usize, &str), second: (usize, &str)) {
+    trace(instruction_logs, tokens);
+
+    asm_error_no_terminate!(&tokens[pc + reason.0].info, reason.1);
+    asm_details!(&tokens[programme_counter + 1].info, "'B' part");
+    asm_details!(&tokens[programme_counter + 2].info, "'C' part");
+    terminate();
+}
+    */
 pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -> Option<String> {
     let mut programme_counter = 0;
     let mut prev_programme_counter = 0;
     let mut buf = String::new();
     let mut instruction_logs: Vec<InstructionLog> = Vec::new();
+
+    let mut performance_counter: Option<usize> = None;
     loop {
         //mem_view::draw_mem(&mem);
 
@@ -116,13 +133,38 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
         if result as i16 <= 0 {
             jumped = true;
           //  println!("JUMP!");
-            programme_counter = c;
-            if c == 0xFFFF {
-                break;
+
+            match c as i16 {
+                IO_ADDR => break,
+                DEBUG_ADDR => {
+                    trace(&instruction_logs, tokens);
+
+                    asm_error_no_terminate!(&tokens[programme_counter + 2].info, "Breakpoint");
+
+                    terminate();
+                }
+                PERF_ADDR => {
+                    match performance_counter {
+                        Some(x) => {
+                            println!("{} instructions executed.", x - 1);
+                            performance_counter = None;
+                        }
+                        None => {
+                            performance_counter = Some(0);
+                        }
+                    }
+                    programme_counter += 3;
+                }
+
+                _ => programme_counter = c,
             }
         } else {
             programme_counter += 3;
         }
+        if let Some(x) = performance_counter.as_mut() {
+            *x += 1;
+        }
+
         instruction_logs.push(InstructionLog {
             pc: prev_programme_counter,
             jumped,

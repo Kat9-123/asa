@@ -1,0 +1,35 @@
+
+
+**
+LOW
+....
+Return address <- fp
+arg1
+arg2
+arg3
+Return value    <- sp
+....
+Return address
+arg1
+.. etc
+HIGH
+**
+
+@Func name? args? body? {
+    
+    .args ->
+    args?
+    .END ->
+
+
+
+    body?
+
+    !Return
+}
+
+!Routine test {a? b? c?} {
+
+    
+}
+

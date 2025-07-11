@@ -87,7 +87,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::BODY => match &token.variant {
                 TokenVariant::LabelArrow {  offset } => {
                     macro_body.push(token.clone());
-                    asm_warn!(&token.info, "Label definitions in non-scoped macros may cause undesired behaviour {}", hint!("Use '{{' and '}}' instead of '[' and ']'"));
+                    asm_warn!(&token.info, "Label definitions in non-scoped macros are very dangerous {}", hint!("Use '{{' and '}}' instead of '[' and ']'"));
                 }
 
                 // Token::macrostart error
@@ -179,32 +179,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     return (new_tokens, macros);
 }
 
-fn generate_macro_body_old(current_macro: &Macro, label_map: &HashMap<String, TokenOrTokenVec>) -> Vec<Token> {
-    let mut body: Vec<Token> = current_macro.body.clone();
-    println_debug!("{:?}", label_map);
-    for body_token in &mut body {
-        if let TokenVariant::Label { name } = &mut body_token.variant {
-            if current_macro.labels_defined_in_macro.contains(&name) {
-                *name = format!("?{}?{}", current_macro.name, name);    // MACRO HYGIENE HACK
-                // Try to just set name maybe?
-            }
 
-
-            let new_token = label_map.get(name);
-            match new_token {
-                Some(t) => match t {
-                    TokenOrTokenVec::Tok(x) => *body_token = x.clone(),
-                    _=> todo!()
-                }
-
-                None => {
-                    continue;
-                }
-            }
-        }
-    }
-    return body;
-}
 
 fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, TokenOrTokenVec>) -> Vec<Token> {
     let mut body: Vec<Token> = Vec::new();

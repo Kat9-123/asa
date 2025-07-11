@@ -42,7 +42,6 @@ LINE_BREAK -> 0xA
 
 
 .main -> {
-
     !Repeat 2 {
         !Repeat 3 {
             !Flip

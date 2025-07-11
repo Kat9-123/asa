@@ -1,0 +1,25 @@
+#Sublib
+@Assert::Eq A? B? {
+    !JumpIf::Eq A? B? .fin
+
+    !IO::PrintLit "Assertion failed."
+    !BreakPoint
+
+    .fin ->
+}
+
+@Assert::EqToLit A? LIT? {
+    !JumpIf::Eq A? LIT_LBL .fin
+
+    
+    !IO::PrintLnLit "Assertion failed."
+    !IO::PrintLit "LH: "
+    !Debug A?
+    !IO::PrintLit "RH: "
+    !Debug LIT_LBL
+
+    W W -2
+
+    LIT_LBL -> LIT?
+    .fin ->
+}

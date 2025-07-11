@@ -16,12 +16,6 @@
 ]
 @Clr a? [!Clear a? ]
 
-@SubLit a? b? {
-    a?      -= literal_pointer
-    W       -= W             _fin
-    literal_pointer -> b?
-    _fin ->
-}
 
 @Inc a? [
     a? -= N_ONE
@@ -37,6 +31,13 @@
     Z -= from?
     to? -= Z
 ]
+
+
+@FFlip target? { .fin
+    !J target?
+    .fin ->
+}
+
 
 @Cpy from? to? [!Copy from? to?]
 
@@ -72,38 +73,20 @@
     b? -= a? (p_local -> 0)
 }
 
-@AssertEq a? b? {
-    !JumpIf::Eq a? b? .fin
 
-    !IO::PrintLit "Assertion failed."
-    !Halt
 
+
+@Repeat l_times? body? {
+    !Cpy L_TIMES i
+
+    .loop ->
+        body?
+
+        i -= ONE .fin
+        W -= W .loop
+
+    i -> 0
+    L_TIMES -> l_times?
     .fin ->
 }
 
-
-**
-    Assumes .repeat exists
-    l_start? is inclusive, l_end? is exclusive
-
-    Usage:
-
-    .repeat ->
-        ...
-    !Repeat 0 16
-**
-@Repeat l_start? l_end? .loop_addr {
-    !Inc i
-
-    !JumpIf::Geq i END .reset_and_finish
-
-    !J .loop_addr
-
-
-    i -> l_start?
-    BASE -> l_start?
-    END -> l_end?
-    .reset_and_finish ->
-    !Copy BASE i
-
-}

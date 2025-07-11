@@ -4,36 +4,49 @@
 ]
 
 @Not a? {
+    !J &2
     result -> 0
 
-    .repeat ->
+    !Repeat 16 {
         !LShift1 result
+
         !JumpIf::LeZero a? .msb_is_1
-        ; msb_is_0
+    
+; .msb_is_0 ->
         !Inc result
 
-        .msb_is_1 ->
+        ; msb_is_1
+    .msb_is_1 ->
+
         !LShift1 a?
-        !Repeat 0 16 .repeat
+    }
+    !Copy result a?
+
 }
+
 
 ; a? &= b?
 @And a? b? {
+    !J .
     result -> 0
+    . ->
+    !Repeat 16 {
 
-    .repeat ->
         !LShift1 result
         !JumpIf::LeZero a? .msb_a_is_1
+
         !J .continue
 
         .msb_a_is_1 ->
         !JumpIf::LeZero b? .msb_a_b_is_1
-
+        !J .continue
         .msb_a_b_is_1 ->
+
         !Inc result
 
         .continue ->
             !LShift1 a?
             !LShift1 b?
-            !Repeat 0 16 .repeat
+    }
+    !Cpy result a?
 }

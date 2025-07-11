@@ -2,3 +2,5 @@
 #Sublib/Base.sbl
 #Sublib/IO.sbl
 #Sublib/JumpIf.sbl
+#Sublib/Arithmetic.sbl
+#Sublib/Logic.sbl

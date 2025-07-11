@@ -1,0 +1,45 @@
+!J .main
+#Sublib
+#Sublib/Assert
+
+
+x -> 24936
+y -> -1237
+
+a -> 8399
+b -> -487
+p -> 482
+q -> 39
+
+
+w -> 3782
+z -> 93
+
+.main ->
+
+    !Mod w z
+    !Assert::EqToLit w 62
+
+
+    !Mul p q
+    !Assert::EqToLit p 18798
+
+
+    !Not x
+    !Assert::EqToLit x -24937
+    !Not y
+    !Assert::EqToLit y 1236
+
+
+    !And a b
+    !Assert::EqToLit a 8201
+
+
+    !Halt
+
+
+
+
+
+
+
