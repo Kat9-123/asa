@@ -26,7 +26,7 @@ use std::time::Instant;
 fn main() {
 
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Debug);
+    log::set_max_level(LevelFilter::Info);
     let args: Vec<String> = env::args().collect();
 
     let file_path = format!("./subleq/{}", args[1]);

@@ -1,10 +1,10 @@
 
 
-use std::{env, result};
+use std::{env, process::id, result};
 
 use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token, TokenVariant}};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum Context {
     None,
     LineComment,
@@ -192,31 +192,28 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
     let mut context: Context = Context::None;
     let mut buffer: String = String::new();
     let mut info: Info = Info { start_char: 0, length: 0, line_number: 1, file: path };
-
+    let mut idx_in_line = 0;
     for c in text.chars() {
         loop {
 
             let (new_context, add_to_buffer, variant_to_add) = updated_context(&context, &buffer, c, &info);
-           // println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, variant_to_add);
 
             context = new_context;
+            info.start_char = idx_in_line - info.length;
+
+
+            
+            //println_debug!("{idx_in_line} '{c}' {:?}, {:?}, {:?}, {:?}", context, add_to_buffer, variant_to_add, info);
+
+
             match add_to_buffer {
                 Some(ch) => buffer.push(ch),
                 None => {}
             }
-            info.length = buffer.len() as i32 + 1;
 
-            if let Some(var) =  variant_to_add {
+            if let Some(var) =  &variant_to_add {
 
-                if let TokenVariant::Linebreak = var  {
 
-                    info.line_number += 1;
-                    info.start_char = 0;
-                    info.length = 0;
-
-                } else {
-                    info.start_char += (info.length - 1);
-                }
                 match &var {
                     TokenVariant::Namespace { name  } => {
                         name_space_stack.push(name.clone());
@@ -225,35 +222,50 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                         info.file = name.clone();
                     },
                     TokenVariant::NamespaceEnd  => {
-                            name_space_stack.pop();
-                            info.file = name_space_stack.last().unwrap().clone();
-                            info.line_number = line_number_stack.pop().unwrap();
+                        name_space_stack.pop();
+                        info.file = name_space_stack.last().unwrap().clone();
+                        info.line_number = line_number_stack.pop().unwrap();
                     }
                     _ => {}
                 }
                 let token = Token {
                     info: info.clone(),
-                    variant: var,
+                    variant: var.clone(),
                 };
                 println!("{:?} {:?}", token, token.info);
                 result_tokens.push(token);
 
                 buffer.clear();
+                if let TokenVariant::Linebreak = var  {
+
+                    info.line_number += 1;
+                    info.start_char = 0;
+                    info.length = 0;
+                    idx_in_line = 0;
+                    break;
+
+                }
             }
+
 
 
             if let Context::DontMoveToNextChar = context {
                 context = Context::None;
                 continue;
             }
-            if buffer == "" {
-                info.start_char += 1;
-            }
+
 
 
             break;
         }
 
+
+        if context == Context::None {
+            info.length = 0;
+        } else {
+            info.length += 1;
+        }
+        idx_in_line += 1;
 
     }
 

@@ -1,6 +1,5 @@
 
 
-Z -= Z 0x8000
 
 W -= W .main
 
@@ -21,7 +20,7 @@ W -= W .main
 }
 
 
-@PrintTest body1? body2? {
+@Flip body1? body2? {
     body2?
 
     body1?
@@ -29,8 +28,7 @@ W -= W .main
 
 }
 
-
-@TEST
+@Skip
 [
     &2
 ]
@@ -43,17 +41,17 @@ ONE -> 1
 LINE_BREAK -> 0xA
 
 
-
 .main -> {
 
     !Repeat 2 {
         !Repeat 3 {
-            !PrintTest
+            !Flip
             {
                 0xFFFF -= A
             }
             {
-                0xFFFF -= B &2
+                0xFFFF -= B
+                W W !Skip
                 0xDEAD
             }
         }

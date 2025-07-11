@@ -91,12 +91,18 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
                 trace(&instruction_logs, tokens);
 
                 asm_error_no_terminate!(&tokens[programme_counter].info, "Address A out of range");
-                asm_details!(&tokens[prev_programme_counter + 1].info, "'B' part");
-                asm_details!(&tokens[prev_programme_counter + 2].info, "'C' part");
+                asm_details!(&tokens[programme_counter + 1].info, "'B' part");
+                asm_details!(&tokens[programme_counter + 2].info, "'C' part");
                 terminate();
             }
             if b >= mem.len() {
-                asm_error!(&tokens[programme_counter + 1].info, "Address B out of range");
+                trace(&instruction_logs, tokens);
+
+                asm_error_no_terminate!(&tokens[programme_counter + 1].info, "Address B out of range");
+                asm_details!(&tokens[programme_counter].info, "'A' part");
+                asm_details!(&tokens[programme_counter + 2].info, "'C' part");
+                terminate();
+
             }
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;
