@@ -4,7 +4,7 @@ mod literals;
 mod macros;
 pub mod statements;
 
-use crate::{asm_error, println_debug};
+use crate::{asm_error, print_debug, println_debug};
 use crate::tokens::{self, Token, TokenVariant};
 use crate::parser::labels::*;
 use crate::parser::literals::*;
@@ -86,7 +86,11 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     log::debug!("Inserted macros:");
     for token in &tokens {
-        println_debug!("{:?}", token);
+        if let TokenVariant::Linebreak = token.variant {
+            println_debug!("");
+            continue;
+        }
+        print_debug!("{:?} ", token);
     }
     println_debug!();
 

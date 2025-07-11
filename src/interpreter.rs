@@ -12,12 +12,24 @@ fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
     terminate();
 }
 
-fn trace(prev_pcs: &Vec<usize>, tokens: &Vec<Token>) {
-    for i in prev_pcs {
+
+struct InstructionLog {
+    pub pc: usize,
+    pub jumped: bool
+}
+
+fn trace(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>) {
+    for i in instruction_logs {
         info!("TRACE");
-        asm_details!(&tokens[*i].info, "'A' part");
-        asm_details!(&tokens[*i + 1].info, "'B' part");
-        asm_details!(&tokens[*i + 2].info, "'C' part");
+        asm_details!(&tokens[i.pc].info, "'A' part");
+        asm_details!(&tokens[i.pc + 1].info, "'B' part");
+        if i.jumped {
+            asm_details!(&tokens[i.pc + 2].info, "'C' part. JUMPED");
+        } else {
+            asm_details!(&tokens[i.pc + 2].info, "'C' part. DIDN'T JUMP");
+
+        }
+        println!();
     }
 }
 
@@ -25,7 +37,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
     let mut programme_counter = 0;
     let mut prev_programme_counter = 0;
     let mut buf = String::new();
-    let mut prev_pcs: Vec<usize> = Vec::new();
+    let mut instruction_logs: Vec<InstructionLog> = Vec::new();
     loop {
         //mem_view::draw_mem(&mem);
 
@@ -33,7 +45,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
         if programme_counter < mem.len() {
             mem[programme_counter] as usize
         } else {
-            trace(&prev_pcs, tokens);
+            trace(&instruction_logs, tokens);
             outside_mem_bounds_err(tokens, prev_programme_counter);
             unreachable!();
         };
@@ -41,7 +53,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
         if programme_counter + 1 < mem.len() {
             mem[programme_counter + 1] as usize
         } else {
-            trace(&prev_pcs, tokens);
+            trace(&instruction_logs, tokens);
 
             outside_mem_bounds_err(tokens, prev_programme_counter);
             unreachable!();
@@ -50,7 +62,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
         if programme_counter + 2 < mem.len() {
             mem[programme_counter + 2] as usize
         } else {
-            trace(&prev_pcs, tokens);
+            trace(&instruction_logs, tokens);
 
             outside_mem_bounds_err(tokens, prev_programme_counter);
             unreachable!();
@@ -76,7 +88,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
         } else {
             if a >= mem.len() {
-                trace(&prev_pcs, tokens);
+                trace(&instruction_logs, tokens);
 
                 asm_error_no_terminate!(&tokens[programme_counter].info, "Address A out of range");
                 asm_details!(&tokens[prev_programme_counter + 1].info, "'B' part");
@@ -92,19 +104,26 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
 
         prev_programme_counter = programme_counter;
-        prev_pcs.push(programme_counter);
-        if prev_pcs.len() > 5 {
-            prev_pcs.remove(0);
-        }
+
+
+        let mut jumped = false;
         if result as i16 <= 0 {
+            jumped = true;
           //  println!("JUMP!");
             programme_counter = c;
             if c == 0xFFFF {
                 break;
             }
-            continue;
+        } else {
+            programme_counter += 3;
         }
-        programme_counter += 3;
+        instruction_logs.push(InstructionLog {
+            pc: prev_programme_counter,
+            jumped,
+        });
+        if instruction_logs.len() > 5 {
+            instruction_logs.remove(0);
+        }
     }
     if return_output {
         return Some(buf);

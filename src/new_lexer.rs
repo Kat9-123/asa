@@ -197,7 +197,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
         loop {
 
             let (new_context, add_to_buffer, variant_to_add) = updated_context(&context, &buffer, c, &info);
-            println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, variant_to_add);
+           // println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, variant_to_add);
 
             context = new_context;
             match add_to_buffer {
@@ -212,7 +212,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
 
                     info.line_number += 1;
                     info.start_char = 0;
-                    info.length = 1;
+                    info.length = 0;
 
                 } else {
                     info.start_char += (info.length - 1);
@@ -235,7 +235,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                     info: info.clone(),
                     variant: var,
                 };
-
+                println!("{:?} {:?}", token, token.info);
                 result_tokens.push(token);
 
                 buffer.clear();

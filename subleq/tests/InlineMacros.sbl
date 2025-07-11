@@ -12,7 +12,10 @@
 
 @Test3 a? b? [a? -= b?]
 
-@IO [0xFFFF]
+@IO
+[
+    -1
+]
 
 
 !Test3 a b &2
