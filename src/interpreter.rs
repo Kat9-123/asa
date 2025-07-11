@@ -6,18 +6,18 @@ use crate::{asm_details, asm_error, asm_error_no_terminate, asm_info, asm_warn, 
 
 
 fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
-    asm_error_no_terminate!(tokens[prev_pc + 2].get_info(), "Jump outside of memory bounds");
-    asm_details!(tokens[prev_pc].get_info(), "'A' part");
-    asm_details!(tokens[prev_pc + 1].get_info(), "'B' part");
+    asm_error_no_terminate!(&tokens[prev_pc + 2].info, "Jump outside of memory bounds");
+    asm_details!(&tokens[prev_pc].info, "'A' part");
+    asm_details!(&tokens[prev_pc + 1].info, "'B' part");
     terminate();
 }
 
 fn trace(prev_pcs: &Vec<usize>, tokens: &Vec<Token>) {
     for i in prev_pcs {
         info!("TRACE");
-        asm_details!(tokens[*i].get_info(), "'A' part");
-        asm_details!(tokens[*i + 1].get_info(), "'B' part");
-        asm_details!(tokens[*i + 2].get_info(), "'C' part");
+        asm_details!(&tokens[*i].info, "'A' part");
+        asm_details!(&tokens[*i + 1].info, "'B' part");
+        asm_details!(&tokens[*i + 2].info, "'C' part");
     }
 }
 
@@ -78,13 +78,13 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
             if a >= mem.len() {
                 trace(&prev_pcs, tokens);
 
-                asm_error_no_terminate!(tokens[programme_counter].get_info(), "Address A out of range");
-                asm_details!(tokens[prev_programme_counter + 1].get_info(), "'B' part");
-                asm_details!(tokens[prev_programme_counter + 2].get_info(), "'C' part");
+                asm_error_no_terminate!(&tokens[programme_counter].info, "Address A out of range");
+                asm_details!(&tokens[prev_programme_counter + 1].info, "'B' part");
+                asm_details!(&tokens[prev_programme_counter + 2].info, "'C' part");
                 terminate();
             }
             if b >= mem.len() {
-                asm_error!(tokens[programme_counter + 1].get_info(), "Address B out of range");
+                asm_error!(&tokens[programme_counter + 1].info, "Address B out of range");
             }
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;

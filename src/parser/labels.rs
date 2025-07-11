@@ -10,21 +10,23 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut i = 0;
 
     while i < tokens.len() {
-        if let Token::BraceOpen { info } = &tokens[i] {
-            let name = match &tokens[i + 1] {
-                Token::Label { info, name } => name,
+        if let TokenVariant::BraceOpen  = &tokens[i].variant {
+            let name = match &tokens[i + 1].variant {
+                TokenVariant::Label { name } => name,
                 _ => todo!(),
             };
-            let data: IntOrString = match &tokens[i + 3] {
-                Token::DecLiteral { info, value } => IntOrString::Int(*value),  
-                Token::Label { info, name  } => IntOrString::Str(name.clone()),
+            let data: IntOrString = match &tokens[i + 3].variant {
+                TokenVariant::DecLiteral { value } => IntOrString::Int(*value),
+                TokenVariant::Label {name  } => IntOrString::Str(name.clone()),
                 _ => todo!()
             };
 
-            updated_tokens.push(Token::BracedLabelDefinition {
-                info: info.clone(),
-                name: name.clone(),
-                data: data,
+            updated_tokens.push(Token {
+                info: tokens[i].info.clone(),
+                variant: TokenVariant::BracedLabelDefinition {
+                    name: name.clone(),
+                    data: data,
+                }
             }
             );
             i += 5;
@@ -46,40 +48,40 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
 
     for token in tokens {
 
-        match token {
-            Token::Scope {info} => {
+        match &token.variant {
+            TokenVariant::Scope  => {
                 scopes.push(HashMap::new());
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
                 println_debug!("SCOPE {:?}", current_scope_indexes);
                 seen_scopes_count += 1;
             }
-            Token::Unscope {info }=> {
+            TokenVariant::Unscope => {
                 current_scope_indexes.pop();
                 println_debug!("UNSCOPE {:?}", current_scope_indexes);
             }
-            Token::Namespace {info, name } => {
+            TokenVariant::Namespace {name } => {
                 println_debug!("set namespace to {name}");
 
                 // namespace = name.clone();
             }
-            Token::BracedLabelDefinition { info, name, data } => {
+            TokenVariant::BracedLabelDefinition { name, data } => {
                 if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
-                    asm_warn!(info, "The label called '{name}' has already been defined in this scope");
+                    asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
                 }
                 scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), (address, info.clone()));
+                        .insert(name.clone(), (address, token.info.clone()));
             }
 
 
-            Token::LabelDefinition {info, name, offset} => {
+            TokenVariant::LabelDefinition { name, offset} => {
 
                     if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
-                        asm_warn!(info, "The label called '{name}' has already been defined in this scope");
+                        asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
                     }
 
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), (address + *offset, info.clone()));
+                        .insert(name.clone(), (address + offset, token.info.clone()));
 
             },
 
@@ -99,32 +101,37 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
     let mut seen_scopes_count: usize = 0;
 
     for token in tokens {
-        match token {
+        match &token.variant {
 
-            Token::Scope {info} => {
+            TokenVariant::Scope => {
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
                 seen_scopes_count += 1;
             }
-            Token::Unscope {info} => {
+            TokenVariant::Unscope => {
                 current_scope_indexes.pop();
             }
-            Token::Label { info: _info, name } => {
-                let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, _info);
-                updated_tokens.push(Token::DecLiteral {
-                        info: _info.clone(),
-                        value: val,
+            TokenVariant::Label { name } => {
+                let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, &token.info);
+                updated_tokens.push(Token {
+                        info: token.info.clone(),
+                        variant: TokenVariant::DecLiteral {
+                            value: val,
+                        }
                 });
             }
-            Token::BracedLabelDefinition { info: info, name, data } => {
+            TokenVariant::BracedLabelDefinition {name, data } => {
                 match data {
-                    IntOrString::Int(x) => updated_tokens.push(Token::DecLiteral { info: info.clone(), value: *x }),
+                    IntOrString::Int(x) => updated_tokens.push(Token {info: token.info.clone(), variant: TokenVariant::DecLiteral { value: *x } }),
                     IntOrString::Str(string) => {
 
-                        let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, info);
-                        updated_tokens.push(Token::DecLiteral {
-                                info: info.clone(),
+                        let (val, inf) = find_label(&name, scoped_label_table, &current_scope_indexes, &token.info);
+                        updated_tokens.push(Token {
+                            info: token.info.clone(),
+
+                            variant: TokenVariant::DecLiteral {
                                 value: val,
+                            }
                         });
                     }
                 }

@@ -2,7 +2,7 @@
 
 use std::{env, result};
 
-use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token}};
+use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token, TokenVariant}};
 
 #[derive(Debug)]
 enum Context {
@@ -33,13 +33,13 @@ enum Context {
 }
 
 
-fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &Info) -> (Context, Option<char>, Option<Token>) {
+fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &Info) -> (Context, Option<char>, Option<TokenVariant>) {
     match context {
         Context::DontMoveToNextChar => unreachable!(),
 
 
         Context::None => match cur_char {
-            '\n' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
+            '\n' => (Context::None, None, Some(TokenVariant::Linebreak)),
             ' ' => (Context::None, None, None),
             ';' => (Context::LineComment, None, None),
             '-' => (Context::SubleqOrNegativeOrLabelArrow, Some(cur_char), None),
@@ -49,16 +49,16 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
 
             '*' => (Context::MultOrBlockComment, None, None),
 
-            '{' => (Context::None, None, Some(Token::Scope {info: info.clone()})),
-            '}' => (Context::None, None, Some(Token::Unscope {info: info.clone()})),
-            '[' => (Context::None, None, Some(Token::MacroBodyStart {info: info.clone()})),
-            ']' => (Context::None, None, Some(Token::MacroBodyEnd {info: info.clone()})),
-            '\\' => (Context::None, None, Some(Token::Linebreak {info: info.clone()})),
+            '{' => (Context::None, None, Some(TokenVariant::Scope)),
+            '}' => (Context::None, None, Some(TokenVariant::Unscope)),
+            '[' => (Context::None, None, Some(TokenVariant::MacroBodyStart)),
+            ']' => (Context::None, None, Some(TokenVariant::MacroBodyEnd )),
+            '\\' => (Context::None, None, Some(TokenVariant::Linebreak)),
 
-            '/' => (Context::None, None, Some(Token::NamespaceEnd {info: info.clone()})),
+            '/' => (Context::None, None, Some(TokenVariant::NamespaceEnd)),
 
-            '(' => (Context::None, None, Some(Token::BraceOpen {info: info.clone()})),
-            ')' => (Context::None, None, Some(Token::BraceClose {info: info.clone()})),
+            '(' => (Context::None, None, Some(TokenVariant::BraceOpen)),
+            ')' => (Context::None, None, Some(TokenVariant::BraceClose)),
             '&' => (Context::Relative, None, None),
 
 
@@ -76,12 +76,12 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
 
         Context::MultOrBlockComment => match cur_char {
             '*' => (Context::BlockComment, None, None),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::Mult {info: info.clone()}))
+            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::Mult))
         }
 
         Context::BlockComment => match cur_char {
             '*' => (Context::PossibleBlockCommentEnd, None, None),
-            '\n' => (Context::BlockComment, None, Some(Token::Linebreak { info: info.clone() })),
+            '\n' => (Context::BlockComment, None, Some(TokenVariant::Linebreak)),
             _ => (Context::BlockComment, None, None),
         }
         Context::PossibleBlockCommentEnd => match cur_char {
@@ -94,17 +94,17 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             _ => (Context::LineComment, None, None),
         }
         Context::Namespace => match cur_char {
-            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Namespace { info: info.clone(), name: buffer.clone() })),
+            '\n' => (Context::DontMoveToNextChar, None, Some(TokenVariant::Namespace { name: buffer.clone() })),
             _ => (Context::Namespace, Some(cur_char), None)
         }
 
 
         Context::SubleqOrNegativeOrLabelArrow => match cur_char {     // Negative numbers :(
-            '=' => (Context::None, None, Some(Token::Subleq {info: info.clone()})),
+            '=' => (Context::None, None, Some(TokenVariant::Subleq)),
             '0' => (Context::HexOrDec, Some(cur_char), None),
             c if c.is_ascii_digit() => (Context::Dec, Some(cur_char), None),
             'a' | 'b' | 'c' => (Context::LabelArrow, Some(cur_char), None),
-            '>' => (Context::None, Some(cur_char), Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Int(0)})),
+            '>' => (Context::None, Some(cur_char), Some(TokenVariant::LabelArrow {offset: LabelOffset::Int(0)})),
             _ => { asm_error!(info, "Unexpected character, for Subleq use '-=', for label use ->") },
         }
 
@@ -112,7 +112,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '>' => {
                 let ch: char = buffer.chars().nth(1).unwrap();
                 if ch == 'a' || ch == 'b' || ch == 'c' {
-                    return (Context::None, Some(cur_char), Some(Token::LabelArrow {info: info.clone(), offset: LabelOffset::Char(ch)}));
+                    return (Context::None, Some(cur_char), Some(TokenVariant::LabelArrow {offset: LabelOffset::Char(ch)}));
                 }
                 asm_error!(info, "Unexpected character");
             }
@@ -124,40 +124,40 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             'x' => (Context::Hex, None, None),
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
             c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Hex or Dec literal {}", hint!("Labels may not start with a number")),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
+            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::DecLiteral {value: buffer.parse::<i32>().unwrap() })),
         }
 
         Context::Hex => match cur_char {
             c if c.is_ascii_hexdigit() => (Context::Hex, Some(c), None),
             c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Hex literal"),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::HexLiteral {info: info.clone(),  value: buffer.clone() })),    // may cause issues
+            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::HexLiteral {value: buffer.clone() })),    // may cause issues
         }
 
         Context::Dec => match cur_char {
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
             c if c.is_ascii_alphabetic() => asm_error!(info, "Unexpected character when defining Dec literal"),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::DecLiteral { info: info.clone(), value: buffer.parse::<i32>().unwrap() })),
+            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::DecLiteral { value: buffer.parse::<i32>().unwrap() })),
         }
         Context::Label => match cur_char {
-            '\n' => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
+            '\n' => (Context::DontMoveToNextChar, None, Some(TokenVariant::Label { name: buffer.clone() })),
             c if c.is_alphanumeric() || c == '?' || c == '_'  || c == ':' || c == '.' => (Context::Label, Some(cur_char), None),
-            _ => (Context::DontMoveToNextChar, None, Some(Token::Label { info: info.clone(), name: buffer.clone() })),
+            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::Label {name: buffer.clone() })),
         }
 
         Context::MacroDeclaration => match cur_char {
-            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroDeclaration { info: info.clone(), name: buffer.clone() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(TokenVariant::MacroDeclaration { name: buffer.clone() })),
             _ => (Context::MacroDeclaration, Some(cur_char), None),
         }
         Context::MacroCall => match cur_char {
-            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(Token::MacroCall { info: info.clone(), name: buffer.clone() })),
+            ' ' | '\n' => (Context::DontMoveToNextChar, None,Some(TokenVariant::MacroCall { name: buffer.clone() })),
             _ => (Context::MacroCall, Some(cur_char), None),
         }
         Context::Char => match cur_char {   // Not great
-            '\'' => (Context::None, None, Some(Token::CharLiteral { info: info.clone(), value: buffer.chars().nth(0).unwrap() })),
+            '\'' => (Context::None, None, Some(TokenVariant::CharLiteral { value: buffer.chars().nth(0).unwrap() })),
             _ => (Context::Char, Some(cur_char), None),
         }
         Context::String => match cur_char {
-            '"' => (Context::None, None, Some(Token::StrLiteral {info: info.clone(),  value: buffer.clone() })),
+            '"' => (Context::None, None, Some(TokenVariant::StrLiteral {value: buffer.clone() })),
             _ => (Context::String, Some(cur_char), None),
         }
         Context::Relative => match cur_char {
@@ -167,7 +167,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
                 if buffer != "" {
                     offset =  buffer.parse::<i32>().unwrap();
                 }
-                (Context::DontMoveToNextChar, None, Some(Token::Relative { info: info.clone(), offset  }))
+                (Context::DontMoveToNextChar, None, Some(TokenVariant::Relative { offset  }))
             }
 
         }
@@ -196,8 +196,8 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
     for c in text.chars() {
         loop {
 
-            let (new_context, add_to_buffer, token_to_add) = updated_context(&context, &buffer, c, &info);
-            println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, token_to_add);
+            let (new_context, add_to_buffer, variant_to_add) = updated_context(&context, &buffer, c, &info);
+            println_debug!("{:?}, {:?}, {:?}", new_context, add_to_buffer, variant_to_add);
 
             context = new_context;
             match add_to_buffer {
@@ -206,9 +206,9 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
             }
             info.length = buffer.len() as i32 + 1;
 
-            if let Some(tok) = token_to_add {
+            if let Some(var) =  variant_to_add {
 
-                if let Token::Linebreak { .. } = tok  {
+                if let TokenVariant::Linebreak = var  {
 
                     info.line_number += 1;
                     info.start_char = 0;
@@ -217,22 +217,26 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                 } else {
                     info.start_char += (info.length - 1);
                 }
-                match &tok {
-                    Token::Namespace { info: _info, name  } => {
+                match &var {
+                    TokenVariant::Namespace { name  } => {
                         name_space_stack.push(name.clone());
                         line_number_stack.push(info.line_number);
                         info.line_number = 0;
                         info.file = name.clone();
                     },
-                    Token::NamespaceEnd { info: _info } => {
+                    TokenVariant::NamespaceEnd  => {
                             name_space_stack.pop();
                             info.file = name_space_stack.last().unwrap().clone();
                             info.line_number = line_number_stack.pop().unwrap();
                     }
                     _ => {}
                 }
+                let token = Token {
+                    info: info.clone(),
+                    variant: var,
+                };
 
-                result_tokens.push(tok);
+                result_tokens.push(token);
 
                 buffer.clear();
             }

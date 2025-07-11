@@ -1,0 +1,19 @@
+
+
+!Repeat {
+    0xFFFF -= A
+}
+
+
+@Repeat body? {
+    .loop ->
+    body?
+
+
+    W -= W .loop
+}
+
+
+W -> 0
+Z -> 0
+A -> 'A'

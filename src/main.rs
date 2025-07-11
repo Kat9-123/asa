@@ -3,6 +3,7 @@ use std::path::Path;
 use std::{fs, path::PathBuf, process::exit};
 
 
+use crate::tokens::TokenVariant;
 use crate::{codegen::generate, tokens::Token};
 use log::{debug, info, trace, LevelFilter};
 use simple_logger::SimpleLogger;
@@ -25,7 +26,7 @@ use std::time::Instant;
 fn main() {
 
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
     let args: Vec<String> = env::args().collect();
 
     let file_path = format!("./subleq/{}", args[1]);
@@ -53,7 +54,7 @@ fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
     println_debug!("Tokens:");
 
     for i in &tokens {
-        if let Token::Linebreak {..} = i {
+        if let TokenVariant::Linebreak = i.variant {
             println_debug!();
             continue;
         }

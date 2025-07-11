@@ -5,7 +5,7 @@ mod macros;
 pub mod statements;
 
 use crate::{asm_error, println_debug};
-use crate::tokens::{self, Token};
+use crate::tokens::{self, Token, TokenVariant};
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
@@ -19,9 +19,12 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
 
     for token in tokens {
-        match token {
-            Token::Relative { info, offset } => {
-                new_tokens.push(Token::DecLiteral { info: info.clone(), value: address + *offset })
+        match token.variant {
+            TokenVariant::Relative {offset } => {
+                new_tokens.push(Token {
+                    info: token.info.clone(),
+                    variant: TokenVariant::DecLiteral { value: address + offset }
+                });
             }
             _ => new_tokens.push(token.clone())
         }
@@ -35,9 +38,9 @@ fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
     let mut i = 0;
     while i < tokens.len() {
-        if i + 1 < tokens.len() && let Token::Mult {..} = tokens[i + 1] {
-            match &tokens[i] {
-                Token::DecLiteral { info, value: count } => {
+        if i + 1 < tokens.len() && let TokenVariant::Mult = tokens[i + 1].variant {
+            match &tokens[i].variant {
+                TokenVariant::DecLiteral {  value: count } => {
                     for mult_i in 0..*count {
                         new_tokens.push(tokens[i + 2].clone());
                     }

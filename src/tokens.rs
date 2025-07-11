@@ -1,3 +1,5 @@
+use std::fmt;
+
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LabelOffset {
@@ -20,74 +22,58 @@ pub enum IntOrString {
     Int(i32),
 }
 
-
+#[derive(PartialEq, Eq, Clone)]
+pub struct Token {
+    pub info: Info,
+    pub variant: TokenVariant,
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Token {
-    DecLiteral { info: Info, value: i32 },
-    HexLiteral { info: Info, value: String },
-    LabelArrow { info: Info, offset: LabelOffset},
-    Subleq {info: Info},
-    Label {info: Info, name: String },
-    LabelDefinition {info: Info, name: String, offset: i32},
-    Relative { info: Info, offset: i32 },
-    Scope {info: Info},
-    Unscope {info: Info},
-    CharLiteral {info: Info,  value: char },
-    StrLiteral {info: Info, value: String },
+pub enum TokenVariant {
+    DecLiteral { value: i32 },
+    HexLiteral { value: String },
+    LabelArrow { offset: LabelOffset},
+    Subleq,
+    Label {name: String },
+    LabelDefinition {name: String, offset: i32},
+    Relative {offset: i32 },
+    Scope,
+    Unscope,
+    CharLiteral {value: char },
+    StrLiteral {value: String },
 
-    MacroDeclaration {info: Info, name: String },
-    MacroBodyStart {info: Info},
-    MacroBodyEnd {info: Info},
+    MacroDeclaration {name: String },
+    MacroBodyStart,
+    MacroBodyEnd,
 
-    MacroCall {info: Info, name: String },
-    Namespace {info: Info, name: String},
+    MacroCall {name: String },
+    Namespace {name: String},
 
-    BraceOpen {info: Info},
-    BraceClose {info: Info},
+    BraceOpen,
+    BraceClose,
 
-    Linebreak {info: Info},
+    Linebreak,
 
-    BracedLabelDefinition {info: Info, name: String, data: IntOrString},
+    BracedLabelDefinition {name: String, data: IntOrString},
 
-    Mult {info: Info},
-    NamespaceEnd {info: Info},
-
+    Mult,
+    NamespaceEnd,
 }
 
 
 impl Token {
     pub fn size(&self) -> i32 {
-        match self {
-            Token::DecLiteral { .. } | Token::Relative {..} | Token::Label {.. } | Token::BracedLabelDefinition { .. } => 1,
-            Token::HexLiteral { .. } | Token::CharLiteral {..} | Token::StrLiteral {..} => todo!(),
+        match self.variant {
+            TokenVariant::DecLiteral { .. } | TokenVariant::Relative {..} | TokenVariant::Label {.. } | TokenVariant::BracedLabelDefinition { .. } => 1,
+            TokenVariant::HexLiteral { .. } | TokenVariant::CharLiteral {..} | TokenVariant::StrLiteral {..} => todo!(),
             _ => 0,
         }
     }
-    pub fn get_info(&self) -> &Info {
-        match self {
-            Token::DecLiteral { info, .. } => info,
-            Token::HexLiteral { info, .. } => info,
-            Token::LabelArrow { info, .. } => info,
-            Token::Subleq { info } => info,
-            Token::Label { info, .. } => info,
-            Token::LabelDefinition { info, .. } => info,
-            Token::Relative { info, .. } => info,
-            Token::Scope { info } => info,
-            Token::Unscope { info } => info,
-            Token::CharLiteral { info, .. } => info,
-            Token::StrLiteral { info, .. } => info,
-            Token::MacroDeclaration { info, .. } => info,
-            Token::MacroBodyStart { info } => info,
-            Token::MacroBodyEnd { info } => info,
-            Token::MacroCall { info, .. } => info,
-            Token::Namespace { info, .. } => info,
-            Token::BraceOpen { info } => info,
-            Token::BraceClose { info } => info,
-            Token::Linebreak { info } => info,
-            Token::BracedLabelDefinition { info, .. } => info,
-            Token::Mult { info } => info,
-            Token::NamespaceEnd { info} => info,
-        }
+
+}
+
+impl fmt::Debug for Token {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{:?}", self.variant)
     }
 }

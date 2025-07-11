@@ -1,4 +1,4 @@
-use crate::{asm_error, tokens::{LabelOffset, Token}};
+use crate::{asm_error, tokens::{LabelOffset, Token, TokenVariant}};
 
 
 
@@ -7,17 +7,18 @@ use crate::{asm_error, tokens::{LabelOffset, Token}};
 
 pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
+
     let mut idx = 0;
 
     while idx < tokens.len() {
-        if let Token::Linebreak {..} = tokens[idx]  {
+        if let TokenVariant::Linebreak = tokens[idx].variant  {
             idx += 1;
             continue;
         }
 
 
 
-        if idx + 2 < tokens.len() && let Token::LabelArrow {info, offset  } = &tokens[idx + 1]   {
+        if idx + 2 < tokens.len() && let TokenVariant::LabelArrow {offset  } = &tokens[idx + 1].variant {
             let label_offset = match offset {
                 LabelOffset::Char(x) => match x {
                     'a' => 0,
@@ -28,15 +29,18 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
                 LabelOffset::Int(x) => *x
             };
 
-            let name = match &tokens[idx] {
-                Token::Label { info, name } => name,
-                _ => asm_error!(info, "Only a label may precede a label arrow")
+            let name = match &tokens[idx].variant {
+                TokenVariant::Label {  name } => name,
+                _ => asm_error!(&tokens[idx].info, "Only a label may precede a label arrow")
             };
 
-            new_tokens.push(Token::LabelDefinition {
-                info: info.clone(),
+            new_tokens.push(    Token {
+                info: tokens[idx + 1].info.clone(),
+                variant: TokenVariant::LabelDefinition {
+
                 name: name.clone(),
                 offset: label_offset,
+            }
             });
 
             idx += 2;
@@ -44,15 +48,19 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
         }
 
 
-        if idx + 1 < tokens.len() && let Token::Subleq {info: _info } = &tokens[idx + 1]   {
-            if idx + 3 < tokens.len() && let Token::Linebreak {info} = &tokens[idx + 3] { // Maybe something else as tokens[idx + 3]
+        if idx + 1 < tokens.len() && let TokenVariant::Subleq  = &tokens[idx + 1].variant   {
+            if idx + 3 < tokens.len() && let TokenVariant::Linebreak = &tokens[idx + 3].variant  { // Maybe something else as tokens[idx + 3]
                     // Subleq has a and b flipped
 
-                let mut updated_info = info.clone();
+                let mut updated_info = tokens[idx + 3].info.clone();
                 updated_info.start_char += 4; // Clones linebreak info
                 new_tokens.push(tokens[idx + 2].clone());
                 new_tokens.push(tokens[idx].clone());
-                new_tokens.push(Token::Relative { info:updated_info, offset: 1 });
+                new_tokens.push(Token {
+                    info: updated_info,
+                    variant: TokenVariant::Relative { offset: 1 }
+                    }
+                );
 
                 idx += 4;
                 continue;

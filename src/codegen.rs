@@ -1,4 +1,4 @@
-use crate::{tokens::Token};
+use crate::tokens::{Token, TokenVariant};
 
 /*
 fn to_bytes(tokens: Vec<u16>) {
@@ -45,9 +45,9 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::new();
     let mut final_tokens: Vec<Token> = Vec::new();
     for statement in statements {
-        match &statement {
+        match &statement.variant {
 
-            Token::DecLiteral {info, value} => {
+            TokenVariant::DecLiteral { value} => {
                 mem.push(*value as u16);
                 final_tokens.push(statement.clone());
             }

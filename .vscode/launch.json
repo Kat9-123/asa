@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["testing.sbl"],
+            "args": ["Scopesasargs.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {
