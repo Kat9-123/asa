@@ -17,6 +17,13 @@
 @Clr a? [!Clear a? ]
 
 
+@Flip m_mac? .addr? {
+    m_mac? .contd
+    !J .addr?
+
+    .contd ->
+}
+
 @Inc a? [
     a? -= N_ONE
 ]

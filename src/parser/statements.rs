@@ -8,6 +8,7 @@ use crate::{asm_error, tokens::{LabelOffset, Token, TokenVariant}};
 pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
 
+
     let mut idx = 0;
 
     while idx < tokens.len() {

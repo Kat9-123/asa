@@ -18,7 +18,6 @@ c -> 0
 d -> 1233
 
 
-@Flip .lbl? [&4 W -= W .lbl? ]
 .main ->
 
     !JumpIf::Le a b .err

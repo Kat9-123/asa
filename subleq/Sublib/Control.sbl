@@ -1,34 +1,48 @@
 #Sublib
 
 
-@If s_conditional_jump? body? {
-    s_conditional_jump? .false?
-    body?
-}
 
-@If::Eq a? b? body? {
-    (!JumpIf::Neq a? b?) .false
+@If m_conditional? body? {
+    !Flip {m_conditional?} .false
     body?
     .false ->
 }
 
-@If::Neq a? b? body? {
-    !JumpIf::Eq a? b? .false
-    body?
-    .false ->
-}
+@IfElse m_conditional? s_true? s_false? {
 
+    m_conditional? .true
 
-@IfElse::Eq a? b? true? false? {
-    !JumpIf::Neq a? b? .else
-
-    true?
+    s_false?
 
     !J .fin
 
-    .else ->
+    .true ->
 
-    false?
+    s_true?
 
     .fin ->
 }
+
+
+@If::Eq a? b? s_body? {
+    !If {!JumpIf::Eq a? b?} s_body?
+}
+
+
+@If::Neq a? b? s_body? {
+    !JumpIf::Eq a? b? .false
+    s_body?
+    .false ->
+}
+
+
+@IfElse::Eq a? b? s_true? s_false? {
+    !IfElse {!Eq a? b? } s_true? s_false?
+}
+@IfElse::Neq a? b? true? false? {
+    !IfElse {!JumpIf::Eq a? b? } true? false?
+}
+
+
+
+@Eq a? b? .addr? [!JumpIf::Eq a? b? .addr?]

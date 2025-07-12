@@ -11,8 +11,22 @@ use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::statements::*;
 
+/*
+fn find_and_collapse_groups(tokens: &Vec<Token>) {
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
+
+    fn recursive(tokens: &Vec<Token>) -> Token {
+
+    }
+    for tok in tokens {
+        match tok.variant {
+
+        }
+    }
 
 
+}
+ */
 
 fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     let mut address: i32 = 0;

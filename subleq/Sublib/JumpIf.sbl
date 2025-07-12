@@ -1,7 +1,7 @@
 
 
 ; https://gist.github.com/howerj/4e0741370bd22b3181443bf3e0ba6697
-@JumpIf::Le a? b? .address {
+@JumpIf::Le a? b? .address? {
 
     !Cpy a? a_plus_one
     !Cpy b? b_plus_one
@@ -14,7 +14,7 @@
 
 .a_not_b ->   ; a<=0 && !b<=0
     b? -= ZERO .a_b
-    !J .address
+    !J .address?
 
 .not_a_b ->   ; !a<=0 && b<=0
     b? -= ZERO .fin
@@ -40,7 +40,7 @@ N ->
 
 TN ->
 
-    a_plus_one -= b? .address
+    a_plus_one -= b? .address?
 
     !J .fin
 
@@ -53,45 +53,42 @@ l -> 0
 
 
 
-@JumpIf::Ge a? b? .address {
-    !JumpIf::Le b? a? .address
+@JumpIf::Ge a? b? .address? {
+    !JumpIf::Le b? a? .address?
 }
 
-@JumpIf::Eq a? b? .address {
+@JumpIf::Eq a? b? .address? {
     !JumpIf::Le a? b? .fin
     !JumpIf::Ge a? b? .fin
-    !J .address
+    !J .address?
 
     .fin ->
 }
 
-@JumpIf::Geq a? b? .address {
-    !JumpIf::Le a? b? .fin
-    !J .address
-
-    .fin ->
+@JumpIf::Geq a? b? .address? {
+    !Flip {!JumpIf::Le a? b? } .address?
 }
 
 @JumpIf::Leq A? B? .address? {
     !JumpIf::Geq B? A? .address?
 }
 
-@JumpIf::Neq A? B? .address {
+@JumpIf::Neq A? B? .address?{
     !JumpIf::Eq A? B? .fin
-    !J .address
+    !J .address?
 
     .fin ->
 }
 
 
 ; Can be optimised
-@JumpIf::LeZero a? .address {
-    !JumpIf::Le a? ZERO .address
+@JumpIf::LeZero a? .address? {
+    !JumpIf::Le a? ZERO .address?
 }
 
 @JumpIf::GeqZero a? .address? {
     !JumpIf::Le a? ZERO .fin
-    !J .address
+    !J .address?
     .fin ->
 }
 

@@ -95,6 +95,7 @@ pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
 fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
     let contents =  get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
+    println!("{:?}",info);
     if info.line_number - 3 >= 0 {
         println!("{}{: >4} | {}", prefix, format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
 
@@ -109,9 +110,12 @@ fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
         Type::INFO =>  println!("{}{: >4} > {}", prefix,  format!("{}", info.line_number).blue() , lines[(info.line_number - 1) as usize]),
     }
     let start = info.start_char;
-    let length = info.length;
+    let mut length = info.length;
+    if length == 0 {
+        length = 1;
+    }
 
-    print!("       ");
+    print!("{}       ", prefix);
     for _ in 0..start-1 {
         print!(" ");
     }

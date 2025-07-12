@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::thread::scope;
+use crate::asm_details;
 use crate::asm_info;
 use crate::feedback::*;
 use crate::hint;
@@ -10,6 +11,7 @@ use crate::tokens::*;
 #[derive(Debug)]
 pub struct Macro {
     name: String,
+    info: Info,
     args: Vec<String>,
     body: Vec<Token>,
     labels_defined_in_macro: Vec<String>
@@ -36,6 +38,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut macro_name: String = String::new();
     let mut macro_body: Vec<Token> = Vec::new();
     let mut macro_args: Vec<String> = Vec::new();
+    let mut macro_info: Option<Info> = None;
     let mut in_macro_label_definitions: Vec<String> = Vec::new();
 
     for i in 0..(&tokens).len() {
@@ -44,9 +47,11 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::NORMAL => match &token.variant {
                 TokenVariant::MacroDeclaration {  name } => {
                     macro_name = name.clone();
-                    if macros.contains_key(&macro_name) {
+                    if let Some(x) = macros.get(&macro_name) {
                         asm_warn!(&token.info, "A macro with this name has already been defined");
+                        asm_details!(&x.info, "Here");
                     }
+                    macro_info = Some(token.info.clone());
                     mode = Mode::ARGS;
                     continue;
                 }
@@ -101,6 +106,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
                     let new_macro = Macro {
                         name: macro_name.clone(),
+                        info: macro_info.unwrap(),
                         args: macro_args,
                         body: macro_body,
                         labels_defined_in_macro: in_macro_label_definitions,
@@ -108,6 +114,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     macros.insert(macro_name, new_macro);
                     macro_body = Vec::new();
                     macro_args = Vec::new();
+                    macro_info = None;
                     macro_name = String::new();
                     in_macro_label_definitions = Vec::new();
                     mode = Mode::NORMAL;
@@ -157,6 +164,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
                     let new_macro = Macro {
                         name: macro_name.clone(),
+                        info: macro_info.unwrap(),
                         args: macro_args,
                         body: macro_body,
                         labels_defined_in_macro: in_macro_label_definitions,
@@ -165,6 +173,8 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     macro_body = Vec::new();
                     macro_args = Vec::new();
                     macro_name = String::new();
+                    macro_info = None;
+
                     in_macro_label_definitions = Vec::new();
                     mode = Mode::NORMAL;
                     continue;
@@ -253,6 +263,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
     let mut current_macro: Option<&Macro> = None;
     let mut label_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
 
+    let mut suffix: Vec<Token> = Vec::new();
     let mut cur_arg_name: String = String::new();
     for token in tokens {
         match mode {
@@ -284,6 +295,8 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                 if label_map.len() >= current_macro_safe.args.len() {
                     let mut body = generate_macro_body(current_macro_safe, &label_map);
                     new_tokens.append(&mut body);
+                    new_tokens.append(&mut suffix);
+                    suffix = Vec::new();
                     has_inserted_macro = true;
                     mode = Mode::NORMAL;
                     current_macro = None;
@@ -293,12 +306,29 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
 
                     continue;
                 }
+                let name_to_replace = &current_macro_safe.args[label_map.len()];
+
 
                 if let TokenVariant::Linebreak = token.variant {
                     continue;
                 }
 
-                let name_to_replace = &current_macro_safe.args[label_map.len()];
+                if let TokenVariant::Unscope = token.variant {
+                    suffix.push(token.clone());
+                    continue;
+                }
+                match &name_to_replace[..2] {
+                    x if x == "s_" || x == "m_" => if let TokenVariant::Scope = token.variant {} else { // Change the m_
+                        asm_info!(&token.info, "Expected a SCOPE as argument {}", hint!("See the documentation for information on the typing system"));
+                    }
+                    "l_" => match token.variant {
+                        TokenVariant::DecLiteral {..} | TokenVariant::StrLiteral {..} => {}
+                        _ => asm_info!(&token.info, "Expected a LITERAL as argument {}", hint!("See the documentation for information on the typing system"))
+                    } 
+                    _ => if let TokenVariant::Label {..} = token.variant {} else {
+                        asm_info!(&token.info, "Expected a LABEL as argument {}", hint!("See the documentation for information on the typing system"));
+                    }
+                }
 
                 if let TokenVariant::Scope = token.variant {
                     mode = Mode::SCOPED_ARG;

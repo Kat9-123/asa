@@ -1,17 +1,44 @@
-!J .main
+Z Z .main
 #Sublib
 #Sublib/Control
+**
+@If s_conditional? body? {
+    s_conditional? .true
+    W W .false
+    .true ->
+    body?
+    .false ->
+}
+
+@If::Leq a? b? body? {
+    !If {!Leq a? b?} body?
+}
+
+@Leq a? b? .jp {
+    a? -= b? .jp
+}
+**
 
 
-.main -> {
+
+x -> 0x8000
+y -> 0x8000
+W -> 0
+Z -> 0
+
+A -> 'A'
+B -> 'B'
+
+
+.main->{
+
     !IfElse::Eq x y {
-        !IO::PrintLnLit "Failed"
+        !IO::PrintLnLit "EQ"
     } {
-        !IO::PrintLnLit "Success"
-
+        !IO::PrintLnLit "NEQ"
     }
-
     !Halt
-    x -> 5
-    y -> 5
+
+
+
 }
