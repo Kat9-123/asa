@@ -21,12 +21,39 @@ mod preprocessor;
 mod feedback;
 mod new_lexer;
 use std::time::Instant;
+use clap::Parser;
 
+
+/// Advanced Subleq Assembler
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Name of the person to greet
+    target: String,
+
+    /// Number of times to greet
+    #[arg(short, long, default_value_t = 1)]
+    count: u8,
+    
+
+    // Debug mode
+    // Hide info
+    // Hide warnings
+    // Run with debugger
+}
 
 fn main() {
 
     SimpleLogger::new().init().unwrap();
     log::set_max_level(LevelFilter::Info);
+
+    //mem_view::draw_mem(&vec![8, 10, 12, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39], 0);
+    /*
+    let args = Args::parse();
+    for _ in 0..args.count {
+        println!("Hello {}!", args.target);
+    }
+ */
     let args: Vec<String> = env::args().collect();
 
     let file_path = format!("./subleq/{}", args[1]);
@@ -35,6 +62,7 @@ fn main() {
     let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
     let (mut mem, tokens) = assemble(contents, file_path);
+    mem_view::draw_mem(&mem, 0);
     interpreter::interpret(&mut mem, &tokens, false);
 
 }

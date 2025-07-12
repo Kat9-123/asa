@@ -1,0 +1,13 @@
+
+
+p_value ; pointer
+p_p_value ; pointer to pointer
+n_value ; negated value
+l_value ; literal value
+s_value ; scoped value
+
+
+value? ; macro argument in definition
+.value ; label to jump to
+
+VALUE ; const, should be applied to all of the above

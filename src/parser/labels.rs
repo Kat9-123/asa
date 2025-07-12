@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::asm_details;
 use crate::feedback::*;
 use crate::println_debug;
 use crate::tokens::*;
@@ -44,7 +45,6 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
     let mut address: i32 = 0;
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
-   // let mut namespace: String = String::from("");
 
     for token in tokens {
 
@@ -58,26 +58,29 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
             }
             TokenVariant::Unscope => {
                 current_scope_indexes.pop();
-                println_debug!("UNSCOPE {:?}", current_scope_indexes);
             }
-            TokenVariant::Namespace {name } => {
-                println_debug!("set namespace to {name}");
 
-                // namespace = name.clone();
-            }
             TokenVariant::BracedLabelDefinition { name, data } => {
-                if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
-                    asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
+                match scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name) {
+                    Some(x) => {
+                        asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
+                        asm_details!(&x.1, "Here");
+                    }
+                    None => {}
                 }
+
                 scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
                         .insert(name.clone(), (address, token.info.clone()));
             }
 
 
             TokenVariant::LabelDefinition { name, offset} => {
-
-                    if scopes[current_scope_indexes[current_scope_indexes.len() - 1]].contains_key(name) {
-                        asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
+                    match scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name) {
+                        Some(x) => {
+                            asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
+                            asm_details!(&x.1, "Here");
+                        }
+                        None => {}
                     }
 
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]]

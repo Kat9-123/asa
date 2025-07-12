@@ -56,7 +56,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
     let mut performance_counter: Option<usize> = None;
     loop {
-        //mem_view::draw_mem(&mem);
+        //mem_view::draw_mem(&mem, programme_counter);
 
         let a=
         if programme_counter < mem.len() {

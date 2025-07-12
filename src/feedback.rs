@@ -81,10 +81,6 @@ use crate::tokens::Info;
 
 
 fn get_file_contents(path: &String) -> String {
-
-
-
-   // info!("{path}");
     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
     return contents;
 }
@@ -92,31 +88,29 @@ fn get_file_contents(path: &String) -> String {
 pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
     log::error!("({file_name}:{line}) {}:{}", info.file, info.line_number);
 
-    asm_msg(msg, info, Type::ERROR);
+    asm_msg(msg, info, Type::ERROR, "");
 }
 
 
-fn asm_msg(msg: String, info: &Info, t: Type) {
+fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
     let contents =  get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
     if info.line_number - 3 >= 0 {
-        println!("{: >4} | {}", format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
+        println!("{}{: >4} | {}", prefix, format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
 
     }
     if info.line_number - 2 >= 0 {
-        println!("{: >4} | {}", format!("{}", info.line_number - 1).bright_cyan(),  lines[(info.line_number - 2) as usize]);
+        println!("{}{: >4} | {}", prefix, format!("{}", info.line_number - 1).bright_cyan(),  lines[(info.line_number - 2) as usize]);
     }
 
     match t {
-        Type::ERROR => println!("{: >4} | {}",  format!("{}", info.line_number).red() , lines[(info.line_number - 1) as usize]),
-        Type::WARN =>  println!("{: >4} | {}",  format!("{}", info.line_number).yellow() , lines[(info.line_number - 1) as usize]),
-        Type::INFO =>  println!("{: >4} | {}",  format!("{}", info.line_number).blue() , lines[(info.line_number - 1) as usize]),
+        Type::ERROR => println!("{}{: >4} > {}", prefix, format!("{}", info.line_number).red() , lines[(info.line_number - 1) as usize]),
+        Type::WARN =>  println!("{}{: >4} > {}", prefix, format!("{}", info.line_number).yellow() , lines[(info.line_number - 1) as usize]),
+        Type::INFO =>  println!("{}{: >4} > {}", prefix,  format!("{}", info.line_number).blue() , lines[(info.line_number - 1) as usize]),
     }
-    // Very very messy
     let start = info.start_char;
     let length = info.length;
-    //println!("{}, {}", start, length);
-    
+
     print!("       ");
     for _ in 0..start-1 {
         print!(" ");
@@ -136,18 +130,18 @@ fn asm_msg(msg: String, info: &Info, t: Type) {
 
 pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
     log::warn!("({file_name}:{line}) {}:{}", info.file, info.line_number);
-    asm_msg(msg, info, Type::WARN);
+    asm_msg(msg, info, Type::WARN, "");
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
     log::info!("({file_name}:{line}) {}:{}", info.file, info.line_number);
-    asm_msg(msg, info, Type::INFO);
+    asm_msg(msg, info, Type::INFO, "");
 }
 
 
 pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
-    println!("{} ({file_name}:{line}) {}:{}", "DETAILS".blue(), info.file, info.line_number);
-    asm_msg(msg, info, Type::INFO);
+    println!("    {} ({file_name}:{line}) {}:{}", "DETAILS".blue(), info.file, info.line_number);
+    asm_msg(msg, info, Type::INFO, "    ");
 }
 
 

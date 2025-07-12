@@ -1,4 +1,4 @@
-
+#Sublib
 
 **
 LOW
@@ -15,6 +15,9 @@ arg1
 HIGH
 **
 
+function_stack -> !Stack::Create 128
+
+
 @Func name? args? body? {
     
     .args ->
@@ -28,7 +31,27 @@ HIGH
     !Return
 }
 
-!Routine test {a? b? c?} {
+
+
+@Func::Call name? {
+
+
+    !Stack::Push return_stack _return_address
+
+    !J name?
+
+    _return_address -> &1
+}
+
+
+@Routine::Return {
+    !Stack::Pop return_stack return_addr
+
+    W -= W (return_addr -> 0x0000)
+}
+
+
+!Func test {a?} {
 
     
 }

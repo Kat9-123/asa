@@ -1,0 +1,17 @@
+!J .main
+#Sublib
+#Sublib/Control
+
+
+.main -> {
+    !IfElse::Eq x y {
+        !IO::PrintLnLit "Failed"
+    } {
+        !IO::PrintLnLit "Success"
+
+    }
+
+    !Halt
+    x -> 5
+    y -> 5
+}

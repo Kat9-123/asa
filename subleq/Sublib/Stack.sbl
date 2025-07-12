@@ -2,7 +2,7 @@
 #Sublib/Base.sbl
 
 @Stack::Create l_size? [
-    &1 0xDEAD l_size? * 0x0000
+    & 0xDEAD l_size? * 0x0000
 ]
 
 @Stack::Push p_stack? val? {

@@ -1,6 +1,6 @@
 
 
-use std::{env, process::id, result};
+use std::{env, hint, process::id, result};
 
 use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token, TokenVariant}};
 
@@ -160,13 +160,18 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             '"' => (Context::None, None, Some(TokenVariant::StrLiteral {value: buffer.clone() })),
             _ => (Context::String, Some(cur_char), None),
         }
+
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
-            _ => {
+            c => {
                 let mut offset= 1;
                 if buffer != "" {
                     offset =  buffer.parse::<i32>().unwrap();
+                    if c == 'x' && buffer.chars().nth(0).unwrap() == '0' {
+                        asm_error!(info, "& may not directly precede a hex number {}", hint!("Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"));
+                    }
                 }
+
                 (Context::DontMoveToNextChar, None, Some(TokenVariant::Relative { offset  }))
             }
 

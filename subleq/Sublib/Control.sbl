@@ -1,0 +1,34 @@
+#Sublib
+
+
+@If s_conditional_jump? body? {
+    s_conditional_jump? .false?
+    body?
+}
+
+@If::Eq a? b? body? {
+    (!JumpIf::Neq a? b?) .false
+    body?
+    .false ->
+}
+
+@If::Neq a? b? body? {
+    !JumpIf::Eq a? b? .false
+    body?
+    .false ->
+}
+
+
+@IfElse::Eq a? b? true? false? {
+    !JumpIf::Neq a? b? .else
+
+    true?
+
+    !J .fin
+
+    .else ->
+
+    false?
+
+    .fin ->
+}

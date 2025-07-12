@@ -58,6 +58,8 @@ pub enum TokenVariant {
 
     Mult,
     NamespaceEnd,
+
+    Grouped {tokens: Vec<Token>},
 }
 
 
