@@ -1,10 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::{print_debug, println_debug};
 
 
 pub fn generic_sanitisation(text: &String) -> String {
-    return text.replace("\r\n", "\n").replace("\t", "    ");
+    text.replace("\r\n", "\n").replace("\t", "    ")
 }
 
 pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{
@@ -16,12 +15,12 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
 
     let mut i = 0;
     while i < split.len() {
-        if split[i].len() < 1 {
+        if split[i].is_empty() {
             i += 1;
             continue;
         }
 
-        if split[i].chars().nth(0).unwrap() != '#' {
+        if !split[i].starts_with('#') {
             i += 1;
             continue;
         }
@@ -34,7 +33,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
             path.push(path.clone().file_stem().unwrap());
         }
 
-        if path.extension() == None {
+        if path.extension().is_none() {
             path.set_extension("sbl");
         }
         // Write out the full path into the import character
@@ -66,6 +65,6 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         result.push('\n');
     }
 
-    return result;
+    result
 
 }

@@ -4,8 +4,8 @@ mod literals;
 mod macros;
 pub mod statements;
 
-use crate::{asm_error, print_debug, println_debug};
-use crate::tokens::{self, Token, TokenVariant};
+use crate::{print_debug, println_debug};
+use crate::tokens::{Token, TokenVariant};
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
@@ -45,7 +45,7 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
         }
         address += token.size();
     }
-    return new_tokens;
+    new_tokens
 }
 
 
@@ -69,7 +69,7 @@ fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
         new_tokens.push(tokens[i].clone());
         i += 1;
     }
-    return new_tokens;
+    new_tokens
 }
 
 
@@ -153,5 +153,5 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }
-    return tokens;
+    tokens
 }

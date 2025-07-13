@@ -1,11 +1,10 @@
-use std::num::Wrapping;
 use std::path::Path;
-use std::{fs, path::PathBuf, process::exit};
+use std::{fs, path::PathBuf};
 
 
 use crate::tokens::TokenVariant;
-use crate::{codegen::generate, tokens::Token};
-use log::{debug, info, trace, LevelFilter};
+use crate::tokens::Token;
+use log::{debug, info, LevelFilter};
 use simple_logger::SimpleLogger;
 use std::env;
 mod parser;
@@ -94,6 +93,6 @@ fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
     let tokens = parser::parse(tokens);
     let result = codegen::generate(tokens);
     info!("Assembled in: {:.3?}", timer.elapsed());
-    return result;
+    result
 
 }

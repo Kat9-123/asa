@@ -40,5 +40,5 @@ pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
     }
 
 
-    return new_tokens;
+    new_tokens
 }

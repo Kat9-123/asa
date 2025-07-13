@@ -12,7 +12,7 @@ enum Type {
 macro_rules! asm_sub_instruction {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_sub_instruction(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_sub_instruction(format!($($arg)*), $info, file!(), line!());
         }
     }
 }
@@ -22,7 +22,7 @@ macro_rules! asm_sub_instruction {
 macro_rules! asm_error {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
             std::process::exit(1);
 
         }
@@ -33,7 +33,7 @@ macro_rules! asm_error {
 macro_rules! asm_info {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_info(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_info(format!($($arg)*), $info, file!(), line!());
         }
     };
 }
@@ -41,7 +41,7 @@ macro_rules! asm_info {
 macro_rules! asm_details {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_details(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_details(format!($($arg)*), $info, file!(), line!());
         }
     };
 }
@@ -50,7 +50,7 @@ macro_rules! asm_details {
 macro_rules! asm_instruction {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_instruction(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_instruction(format!($($arg)*), $info, file!(), line!());
         }
     };
 }
@@ -65,7 +65,7 @@ pub fn terminate() {
 macro_rules! asm_error_no_terminate {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
 
         }
     };
@@ -78,7 +78,7 @@ macro_rules! asm_error_no_terminate {
 macro_rules! asm_warn {
     ($info:expr, $($arg:tt)*) => {
         {
-            crate::feedback::_asm_warning(format!($($arg)*), $info, file!(), line!());
+            $crate::feedback::_asm_warning(format!($($arg)*), $info, file!(), line!());
         }
     };
 }
@@ -94,7 +94,7 @@ macro_rules! hint {
 
 
 
-use std::{collections::btree_map::Range, env, fs, path::Path, process::exit};
+use std::{fs, process::exit};
 
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
@@ -103,8 +103,8 @@ use crate::tokens::Info;
 
 
 fn get_file_contents(path: &String) -> String {
-    let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-    return contents;
+    
+    fs::read_to_string(path).expect("Should have been able to read the file")
 }
 
 pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
@@ -153,7 +153,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     let prefix = if !sub_msg {"     | "} else {"     |     | "};
 
     if msg_type != Type::INSTRUCTION {
-        print!("{}", prefix);
+        print!("{prefix}");
 
 
         for _ in 0..start-1 {
@@ -196,7 +196,7 @@ pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
 
 pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
     println!("     |");
-    println!("     + {} ({file_name}:{line}) {}:{}:{}", format!("{}", msg).bright_cyan(), info.file, info.line_number, info.start_char);
+    println!("     + {} ({file_name}:{line}) {}:{}:{}", msg.to_string().bright_cyan(), info.file, info.line_number, info.start_char);
     asm_msg(msg, info, Type::SUB_INSTRUCTION, true);
 }
 

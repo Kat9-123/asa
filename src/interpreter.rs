@@ -2,10 +2,10 @@ use std::{io::{self, Write}, num::Wrapping};
 
 use log::info;
 
-use crate::{asm_details, asm_error, asm_sub_instruction, asm_instruction, asm_error_no_terminate, asm_info, asm_warn, feedback::terminate, mem_view, tokens::Token};
+use crate::{asm_details, asm_sub_instruction, asm_instruction, asm_error_no_terminate, feedback::terminate, tokens::Token};
 
 use crossterm::{
-    ExecutableCommand, QueueableCommand,
+    ExecutableCommand,
     terminal, cursor
 };
 
@@ -130,14 +130,14 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool, d
             result = mem[a];
             let ch = result as u8 as char;
             buf.push(ch);
-            print!("{}", ch );
+            print!("{ch}" );
             io::stdout().flush();
 
         } else if b == 0xFFFE {
             result = mem[a];
             let ch = (result as i16).to_string();
             buf.push_str(&ch);
-            println!("{}", ch );
+            println!("{ch}" );
             io::stdout().flush();
         }else if a == 0xFFFF {
 
@@ -225,6 +225,6 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool, d
     if return_output {
         return Some(buf);
     }
-    return None;
+    None
 
 }

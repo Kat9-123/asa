@@ -1,10 +1,8 @@
 use std::collections::HashMap;
-use std::thread::scope;
 use crate::asm_details;
 use crate::asm_info;
 use crate::feedback::*;
 use crate::hint;
-use crate::print_debug;
 use crate::println_debug;
 use crate::tokens::*;
 use colored::Colorize;
@@ -42,7 +40,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut macro_info: Option<Info> = None;
     let mut in_macro_label_definitions: Vec<String> = Vec::new();
 
-    for i in 0..(&tokens).len() {
+    for i in 0..tokens.len() {
         let token: &Token = &tokens[i];
         match mode {
             Mode::NORMAL => match &token.variant {
@@ -68,7 +66,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 TokenVariant::Linebreak => {
                     continue;
                 }
-                TokenVariant::Label { name: name } => {
+                TokenVariant::Label { name } => {
                     macro_args.push(name.clone());
                     if !name.ends_with('?') {
                         asm_info!(&token.info, "Notate macro arguments with a trailing question mark {}", hint!("'{name}' -> '{name}?'"));
@@ -187,7 +185,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             }
         }
     }
-    return (new_tokens, macros);
+    (new_tokens, macros)
 }
 
 
@@ -201,7 +199,7 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, TokenO
         match  &base_body_token.variant {
                 TokenVariant::Label {name} => {
                 let mut n = name.clone();
-                if current_macro.labels_defined_in_macro.contains(&name) {
+                if current_macro.labels_defined_in_macro.contains(name) {
                     n = format!("?{}?{}", current_macro.name, name);    // MACRO HYGIENE HACK
                     // Try to just set name maybe?
                 }
@@ -246,7 +244,7 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, TokenO
     }
 
 
-    return body;
+    body
 }
 
 #[derive(Debug)]
@@ -363,7 +361,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
 
                 TokenVariant::Scope => {
                     scope_tracker += 1;
-                    let mut tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -403,7 +401,7 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
         }
     }
 
-    return (has_inserted_macro, new_tokens);
+    (has_inserted_macro, new_tokens)
 }
 
 pub fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> Vec<Token> {
@@ -411,7 +409,7 @@ pub fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -
     let mut t = tokens;
     let mut i = 0;
     loop {
-        (has_inserted, t) = insert_macros(t, &macros);
+        (has_inserted, t) = insert_macros(t, macros);
 
         if !has_inserted {
             return t;

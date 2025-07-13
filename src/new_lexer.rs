@@ -1,9 +1,8 @@
 
 
-use std::{env, hint, process::id, result};
     use colored::Colorize;
 
-use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token, TokenVariant}};
+use crate::{asm_error,  hint, tokens::{Info, LabelOffset, Token, TokenVariant}};
 
 #[derive(Debug, PartialEq, Eq)]
 enum Context {
@@ -154,7 +153,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             _ => (Context::MacroCall, Some(cur_char), None),
         }
         Context::Char => match cur_char {   // Not great
-            '\'' => (Context::None, None, Some(TokenVariant::CharLiteral { value: buffer.chars().nth(0).unwrap() })),
+            '\'' => (Context::None, None, Some(TokenVariant::CharLiteral { value: buffer.chars().next().unwrap() })),
             _ => (Context::Char, Some(cur_char), None),
         }
         Context::String => match cur_char {
@@ -166,9 +165,9 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
             c => {
                 let mut offset= 1;
-                if buffer != "" {
+                if !buffer.is_empty() {
                     offset =  buffer.parse::<i32>().unwrap();
-                    if c == 'x' && buffer.chars().nth(0).unwrap() == '0' {
+                    if c == 'x' && buffer.starts_with('0') {
                         asm_error!(info, "& may not directly precede a hex number {}", hint!("Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"));
                     }
                 }
@@ -184,7 +183,7 @@ fn updated_context(context: &Context, buffer: &String, cur_char: char, info: &In
 
 pub fn clean(text: String) -> String {
     let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
-    return cleaned_string;
+    cleaned_string
 }
 
 pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
@@ -212,10 +211,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
             //println_debug!("{idx_in_line} '{c}' {:?}, {:?}, {:?}, {:?}", context, add_to_buffer, variant_to_add, info);
 
 
-            match add_to_buffer {
-                Some(ch) => buffer.push(ch),
-                None => {}
-            }
+            if let Some(ch) = add_to_buffer { buffer.push(ch) }
 
             if let Some(var) =  &variant_to_add {
 
@@ -277,6 +273,6 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
     }
 
 
-    return result_tokens;
+    result_tokens
 }
 

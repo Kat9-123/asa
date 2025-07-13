@@ -39,7 +39,7 @@ pub fn to_text(data: &Vec<u16>) -> String {
     }
     text.pop();
 
-    return text;
+    text
 }
 pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::new();
@@ -57,6 +57,6 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
         }
     }
     println!("{mem:?}");
-    return (mem, final_tokens);
+    (mem, final_tokens)
 
 }

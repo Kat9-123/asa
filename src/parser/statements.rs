@@ -1,4 +1,4 @@
-use crate::{asm_error, asm_info, tokens::{LabelOffset, Token, TokenVariant}};
+use crate::{asm_error, tokens::{LabelOffset, Token, TokenVariant}};
 
 
 
@@ -97,5 +97,5 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
 
         idx += 1;
     }
-    return new_tokens;
+    new_tokens
 }
