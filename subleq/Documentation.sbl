@@ -11,3 +11,7 @@ value? ; macro argument in definition
 .value ; label to jump to
 
 VALUE ; const, should be applied to all of the above
+
+
+
+*ptr -= x ; Is syntax sugar for:

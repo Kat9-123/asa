@@ -48,20 +48,21 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
 }
 
 
+
 fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
     let mut i = 0;
     while i < tokens.len() {
         if i + 1 < tokens.len() && let TokenVariant::Mult = tokens[i + 1].variant {
-            match &tokens[i].variant {
+            match &tokens[i + 2].variant {
                 TokenVariant::DecLiteral {  value: count } => {
                     for mult_i in 0..*count {
-                        new_tokens.push(tokens[i + 2].clone());
+                        new_tokens.push(tokens[i].clone());
                     }
                     i += 3;
                     continue;
                 }
-                _ => todo!(),
+                _ => {} // its the deref operator
             }
         }
         new_tokens.push(tokens[i].clone());
@@ -111,7 +112,16 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let tokens = convert_strings(tokens);
 
     let tokens = expand_mults(&tokens);
-
+    let tokens = expand_derefs(&tokens);
+    log::debug!("Derefs:");
+    for token in &tokens {
+        if let TokenVariant::Linebreak = token.variant {
+            println_debug!("");
+            continue;
+        }
+        print_debug!("{:?} ", token);
+    }
+    println_debug!();
 
     let tokens = separate_statements(&tokens);
 

@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["controlflow.sbl"],
+            "args": ["Derefs.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {

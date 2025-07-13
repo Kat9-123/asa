@@ -65,7 +65,8 @@ macro_rules! asm_warn {
 #[macro_export]
 macro_rules! hint {
     ($($arg:tt)*) => {
-        format!("\n     : {} {}", colored::Colorize::blue("Hint:"), format!($($arg)*))
+
+        format!("\n     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white())
     };
 }
 

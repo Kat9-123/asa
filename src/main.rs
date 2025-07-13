@@ -40,12 +40,13 @@ struct Args {
     // Hide info
     // Hide warnings
     // Run with debugger
+    // Trace len
 }
 
 fn main() {
 
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
 
     //mem_view::draw_mem(&vec![8, 10, 12, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39,0x888, 3, 84, 39], 0);
     /*

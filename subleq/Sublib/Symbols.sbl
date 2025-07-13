@@ -1,6 +1,7 @@
 Z -> 0 ; Temp register, use discouraged
 W -> 0 ; Always empty register
-
+_ASM -> 0 ; assembler reserved
+_ -> 0
 
 N_ONE -> -1
 ONE -> 1

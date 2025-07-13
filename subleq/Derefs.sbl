@@ -1,0 +1,29 @@
+**
+_ASM _ASM &1
+*0*ptr *0*ptr &1
+ptr _ASM &1
+_ASM *0*ptr &1
+**
+-1 -= *ptr
+-1 -= *ptr
+*ptr -= N_ONE
+-1 -= *ptr
+*ptr -= *ptr
+Z -= C
+*ptr -= Z
+-1 -= *ptr
+
+
+
+;*ptr -= N_ONE
+
+;-1 -= *ptr
+
+Z Z -1
+
+
+ptr -> &'A'
+C -> 'C'
+N_ONE -> -1
+_ASM -> 0
+Z -> 0

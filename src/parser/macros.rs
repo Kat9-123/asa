@@ -7,6 +7,7 @@ use crate::hint;
 use crate::print_debug;
 use crate::println_debug;
 use crate::tokens::*;
+use colored::Colorize;
 
 #[derive(Debug)]
 pub struct Macro {

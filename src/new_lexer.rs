@@ -1,6 +1,7 @@
 
 
 use std::{env, hint, process::id, result};
+    use colored::Colorize;
 
 use crate::{asm_error,  hint, println_debug, tokens::{Info, LabelOffset, Token, TokenVariant}};
 
