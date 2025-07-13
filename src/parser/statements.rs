@@ -1,4 +1,4 @@
-use crate::{asm_error, tokens::{LabelOffset, Token, TokenVariant}};
+use crate::{asm_error, asm_info, tokens::{LabelOffset, Token, TokenVariant}};
 
 
 
@@ -50,6 +50,15 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
 
 
         if idx + 1 < tokens.len() && let TokenVariant::Subleq  = &tokens[idx + 1].variant   {
+            /*  doesnt work, shouldnt trigger for b -= ZERO...
+            if let TokenVariant::Label {name} = &tokens[idx].variant {
+                if name.len() > 1 {
+                    if name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
+                        asm_info!(&tokens[idx].info, "Attempting to write to a label notated as being constant");
+                    }
+                }
+            }
+             */
             if idx + 3 < tokens.len() && let TokenVariant::Linebreak = &tokens[idx + 3].variant  { // Maybe something else as tokens[idx + 3]
                     // Subleq has a and b flipped
 

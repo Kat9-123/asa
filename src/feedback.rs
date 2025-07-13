@@ -65,7 +65,7 @@ macro_rules! asm_warn {
 #[macro_export]
 macro_rules! hint {
     ($($arg:tt)*) => {
-        format!("\n{} {}", colored::Colorize::blue("Hint:"), format!($($arg)*))
+        format!("\n     : {} {}", colored::Colorize::blue("Hint:"), format!($($arg)*))
     };
 }
 
@@ -86,16 +86,20 @@ fn get_file_contents(path: &String) -> String {
 }
 
 pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
-    log::error!("({file_name}:{line}) {}:{}", info.file, info.line_number);
+    println!();
+    log::error!("({file_name}:{line}) {}:{}:{}", info.file, info.line_number, info.start_char);
 
-    asm_msg(msg, info, Type::ERROR, "");
+    asm_msg(msg, info, Type::ERROR, false);
 }
 
 
-fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
+fn asm_msg(msg: String, info: &Info, t: Type, sub_msg: bool) {
     let contents =  get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
-    println!("{:?}",info);
+    let prefix = if !sub_msg {""} else {"     |"};
+
+
+  //  println!("{:?}",info);
     if info.line_number - 3 >= 0 {
         println!("{}{: >4} | {}", prefix, format!("{}", info.line_number - 2).bright_cyan(), lines[(info.line_number - 3) as usize]);
 
@@ -105,17 +109,18 @@ fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
     }
 
     match t {
-        Type::ERROR => println!("{}{: >4} > {}", prefix, format!("{}", info.line_number).red() , lines[(info.line_number - 1) as usize]),
-        Type::WARN =>  println!("{}{: >4} > {}", prefix, format!("{}", info.line_number).yellow() , lines[(info.line_number - 1) as usize]),
-        Type::INFO =>  println!("{}{: >4} > {}", prefix,  format!("{}", info.line_number).blue() , lines[(info.line_number - 1) as usize]),
+        Type::ERROR => println!("{}{: >4}{}{}", prefix, format!("{}", info.line_number).red() , " > ".red(), lines[(info.line_number - 1) as usize]),
+        Type::WARN =>  println!("{}{: >4}{}{}", prefix, format!("{}", info.line_number).yellow(),  " > ".yellow(), lines[(info.line_number - 1) as usize]),
+        Type::INFO =>  println!("{}{: >4}{}{}", prefix,  format!("{}", info.line_number).blue(),  " > ".blue(), lines[(info.line_number - 1) as usize]),
     }
     let start = info.start_char;
     let mut length = info.length;
     if length == 0 {
         length = 1;
     }
+    let prefix = if !sub_msg {"     | "} else {"     |     | "};
 
-    print!("{}       ", prefix);
+    print!("{}", prefix);
     for _ in 0..start-1 {
         print!(" ");
     }
@@ -127,25 +132,36 @@ fn asm_msg(msg: String, info: &Info, t: Type, prefix: &str) {
         }
     }
     println!();
+    let prefix = if !sub_msg {"     - "} else {"     |     - "};
 
-    println!("{}", msg.bold());
-    println!();
+
+    match t {
+        Type::ERROR => println!("{}{}", prefix, msg.red()),
+        Type::WARN =>println!("{}{}", prefix, msg.bold().yellow()),
+        Type::INFO => println!("{}{}", prefix, msg.bold()),
+    }
+    
 }
 
 pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
-    log::warn!("({file_name}:{line}) {}:{}", info.file, info.line_number);
-    asm_msg(msg, info, Type::WARN, "");
+    println!();
+
+    log::warn!("({file_name}:{line}) {}:{}:{}", info.file, info.line_number, info.start_char);
+    asm_msg(msg, info, Type::WARN, false);
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
-    log::info!("({file_name}:{line}) {}:{}", info.file, info.line_number);
-    asm_msg(msg, info, Type::INFO, "");
+    println!();
+
+    log::info!("({file_name}:{line}) {}:{}:{}", info.file, info.line_number, info.start_char);
+    asm_msg(msg, info, Type::INFO, false);
 }
 
 
 pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
-    println!("    {} ({file_name}:{line}) {}:{}", "DETAILS".blue(), info.file, info.line_number);
-    asm_msg(msg, info, Type::INFO, "    ");
+    println!("     |");
+    println!("     + {} ({file_name}:{line}) {}:{}:{}", "DETAILS".blue(), info.file, info.line_number, info.start_char);
+    asm_msg(msg, info, Type::INFO, true);
 }
 
 

@@ -5,7 +5,7 @@ p_p_value ; pointer to pointer
 n_value ; negated value
 l_value ; literal value
 s_value ; scoped value
-
+a_value ; anything, no type checking
 
 value? ; macro argument in definition
 .value ; label to jump to

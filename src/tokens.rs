@@ -59,7 +59,6 @@ pub enum TokenVariant {
     Mult,
     NamespaceEnd,
 
-    Grouped { tokens: Vec<Token> },
 }
 
 
@@ -79,3 +78,4 @@ impl fmt::Debug for Token {
         write!(fmt, "{:?}", self.variant)
     }
 }
+

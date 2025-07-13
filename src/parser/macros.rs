@@ -317,16 +317,23 @@ fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> (bool, 
                     suffix.push(token.clone());
                     continue;
                 }
-                match &name_to_replace[..2] {
+                let lower = name_to_replace.to_ascii_lowercase();
+                match &lower[..2] {
                     x if x == "s_" || x == "m_" => if let TokenVariant::Scope = token.variant {} else { // Change the m_
                         asm_info!(&token.info, "Expected a SCOPE as argument {}", hint!("See the documentation for information on the typing system"));
+                        asm_details!(&current_macro_safe.info, "Macro definition");
                     }
                     "l_" => match token.variant {
                         TokenVariant::DecLiteral {..} | TokenVariant::StrLiteral {..} => {}
-                        _ => asm_info!(&token.info, "Expected a LITERAL as argument {}", hint!("See the documentation for information on the typing system"))
-                    } 
+                        _ => { asm_info!(&token.info, "Expected a LITERAL as argument {}", hint!("See the documentation for information on the typing system"));
+                            asm_details!(&current_macro_safe.info, "Macro definition");
+                    }
+                    }
+                    "a_" => {}
                     _ => if let TokenVariant::Label {..} = token.variant {} else {
-                        asm_info!(&token.info, "Expected a LABEL as argument {}", hint!("See the documentation for information on the typing system"));
+                        asm_info!(&token.info, "Expected a LABEL as argument, found {:?} {}", &token.variant, hint!("See the documentation for information on the typing system"));
+                        asm_details!(&current_macro_safe.info, "Macro definition");
+
                     }
                 }
 

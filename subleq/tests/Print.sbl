@@ -6,10 +6,10 @@ W -= W _loop
     a?      -= a?
 ]
 
-@SubLit a? b? {
+@SubLit a? l_b? {
     a?      -= literal_pointer
     W       -= W             _fin
-    literal_pointer -> b?
+    literal_pointer -> l_b?
     _fin ->
 }
 

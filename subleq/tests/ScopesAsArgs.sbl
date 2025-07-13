@@ -1,15 +1,15 @@
 
 
 
-W -= W .main
+W W .main
 
-@Repeat l_times? body? {
+@Repeat l_times? s_body? {
     Z -= Z
     Z -= L_TIMES
     i -= Z
 
     .loop ->
-        body?
+        s_body?
 
         i -= ONE .fin
         W -= W .loop
@@ -20,10 +20,10 @@ W -= W .main
 }
 
 
-@Flip body1? body2? {
-    body2?
+@Flip s_body1? s_body2? {
+    s_body2?
 
-    body1?
+    s_body1?
 
 
 }
