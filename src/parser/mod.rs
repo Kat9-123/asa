@@ -37,7 +37,8 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
             TokenVariant::Relative {offset } => {
                 new_tokens.push(Token {
                     info: token.info.clone(),
-                    variant: TokenVariant::DecLiteral { value: address + offset }
+                    variant: TokenVariant::DecLiteral { value: address + offset },
+                    origin_info: token.origin_info.clone()
                 });
             }
             _ => new_tokens.push(token.clone())

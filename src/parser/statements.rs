@@ -41,7 +41,10 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
 
                 name: name.clone(),
                 offset: label_offset,
-            }
+                
+            },
+               origin_info: tokens[idx + 1].origin_info.clone()
+
             });
 
             idx += 2;
@@ -63,12 +66,15 @@ pub fn separate_statements(tokens: &Vec<Token>) -> Vec<Token> {
                     // Subleq has a and b flipped
 
                 let mut updated_info = tokens[idx + 3].info.clone();
-                updated_info.start_char += 4; // Clones linebreak info
+                updated_info.start_char += updated_info.length + 3; // Clones linebreak info
+                updated_info.length = 2;
+
                 new_tokens.push(tokens[idx + 2].clone());
                 new_tokens.push(tokens[idx].clone());
                 new_tokens.push(Token {
                     info: updated_info,
-                    variant: TokenVariant::Relative { offset: 1 }
+                    variant: TokenVariant::Relative { offset: 1 },
+                    origin_info: tokens[idx + 3].origin_info.clone()
                     }
                 );
 

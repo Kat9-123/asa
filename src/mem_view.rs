@@ -1,4 +1,13 @@
 use colored::Colorize;
+use std::io::{self, Write};
+use crossterm::{
+    ExecutableCommand, QueueableCommand,
+    terminal, cursor
+};
+
+pub fn setup() {
+    let mut stdout = io::stdout();
+}
 
 pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
 
@@ -8,7 +17,13 @@ pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
     println!("{}", "a".yellow());
     println!("{}", "b".purple());
     println!("{}", "c".red());
- */
+ */ 
+    let mut stdout = io::stdout();
+  //  stdout.execute(cursor::MoveTo(0,0));
+
+
+
+
     print!("----  ");
     for i in 0..16 {
         print!("{}", format!("{:04X}  ", i ).bright_black())
@@ -32,4 +47,6 @@ pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
     }
     println!();
     println!();
+
+
 }

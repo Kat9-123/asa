@@ -1,5 +1,6 @@
+!J .main
 #Sublib
-
+#Sublib/Stack
 **
 LOW
 ....
@@ -18,41 +19,44 @@ HIGH
 function_stack -> !Stack::Create 128
 
 
-@Func name? args? body? {
-    
-    .args ->
-    args?
-    .END ->
+@Func name? args? body? [
 
 
 
+name? ->
+{
     body?
-
-    !Return
+    !Func::Return
 }
+]
 
 
 
-@Func::Call name? {
+@Func::Call name? arg? {
 
 
-    !Stack::Push return_stack _return_address
+    !Stack::Push function_stack _return_address
 
+    !Stack::Push function_stack arg?
     !J name?
 
     _return_address -> &1
 }
 
 
-@Routine::Return {
-    !Stack::Pop return_stack return_addr
+@Func::Return {
+    !Stack::Pop function_stack return_addr
 
     W -= W (return_addr -> 0x0000)
 }
 
 
-!Func test {a?} {
-
-    
+!Func test a {
+    !IO::PrintLnLit arg?
 }
 
+p -> &"Test"
+.main ->
+!Func::Call test p
+
+!Halt

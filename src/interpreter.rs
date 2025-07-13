@@ -2,8 +2,12 @@ use std::{io::{self, Write}, num::Wrapping};
 
 use log::info;
 
-use crate::{asm_details, asm_error, asm_error_no_terminate, asm_info, asm_warn, feedback::terminate, mem_view, tokens::Token};
+use crate::{asm_details, asm_error, asm_sub_instruction, asm_instruction, asm_error_no_terminate, asm_info, asm_warn, feedback::terminate, mem_view, tokens::Token};
 
+use crossterm::{
+    ExecutableCommand, QueueableCommand,
+    terminal, cursor
+};
 
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
@@ -22,11 +26,44 @@ struct InstructionLog {
     pub jumped: bool
 }
 
+fn instruction_info(tokens: &Vec<Token>, jumped: bool, pc: usize) {
+    let mut stdout = io::stdout();
+    stdout.execute(terminal::Clear(terminal::ClearType::All));
+    stdout.execute(cursor::MoveTo(0,0));
+    if let Some(x) = &tokens[pc].origin_info {
+        asm_instruction!(x, "Instruction");
+    } else {
+        asm_instruction!(&tokens[pc].info, "'Instruction");
+    }
+    
+
+    asm_sub_instruction!(&tokens[pc].info, "'A' part");
+
+    asm_sub_instruction!(&tokens[pc + 1].info, "'B' part");
+    if jumped {
+        asm_sub_instruction!(&tokens[pc + 2].info, "'C' part. JUMPED");
+    } else {
+        asm_sub_instruction!(&tokens[pc + 2].info, "'C' part. DIDN'T JUMP");
+
+    }
+    println!();
+}
+
 fn trace(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>) {
     for i in instruction_logs {
         info!("TRACE");
-        asm_details!(&tokens[i.pc].info, "'A' part");
-        asm_details!(&tokens[i.pc + 1].info, "'B' part");
+
+        
+        if let Some(x) = &tokens[i.pc].origin_info {
+            asm_details!(x, "'A' part");
+        } else {
+            asm_details!(&tokens[i.pc].info, "'A' part");
+        }
+        if let Some(x) = &tokens[i.pc + 1].origin_info {
+            asm_details!(x, "'B' part");
+        } else {
+            asm_details!(&tokens[i.pc].info, "'B' part");
+        }
         if i.jumped {
             asm_details!(&tokens[i.pc + 2].info, "'C' part. JUMPED");
         } else {
@@ -48,7 +85,8 @@ pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usiz
     terminate();
 }
     */
-pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -> Option<String> {
+pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool, debugger: bool) -> Option<String> {
+
     let mut programme_counter = 0;
     let mut prev_programme_counter = 0;
     let mut buf = String::new();
@@ -56,7 +94,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
     let mut performance_counter: Option<usize> = None;
     loop {
-        //mem_view::draw_mem(&mem, programme_counter);
+       // mem_view::draw_mem(&mem, programme_counter);
 
         let a=
         if programme_counter < mem.len() {
@@ -127,16 +165,26 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
 
 
         prev_programme_counter = programme_counter;
-
-
         let mut jumped = false;
+
+        if result as i16 <= 0 {
+            jumped = true;
+        }
+
+        if debugger {
+
+            instruction_info(tokens, jumped, programme_counter);
+            let mut inp: String = String::new();
+            io::stdin().read_line(&mut inp);
+        }
+
         if result as i16 <= 0 {
             jumped = true;
           //  println!("JUMP!");
 
             match c as i16 {
                 IO_ADDR => break,
-                DEBUG_ADDR => {
+                DEBUG_ADDR => { // Breakpoint
                     trace(&instruction_logs, tokens);
 
                     asm_error_no_terminate!(&tokens[programme_counter + 2].info, "Breakpoint");
@@ -172,6 +220,7 @@ pub fn interpret(mem: &mut Vec<u16>, tokens: &Vec<Token>, return_output: bool) -
         if instruction_logs.len() > 5 {
             instruction_logs.remove(0);
         }
+
     }
     if return_output {
         return Some(buf);

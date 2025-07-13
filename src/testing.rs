@@ -50,7 +50,7 @@ mod tests {
             }
             let expected_out= fs::read_to_string(fp).unwrap();
             let expected_out = generic_sanitisation(&expected_out);
-            let out = interpret(&mut mem, &tokens, true).unwrap();
+            let out = interpret(&mut mem, &tokens, true, false).unwrap();
             assert_eq!(out, expected_out);
 
 

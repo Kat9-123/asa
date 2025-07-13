@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["Derefs.sbl"],
+            "args": ["tests/Stacktest.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {

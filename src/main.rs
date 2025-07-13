@@ -63,8 +63,8 @@ fn main() {
     let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
     let (mut mem, tokens) = assemble(contents, file_path);
-    mem_view::draw_mem(&mem, 0);
-    interpreter::interpret(&mut mem, &tokens, false);
+ //   mem_view::draw_mem(&mem, 0);
+    interpreter::interpret(&mut mem, &tokens, false, true);
 
 }
 

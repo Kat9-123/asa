@@ -1,5 +1,6 @@
 use crate::feedback::*;
 use crate::tokens::*;
+use unescape::unescape;
 
 pub fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
     for token in tokens.iter_mut() {
@@ -29,8 +30,9 @@ pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
     for token in tokens {
         match token.variant {
             TokenVariant::StrLiteral {value } => {
-                for c in value.chars() {
-                    new_tokens.push(Token {info: token.info.clone(), variant: TokenVariant::DecLiteral {value: c as i32 }});
+                let string = unescape(&value).unwrap();
+                for c in string.chars() {
+                    new_tokens.push(Token {info: token.info.clone(), origin_info: token.origin_info.clone(), variant: TokenVariant::DecLiteral {value: c as i32 }});
                 }
             }
             _ => new_tokens.push(token)

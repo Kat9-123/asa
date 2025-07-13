@@ -34,7 +34,7 @@ iChar -> 0
 
 W -> 0 \ Z -> 0
 nOne -> 0xFFFF
-string -> "(\'Hello, world!;\')" 0
+string -> "(\\'Hello, world!;\\')" 0
 
 
 

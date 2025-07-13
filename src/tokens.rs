@@ -26,6 +26,7 @@ pub enum IntOrString {
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
+    pub origin_info: Option<Info>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

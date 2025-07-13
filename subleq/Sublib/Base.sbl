@@ -35,7 +35,7 @@
     !Clr Z
     !Clr to?
 
-    Z -= from?
+    Z   -= from?
     to? -= Z
 ]
 
@@ -51,16 +51,16 @@
 ; a += b
 @Add a? b? [
     !Clr Z
-    Z -= b?
-    a? -= Z
+    Z   -= b?
+    a?  -= Z
 ]
 
 @Assign value? target? [
     !Clr Z
 
     target? -= target?
-    Z -= value?
-    target -= Z
+    Z       -= value?
+    target  -= Z
 ]
 
 

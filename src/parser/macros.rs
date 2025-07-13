@@ -212,11 +212,15 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, TokenO
                     Some(t) => {
                         match t {
                             TokenOrTokenVec::Tok(x) => {
-                                body.push(x.clone());
+                                let mut copy = x.clone();
+                                copy.origin_info = Some(base_body_token.info.clone());
+                                body.push(copy);
                             }
                             TokenOrTokenVec::TokVec(v) => {
                                 for i in v {
-                                    body.push(i.clone());
+                                    let mut copy = i.clone();
+                                    copy.origin_info = Some(base_body_token.info.clone());
+                                    body.push(copy);
                                 }
                             }
                         }
@@ -225,7 +229,8 @@ fn generate_macro_body(current_macro: &Macro, label_map: &HashMap<String, TokenO
                     None => {
                         body.push(Token {
                             info: base_body_token.info.clone(),
-                            variant: TokenVariant::Label { name: n }
+                            variant: TokenVariant::Label { name: n },
+                            origin_info: base_body_token.origin_info.clone()
                         });
                         continue;
                     }

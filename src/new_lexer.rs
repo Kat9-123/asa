@@ -237,6 +237,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                 let token = Token {
                     info: info.clone(),
                     variant: var.clone(),
+                    origin_info: None,
                 };
              //   println!("{:?} {:?}", token, token.info);
                 result_tokens.push(token);

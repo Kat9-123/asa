@@ -1,6 +1,9 @@
 Z Z .main
 #Sublib
 #Sublib/Control
+0x0000 * 1024
+
+
 **
 @If s_conditional? body? {
     s_conditional? .true
@@ -37,7 +40,6 @@ TEST -> 0
     } {
         !IO::PrintLnLit "NEQ"
     }
-    !BreakPoint
     !Halt
 
 
