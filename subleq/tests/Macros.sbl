@@ -1,6 +1,7 @@
 
+@T [0xAAA]
 
-@Gamma F?[F?-=0xAAA]
+@Gamma F?[ F?-=!T ]
 
 @Beta E?
     {!Gamma E? \ E? -= E? E?}

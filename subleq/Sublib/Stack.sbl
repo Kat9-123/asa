@@ -18,7 +18,7 @@
     i_val -= val?
 
     *p_stack? -= i_val
-    !IO::PrintLnLit "PUSH"
+;    !IO::PrintLnLit "PUSH"
 
 }
 
@@ -46,7 +46,7 @@
     (p_write -> 0) -= out?
 
     !Dec p_stack?
-    !IO::PrintLnLit "POP"
+   ; !IO::PrintLnLit "POP"
 
 }
 

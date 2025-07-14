@@ -216,7 +216,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         Type::WARN => println!("{}{}", prefix, msg.bold().yellow()),
         Type::INFO => println!("{}{}", prefix, msg.bold()),
         Type::DETAILS => println!("{}{}", prefix, msg.bold()),
-        Type::INSTRUCTION => {}
+        Type::INSTRUCTION => println!("{}{}", prefix, msg.bold()),
         Type::SUB_INSTRUCTION => {}
     }
 }

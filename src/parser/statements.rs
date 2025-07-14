@@ -39,6 +39,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
                     offset: label_offset,
                 },
                 origin_info: tokens[idx + 1].origin_info.clone(),
+               // macro_trace: tokens[idx + 1].macro_trace.clone(),
             });
 
             idx += 2;
@@ -73,6 +74,8 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
                     info: updated_info,
                     variant: TokenVariant::Relative { offset: 1 },
                     origin_info: tokens[idx + 3].origin_info.clone(),
+                 //   macro_trace: tokens[idx + 3].macro_trace.clone(),
+
                 });
 
                 idx += 4;

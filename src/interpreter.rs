@@ -15,6 +15,9 @@ const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
 const PERF_ADDR: i16 = -3;
 
+
+
+
 fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
     asm_error_no_terminate!(&tokens[prev_pc + 2].info, "Jump outside of memory bounds");
     asm_details!(&tokens[prev_pc].info, "'A' part");
@@ -28,14 +31,14 @@ struct InstructionLog {
 }
 
 fn instruction_info(tokens: &Vec<Token>, jumped: bool, pc: usize) {
-    let mut stdout = io::stdout();
+   // let mut stdout = io::stdout();
     //  stdout.execute(terminal::Clear(terminal::ClearType::All));
     //  stdout.execute(cursor::MoveTo(0,0));
-    if let Some(x) = &tokens[pc].origin_info {
-        asm_instruction!(x, "Instruction");
-    } else {
-        asm_instruction!(&tokens[pc].info, "'Instruction");
+    for i in ((tokens[pc + 1].origin_info).iter()).rev() {
+        asm_instruction!(&i.1, "depth Instruction {}", i.0);
+
     }
+
 
     asm_sub_instruction!(&tokens[pc].info, "'A' part");
 
@@ -64,6 +67,101 @@ pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usiz
     terminate();
 }
     */
+
+pub struct InstructionHistoryItem {
+    pub pc: usize,
+    pub original_value_at_b: u16,
+    pub jumped: bool,
+    pub io_operation: IOOperation
+}
+
+pub enum RuntimeError {
+    InstructionOutOfRange,
+    AOutOfRange,
+    BOutOfRange,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum IOOperation {
+    Char(char),
+    Debug(u16),
+    Halt,
+    BreakPoint,
+    Perf,
+    None,
+}
+
+pub fn interpret_single(mem: &mut Vec<u16>, pc: usize) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
+
+    let a = if pc < mem.len() {
+        mem[pc] as usize
+    } else {
+        return Err(RuntimeError::InstructionOutOfRange);
+    };
+    let b = if pc + 1 < mem.len() {
+        mem[pc + 1] as usize
+    } else {
+        return Err(RuntimeError::InstructionOutOfRange);
+    };
+    let c = if pc + 2 < mem.len() {
+        mem[pc + 2] as usize
+    } else {
+        return Err(RuntimeError::InstructionOutOfRange);
+
+    };
+
+    let mut original_value_at_b = 0;
+
+    let mut result: u16 = 0;
+    let mut io: IOOperation = IOOperation::None;
+    if b == 0xFFFF {
+        result = mem[a];
+        io = IOOperation::Char(result as u8 as char);
+
+    } else if b == 0xFFFE {
+        result = mem[a];
+        io = IOOperation::Debug(result);
+
+    } else if a == 0xFFFF {
+    } else {
+
+        if a >= mem.len() {
+            return Err(RuntimeError::AOutOfRange);
+        }
+        if b >= mem.len() {
+            return Err(RuntimeError::BOutOfRange);
+
+        }
+        original_value_at_b = mem[b];
+        result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
+        mem[b] = result;
+    }
+
+
+    if result as i16 <= 0 {
+        //  println!("JUMP!");
+
+        match c as i16 {
+            IO_ADDR => {
+                return Ok((pc, IOOperation::Halt, InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: IOOperation::Halt,}))
+            }
+            DEBUG_ADDR => {
+                // Breakpoint
+
+                return Ok((pc + 3, IOOperation::BreakPoint, InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: IOOperation::BreakPoint}));
+            }
+            PERF_ADDR => {
+                todo!();
+            },
+
+            _ => {
+                return Ok((c, io.clone(), InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: io}));
+            }
+        }
+    }
+    return Ok((pc + 3, io.clone(), InstructionHistoryItem {pc, original_value_at_b, jumped: false, io_operation: io}));
+}
+
 pub fn interpret(
     mem: &mut Vec<u16>,
     tokens: &Vec<Token>,
@@ -74,6 +172,8 @@ pub fn interpret(
     let mut prev_programme_counter = 0;
     let mut buf = String::new();
     let mut instruction_logs: Vec<InstructionLog> = Vec::new();
+
+    let mut instruction_history: Vec<InstructionLog> = Vec::new();
 
     let mut performance_counter: Option<usize> = None;
     loop {

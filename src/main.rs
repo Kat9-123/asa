@@ -1,9 +1,11 @@
+use std::io::Read;
 use std::path::Path;
 use std::{fs, path::PathBuf};
 
 use crate::mem_view::draw_mem;
 use crate::tokens::Token;
 use crate::tokens::TokenVariant;
+use crossterm::terminal::disable_raw_mode;
 use log::{LevelFilter, debug, info};
 use simple_logger::SimpleLogger;
 use std::env;
@@ -18,8 +20,10 @@ mod preprocessor;
 mod symbols;
 mod testing;
 mod tokens;
+mod debugger;
 use clap::Parser;
 use std::time::Instant;
+
 
 /// Advanced Subleq Assembler
 #[derive(Parser, Debug)]
@@ -40,7 +44,8 @@ struct Args {
 
 fn main() {
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
+    disable_raw_mode();
 
     let args: Vec<String> = env::args().collect();
 
@@ -51,7 +56,8 @@ fn main() {
 
     let (mut mem, tokens) = assemble(contents, file_path);
     //   mem_view::draw_mem(&mem, 0);
-    interpreter::interpret(&mut mem, &tokens, false, false);
+    debugger::debug(&mut mem, &tokens, true);
+ //  interpreter::interpret(&mut mem, &tokens, false, true);
 }
 
 fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {

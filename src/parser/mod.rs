@@ -23,6 +23,7 @@ fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
                         value: address + offset,
                     },
                     origin_info: token.origin_info.clone(),
+                    //macro_trace: token.macro_trace.clone()
                 });
             }
             _ => new_tokens.push(token.clone()),
@@ -73,7 +74,8 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
-    tokens = loop_insert_macros(tokens, &macros);
+    let (_, tokens) = insert_macros(tokens, &macros, 0, vec![]);
+    //let  tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");
     for token in &tokens {

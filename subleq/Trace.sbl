@@ -1,0 +1,14 @@
+
+@IO [0]
+!J lbl
+@Jump .address {
+    !IO -= W .address
+}
+
+@J .address [
+    !Jump .address 0
+]
+
+lbl ->
+
+W -> 0

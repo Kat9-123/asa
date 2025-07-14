@@ -211,103 +211,103 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Linebreak,
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: "_ASM".to_string(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: "_ASM".to_string(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Linebreak,
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: in_instruction_label.clone(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: in_instruction_label.clone(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Linebreak,
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: name.to_string(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: "_ASM".to_string(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Linebreak,
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: "_ASM".to_string(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Label {
                                 name: in_instruction_label.clone(),
                             },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                         Token {
                             info: info.clone(),
                             variant: TokenVariant::Linebreak,
-                            origin_info: None,
+                            origin_info: vec![],
                         },
                     ];
                     address += 12;
