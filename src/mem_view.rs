@@ -6,23 +6,19 @@ pub fn setup() {
 }
 
 pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
-
     /*
-    println!("LEGEND");
-    println!("{}", "Instruction".cyan());
-    println!("{}", "a".yellow());
-    println!("{}", "b".purple());
-    println!("{}", "c".red());
- */ 
+       println!("LEGEND");
+       println!("{}", "Instruction".cyan());
+       println!("{}", "a".yellow());
+       println!("{}", "b".purple());
+       println!("{}", "c".red());
+    */
     let stdout = io::stdout();
-  //  stdout.execute(cursor::MoveTo(0,0));
-
-
-
+    //  stdout.execute(cursor::MoveTo(0,0));
 
     print!("----  ");
     for i in 0..16 {
-        print!("{}", format!("{i:04X}  " ).bright_black())
+        print!("{}", format!("{i:04X}  ").bright_black())
     }
 
     for (i, item) in mem.iter().enumerate() {
@@ -35,14 +31,11 @@ pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
         };
         if i % 16 == 0 {
             println!();
-            print!("{}", format!("{i:04X}" ).bright_black())
+            print!("{}", format!("{i:04X}").bright_black())
         }
-
 
         print!("{s}");
     }
     println!();
     println!();
-
-
 }

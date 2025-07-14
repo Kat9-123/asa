@@ -1,12 +1,15 @@
-
 #[cfg(test)]
 mod tests {
     use std::{fs, path::Path};
 
-    use log::{debug, LevelFilter, info};
+    use log::{LevelFilter, debug, info};
     use simple_logger::SimpleLogger;
 
-    use crate::{assemble, codegen, interpreter::{self, interpret}, preprocessor::generic_sanitisation};
+    use crate::{
+        assemble, codegen,
+        interpreter::{self, interpret},
+        preprocessor::generic_sanitisation,
+    };
 
     use super::*;
 
@@ -27,7 +30,7 @@ mod tests {
             info!("Name: {}", p);
 
             let contents = fs::read_to_string(&p).unwrap();
-            let (mut mem, tokens) = assemble(contents,p.to_string());
+            let (mut mem, tokens) = assemble(contents, p.to_string());
             let result = codegen::to_text(&mem);
 
             let mut sblx_path = p[..p.len() - 4].to_string();
@@ -43,21 +46,18 @@ mod tests {
                 assert_eq!(result, expected);
             }
 
-
             let fp = Path::new(&out_path);
             if !fp.is_file() {
                 continue;
             }
-            let expected_out= fs::read_to_string(fp).unwrap();
+            let expected_out = fs::read_to_string(fp).unwrap();
             let expected_out = generic_sanitisation(&expected_out);
             let out = interpret(&mut mem, &tokens, true, false).unwrap();
             assert_eq!(out, expected_out);
 
-
             println!();
 
-         //   let should_be = fs::read_to_string(.unwrap();            
-
+            //   let should_be = fs::read_to_string(.unwrap();
         }
-    } 
+    }
 }

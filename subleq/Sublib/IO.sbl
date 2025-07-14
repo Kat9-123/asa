@@ -34,7 +34,7 @@
     !IO -= char?
 }
 
-@IO::PrintLn l_string? {
+@IO::PrintLn string? {
     !IO::Print string?
     !IO::PutChar LINEBREAK
 }

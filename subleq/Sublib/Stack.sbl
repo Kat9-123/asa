@@ -18,6 +18,7 @@
     i_val -= val?
 
     *p_stack? -= i_val
+    !IO::PrintLnLit "PUSH"
 
 }
 
@@ -45,4 +46,20 @@
     (p_write -> 0) -= out?
 
     !Dec p_stack?
+    !IO::PrintLnLit "POP"
+
+}
+
+@Stack::Debug p_stack? l_size? {
+    !Cpy size i
+
+    .loop ->
+
+
+    i -= ZERO
+    !J .fin
+
+    i -> 0
+    size -> l_size
+    .fin ->
 }

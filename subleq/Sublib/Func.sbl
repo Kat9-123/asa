@@ -19,26 +19,48 @@ HIGH
 function_stack -> !Stack::Create 128
 
 
-@Func name? args? body? [
+@Func name? body? [
 
-
-
-name? ->
-{
-    body?
-    !Func::Return
-}
+    name? ->
+    {
+        body?
+        !Func::Return
+    }
 ]
 
 
 
-@Func::Call name? arg? {
-
+@Func::Call name? args? {
+    !Cpy ARG_BASE arg_idx
+    !IO::PrintLit "RET "
 
     !Stack::Push function_stack _return_address
+    .arg_loop ->
+        !Clr n_arg
+        !Clr cur_arg
+        n_arg -= (arg_idx -> 0)
+        cur_arg -= n_arg
+        !IO::PrintLn cur_arg
+        !Debug arg_idx
+        !Debug ARGS_END
+        !IO::PrintLit "ARG "
+        !Stack::Push function_stack cur_arg
+        !Inc arg_idx
+        !Debug arg_idx
+        !BreakPoint
 
-    !Stack::Push function_stack arg?
+        !JumpIf::Le arg_idx ARGS_END .arg_loop
+
+    !IO::PrintLnLit "JP"
+
     !J name?
+    n_arg -> 0
+    cur_arg -> 0
+    0xABCD
+    ARG_BASE -> &1
+        args?
+        
+    ARGS_END -> &0
 
     _return_address -> &1
 }
@@ -46,17 +68,30 @@ name? ->
 
 @Func::Return {
     !Stack::Pop function_stack return_addr
-
     W -= W (return_addr -> 0x0000)
 }
 
 
-!Func test a {
-    !IO::PrintLnLit arg?
+@Arg name? [
+    !Stack::Pop function_stack name?
+    !J &2
+    name? -> 0
+]
+
+!Func FUNtest {
+    !Arg a
+    !Arg b
+
+    !IO::PrintLn a
+    !IO::PrintLn b
+    !Halt
 }
 
-p -> &"Test"
-.main ->
-!Func::Call test p
+p -> &"Test" 0
+p2 -> &"string" 0
 
-!Halt
+.main ->
+
+    !Func::Call FUNtest {p p2}
+
+    !Halt

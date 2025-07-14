@@ -1,7 +1,6 @@
 Z Z .main
 #Sublib
 #Sublib/Control
-0x0000 * 1024
 
 
 **
@@ -34,7 +33,6 @@ B -> 'B'
 
 TEST -> 0
 .main->{
-
     !IfElse::Eq x y {
         !IO::PrintLnLit "EQ"
     } {

@@ -97,3 +97,16 @@
     .fin ->
 }
 
+
+**
+!DerefAndCopy P_A? b? {
+    !J .start
+    n_a -> 0
+
+    .start ->
+    !Clr n_a
+    !Clr b?
+    n_a -= *P_A?
+    b? -= n_a
+}
+**

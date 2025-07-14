@@ -1,13 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-
 pub fn generic_sanitisation(text: &String) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")
 }
 
-pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, source_level: bool) -> String{
-
+pub fn include_imports(
+    text: String,
+    currently_imported: &mut Vec<PathBuf>,
+    source_level: bool,
+) -> String {
     let cleaned_string: String = generic_sanitisation(&text);
 
     let str_split = cleaned_string.split("\n").collect::<Vec<&str>>();
@@ -40,7 +42,7 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         split[i] = "#".to_owned() + path.clone().to_str().unwrap();
 
         if currently_imported.contains(&path) {
-            split.insert(i + 1, "/".to_owned());    // '/' is used to delimit EOF
+            split.insert(i + 1, "/".to_owned()); // '/' is used to delimit EOF
 
             i += 2;
             continue;
@@ -52,12 +54,9 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
         let contents = generic_sanitisation(&contents);
         let contents = include_imports(contents, currently_imported, false);
 
-
-
         split.insert(i + 1, contents);
-        split.insert(i + 2, "/".to_owned());  // '/' is used to delimit EOF
+        split.insert(i + 2, "/".to_owned()); // '/' is used to delimit EOF
         i += 3;
-
     }
     let mut result = String::new();
     for i in split {
@@ -66,5 +65,4 @@ pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>, sour
     }
 
     result
-
 }

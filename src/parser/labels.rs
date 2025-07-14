@@ -2,27 +2,26 @@ use std::collections::HashMap;
 
 use crate::asm_details;
 use crate::feedback::*;
+use crate::hint;
 use crate::println_debug;
 use crate::tokens;
 use crate::tokens::*;
-use crate::{hint};
-    use colored::Colorize;
-
+use colored::Colorize;
 
 pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::new();
     let mut i = 0;
 
     while i < tokens.len() {
-        if let TokenVariant::BraceOpen  = &tokens[i].variant {
+        if let TokenVariant::BraceOpen = &tokens[i].variant {
             let name = match &tokens[i + 1].variant {
                 TokenVariant::Label { name } => name,
                 _ => todo!(),
             };
             let data: IntOrString = match &tokens[i + 3].variant {
                 TokenVariant::DecLiteral { value } => IntOrString::Int(*value),
-                TokenVariant::Label {name  } => IntOrString::Str(name.clone()),
-                _ => todo!()
+                TokenVariant::Label { name } => IntOrString::Str(name.clone()),
+                _ => todo!(),
             };
 
             updated_tokens.push(Token {
@@ -30,10 +29,9 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
                 variant: TokenVariant::BracedLabelDefinition {
                     name: name.clone(),
                     data,
-                
-                }, origin_info: tokens[i + 3].origin_info.clone()
-            }
-            );
+                },
+                origin_info: tokens[i + 3].origin_info.clone(),
+            });
             i += 5;
             continue;
         }
@@ -51,9 +49,8 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
     let mut seen_scopes_count: usize = 0;
 
     for token in tokens {
-
         match &token.variant {
-            TokenVariant::Scope  => {
+            TokenVariant::Scope => {
                 scopes.push(HashMap::new());
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
@@ -65,26 +62,34 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
             }
 
             TokenVariant::BracedLabelDefinition { name, data } => {
-                if let Some(x) = scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name) {
-                    asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
+                if let Some(x) =
+                    scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name)
+                {
+                    asm_warn!(
+                        &token.info,
+                        "The label called '{name}' has already been defined in this scope"
+                    );
                     asm_details!(&x.1, "Here");
                 }
 
                 scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), (address, token.info.clone()));
+                    .insert(name.clone(), (address, token.info.clone()));
             }
 
+            TokenVariant::LabelDefinition { name, offset } => {
+                if let Some(x) =
+                    scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name)
+                {
+                    asm_warn!(
+                        &token.info,
+                        "The label called '{name}' has already been defined in this scope"
+                    );
+                    asm_details!(&x.1, "Here");
+                }
 
-            TokenVariant::LabelDefinition { name, offset} => {
-                    if let Some(x) = scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name) {
-                        asm_warn!(&token.info, "The label called '{name}' has already been defined in this scope");
-                        asm_details!(&x.1, "Here");
-                    }
-
-                    scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                        .insert(name.clone(), (address + offset, token.info.clone()));
-
-            },
+                scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
+                    .insert(name.clone(), (address + offset, token.info.clone()));
+            }
 
             _ => {}
         }
@@ -95,7 +100,10 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
     scopes
 }
 
-pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<String, (i32, Info)>>) -> Vec<Token> {
+pub fn resolve_labels(
+    tokens: &Vec<Token>,
+    scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
+) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::new();
 
     let mut current_scope_indexes: Vec<usize> = vec![0];
@@ -103,7 +111,6 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
 
     for token in tokens {
         match &token.variant {
-
             TokenVariant::Scope => {
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
@@ -113,62 +120,70 @@ pub fn resolve_labels(tokens: &Vec<Token>, scoped_label_table: &Vec<HashMap<Stri
                 current_scope_indexes.pop();
             }
             TokenVariant::Label { name } => {
-                let (val, inf) = find_label(name, scoped_label_table, &current_scope_indexes, &token.info);
+                let (val, inf) = find_label(
+                    name,
+                    scoped_label_table,
+                    &current_scope_indexes,
+                    &token.info,
+                );
                 updated_tokens.push(Token {
-                        info: token.info.clone(),
-                        variant: TokenVariant::DecLiteral {
-                            value: val,
-                        }, origin_info: token.origin_info.clone()
+                    info: token.info.clone(),
+                    variant: TokenVariant::DecLiteral { value: val },
+                    origin_info: token.origin_info.clone(),
                 });
             }
-            TokenVariant::BracedLabelDefinition {name, data } => {
-                match data {
-                    IntOrString::Int(x) => updated_tokens.push(Token 
-                        {info: token.info.clone(), 
-                            variant: TokenVariant::DecLiteral { value: *x }, 
-                            origin_info: token.origin_info.clone()
-                    }),
-                    IntOrString::Str(string) => {
+            TokenVariant::BracedLabelDefinition { name, data } => match data {
+                IntOrString::Int(x) => updated_tokens.push(Token {
+                    info: token.info.clone(),
+                    variant: TokenVariant::DecLiteral { value: *x },
+                    origin_info: token.origin_info.clone(),
+                }),
+                IntOrString::Str(string) => {
+                    let (val, inf) = find_label(
+                        name,
+                        scoped_label_table,
+                        &current_scope_indexes,
+                        &token.info,
+                    );
+                    updated_tokens.push(Token {
+                        info: token.info.clone(),
 
-                        let (val, inf) = find_label(name, scoped_label_table, &current_scope_indexes, &token.info);
-                        updated_tokens.push(Token {
-                            info: token.info.clone(),
-
-                            variant: TokenVariant::DecLiteral {
-                                value: val,
-                            }, origin_info: token.origin_info.clone()
-                        });
-                    }
+                        variant: TokenVariant::DecLiteral { value: val },
+                        origin_info: token.origin_info.clone(),
+                    });
                 }
-            }
-            _ => {updated_tokens.push(token.clone())}
+            },
+            _ => updated_tokens.push(token.clone()),
         }
-
     }
     updated_tokens
 }
-
 
 fn find_label(
     name: &String,
     scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
     current_scope_indexes: &Vec<usize>,
-    info: &Info
+    info: &Info,
 ) -> (i32, Info) {
-
     for scope in current_scope_indexes.iter().rev() {
-        if let Some(x) = scoped_label_table[*scope].get(name) { return x.clone() }
-    };
+        if let Some(x) = scoped_label_table[*scope].get(name) {
+            return x.clone();
+        }
+    }
     if name == "_ASM" {
-        asm_error!(info, "No definition for label '{name}' found {}{}",
-        hint!("For some features, like dereferencing with the * operator, the assembler requires an _ASM label"),
-        hint!("Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"));
+        asm_error!(
+            info,
+            "No definition for label '{name}' found {}{}",
+            hint!(
+                "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
+            ),
+            hint!(
+                "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
+            )
+        );
     }
     asm_error!(info, "No definition for label '{name}' found");
 }
-
-
-
 
 pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
@@ -180,8 +195,10 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
     let mut address = 0;
     while i < tokens.len() {
         match tokens[i].variant {
-            TokenVariant::Mult => {
-                if  i + 1 < tokens.len() && let TokenVariant::Label { name } = &tokens[i+1].variant {
+            TokenVariant::Asterisk => {
+                if i + 1 < tokens.len()
+                    && let TokenVariant::Label { name } = &tokens[i + 1].variant
+                {
                     let info = &tokens[i].info;
                     let in_instruction_label = format!("*{id}*{name}");
                     /*
@@ -191,39 +208,125 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
                     Z *ID*name &1
                      */
                     let deref: Vec<Token> = vec![
-                        Token {info: info.clone(), variant: TokenVariant::Linebreak, origin_info: None},
-
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: "_ASM".to_string() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: "_ASM".to_string() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Relative { offset: 1 }, origin_info: None},
-                        Token {info: info.clone(), variant: TokenVariant::Linebreak, origin_info: None},
-
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: in_instruction_label.clone() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: in_instruction_label.clone() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Relative { offset: 1 }, origin_info: None},
-                        Token {info: info.clone(), variant: TokenVariant::Linebreak, origin_info: None},
-
-
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: name.to_string() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: "_ASM".to_string() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Relative { offset: 1 }, origin_info: None},
-                        Token {info: info.clone(), variant: TokenVariant::Linebreak, origin_info: None},
-
-
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: "_ASM".to_string() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Label { name: in_instruction_label.clone() }, origin_info: None },
-                        Token {info: info.clone(), variant: TokenVariant::Relative { offset: 1 }, origin_info: None},
-                        Token {info: info.clone(), variant: TokenVariant::Linebreak, origin_info: None},
-
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Linebreak,
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: "_ASM".to_string(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: "_ASM".to_string(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Relative { offset: 1 },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Linebreak,
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: in_instruction_label.clone(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: in_instruction_label.clone(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Relative { offset: 1 },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Linebreak,
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: name.to_string(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: "_ASM".to_string(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Relative { offset: 1 },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Linebreak,
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: "_ASM".to_string(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Label {
+                                name: in_instruction_label.clone(),
+                            },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Relative { offset: 1 },
+                            origin_info: None,
+                        },
+                        Token {
+                            info: info.clone(),
+                            variant: TokenVariant::Linebreak,
+                            origin_info: None,
+                        },
                     ];
                     address += 12;
-                    new_tokens.splice(last_linebreak_idx..last_linebreak_idx, deref.iter().cloned());
-                    new_tokens.push(Token {info: info.clone(), origin_info: tokens[i].origin_info.clone(), variant: TokenVariant::BracedLabelDefinition { name: in_instruction_label, data: tokens::IntOrString::Int(0) }});
+                    new_tokens.splice(
+                        last_linebreak_idx..last_linebreak_idx,
+                        deref.iter().cloned(),
+                    );
+                    new_tokens.push(Token {
+                        info: info.clone(),
+                        origin_info: tokens[i].origin_info.clone(),
+                        variant: TokenVariant::BracedLabelDefinition {
+                            name: in_instruction_label,
+                            data: tokens::IntOrString::Int(0),
+                        },
+                    });
                     last_linebreak_idx += INSERTED_INSTRUCTIONS_SIZE;
                     id += 1;
                     i += 2;
                     address += 1;
-
                 }
             }
             TokenVariant::Linebreak => {

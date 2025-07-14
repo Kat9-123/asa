@@ -31,7 +31,6 @@ fn generate_as_text(tokens: Vec<Token>) {
 }
  */
 pub fn to_text(data: &Vec<u16>) -> String {
-
     let mut text: String = String::new();
     for i in data {
         text.push_str(&i.to_string());
@@ -46,8 +45,7 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut final_tokens: Vec<Token> = Vec::new();
     for statement in statements {
         match &statement.variant {
-
-            TokenVariant::DecLiteral { value} => {
+            TokenVariant::DecLiteral { value } => {
                 mem.push(*value as u16);
                 final_tokens.push(statement.clone());
             }
@@ -56,7 +54,5 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
             }
         }
     }
-    println!("{mem:?}");
     (mem, final_tokens)
-
 }

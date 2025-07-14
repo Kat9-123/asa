@@ -1,10 +1,9 @@
 use std::fmt;
 
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LabelOffset {
     Char(char),
-    Int(i32)
+    Int(i32),
 }
 #[derive(Debug, PartialEq, Eq, Clone)]
 
@@ -33,45 +32,47 @@ pub struct Token {
 pub enum TokenVariant {
     DecLiteral { value: i32 },
     HexLiteral { value: String },
-    LabelArrow { offset: LabelOffset},
+    LabelArrow { offset: LabelOffset },
     Subleq,
-    Label {name: String },
-    LabelDefinition {name: String, offset: i32},
-    Relative {offset: i32 },
+    Label { name: String },
+    LabelDefinition { name: String, offset: i32 },
+    Relative { offset: i32 },
     Scope,
     Unscope,
-    CharLiteral {value: char },
-    StrLiteral {value: String },
+    CharLiteral { value: char },
+    StrLiteral { value: String },
 
-    MacroDeclaration {name: String },
+    MacroDeclaration { name: String },
     MacroBodyStart,
     MacroBodyEnd,
 
-    MacroCall {name: String },
-    Namespace {name: String},
+    MacroCall { name: String },
+    Namespace { name: String },
 
     BraceOpen,
     BraceClose,
 
     Linebreak,
 
-    BracedLabelDefinition {name: String, data: IntOrString},
+    BracedLabelDefinition { name: String, data: IntOrString },
 
-    Mult,
+    Asterisk,
     NamespaceEnd,
-
 }
-
 
 impl Token {
     pub fn size(&self) -> i32 {
         match self.variant {
-            TokenVariant::DecLiteral { .. } | TokenVariant::Relative {..} | TokenVariant::Label {.. } | TokenVariant::BracedLabelDefinition { .. } => 1,
-            TokenVariant::HexLiteral { .. } | TokenVariant::CharLiteral {..} | TokenVariant::StrLiteral {..} => todo!(),
+            TokenVariant::DecLiteral { .. }
+            | TokenVariant::Relative { .. }
+            | TokenVariant::Label { .. }
+            | TokenVariant::BracedLabelDefinition { .. } => 1,
+            TokenVariant::HexLiteral { .. }
+            | TokenVariant::CharLiteral { .. }
+            | TokenVariant::StrLiteral { .. } => todo!(),
             _ => 0,
         }
     }
-
 }
 
 impl fmt::Debug for Token {
@@ -79,4 +80,3 @@ impl fmt::Debug for Token {
         write!(fmt, "{:?}", self.variant)
     }
 }
-
