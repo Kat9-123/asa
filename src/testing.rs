@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #[cfg(test)]
 mod tests {
     use std::{fs, path::Path};
@@ -12,12 +18,9 @@ mod tests {
     };
 
     use super::*;
+    fn test_at_path(path: &str) {
 
-    #[test]
-    fn test_full() {
-        SimpleLogger::new().init().unwrap();
-        log::set_max_level(LevelFilter::Info);
-        let paths = fs::read_dir("./subleq/tests").unwrap();
+        let paths = fs::read_dir(path).unwrap();
 
         for path in paths {
             let p = path.unwrap().path();
@@ -59,5 +62,18 @@ mod tests {
 
             //   let should_be = fs::read_to_string(.unwrap();
         }
+    }
+    #[test]
+    fn setup() {
+        SimpleLogger::new().init().unwrap();
+        log::set_max_level(LevelFilter::Info);
+    }
+    #[test]
+    fn basic() {
+        test_at_path("./subleq/tests");
+    }
+    #[test]
+    fn sublib() {
+        test_at_path("./subleq/sublib/tests");
     }
 }
