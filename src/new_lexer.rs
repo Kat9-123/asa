@@ -82,7 +82,11 @@ fn updated_context(
 
         Context::AsteriskOrBlockComment => match cur_char {
             '*' => (Context::BlockComment, None, None),
-            _ => (Context::DontMoveToNextChar, None, Some(TokenVariant::Asterisk)),
+            _ => (
+                Context::DontMoveToNextChar,
+                None,
+                Some(TokenVariant::Asterisk),
+            ),
         },
 
         Context::BlockComment => match cur_char {
@@ -111,7 +115,6 @@ fn updated_context(
         },
 
         Context::SubleqOrNegativeOrLabelArrow => match cur_char {
-            // Negative numbers :(
             '=' => (Context::None, None, Some(TokenVariant::Subleq)),
             '0' => (Context::HexOrDec, Some(cur_char), None),
             c if c.is_ascii_digit() => (Context::Dec, Some(cur_char), None),
@@ -335,8 +338,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                 let token = Token {
                     info: info.clone(),
                     variant: var.clone(),
-                     origin_info: vec![]
-                    //macro_trace: None,
+                    origin_info: vec![], //macro_trace: None,
                 };
                 //   println!("{:?} {:?}", token, token.info);
                 result_tokens.push(token);

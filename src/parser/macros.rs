@@ -231,12 +231,10 @@ fn generate_macro_body(
                                     copy.origin_info = context.clone();
                                     copy.origin_info.push((0, base_body_token.info.clone()));
 
-                                   // copy.origin_info.push(calling_info.clone());
+                                    // copy.origin_info.push(calling_info.clone());
                                     //copy.origin_info.push((depth,base_body_token.info.clone()));
-                            
+
                                     //copy.origin_info.push(base_body_token.info.clone());
-
-
 
                                     body.push(copy);
                                 }
@@ -245,19 +243,15 @@ fn generate_macro_body(
                         continue;
                     }
                     None => {
-            
                         let mut origin_info = base_body_token.origin_info.clone();
                         //origin_info.push((depth, base_body_token.info.clone()));
                         origin_info = context.clone();
                         origin_info.push((0, base_body_token.info.clone()));
-            
-
 
                         body.push(Token {
                             info: base_body_token.info.clone(),
                             variant: TokenVariant::Label { name: n },
-                            origin_info: origin_info
-                           // macro_trace: macro_trace
+                            origin_info: origin_info, // macro_trace: macro_trace
                         });
                         continue;
                     }
@@ -265,7 +259,7 @@ fn generate_macro_body(
             }
             _ => {
                 let mut c = base_body_token.clone();
-                c.origin_info =  context.clone();
+                c.origin_info = context.clone();
                 c.origin_info.push((0, base_body_token.info.clone()));
 
                 body.push(c);
@@ -273,9 +267,8 @@ fn generate_macro_body(
         }
     }
 
-     
     //body.push(Token {info: Info {start_char: 0, length: 0, line_number: 0, file: "".to_owned(), }, variant: TokenVariant::Linebreak, origin_info: vec![]});
-   // dbg!(&body);
+    // dbg!(&body);
 
     //dbg!(&macros);
     let (_, body) = insert_macros(body, macros, depth, context);
@@ -290,10 +283,14 @@ enum TokenOrTokenVec {
     TokVec(Vec<Token>),
 }
 
-pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth: i32, context: Vec<(i32,Info)>) -> (bool, Vec<Token>) {
+pub fn insert_macros(
+    tokens: Vec<Token>,
+    macros: &HashMap<String, Macro>,
+    depth: i32,
+    context: Vec<(i32, Info)>,
+) -> (bool, Vec<Token>) {
     let mut new_tokens: Vec<Token> = Vec::new();
-    #[derive(Debug)]
-    #[derive(PartialEq)]
+    #[derive(Debug, PartialEq)]
     enum Mode {
         NORMAL,
         ARGS,
@@ -338,7 +335,8 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
                 if label_map.len() >= current_macro_safe.args.len() {
                     let mut c = context.clone();
                     c.push((0, caller_info.unwrap()));
-                    let mut body = generate_macro_body(current_macro_safe, macros, &label_map, c, depth);
+                    let mut body =
+                        generate_macro_body(current_macro_safe, macros, &label_map, c, depth);
                     new_tokens.append(&mut body);
                     new_tokens.append(&mut suffix);
                     caller_info = None;
@@ -349,7 +347,6 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
                     label_map = HashMap::new();
                     new_tokens.push(token.clone());
 
-    
                     scope_tracker = 1;
 
                     continue;
@@ -365,45 +362,52 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
                     continue;
                 }
                 let lower = name_to_replace.to_ascii_lowercase();
-                if lower.len() > 1 { match &lower[..2] {
-                    x if x == "s_" || x == "m_" => {
-                        if let TokenVariant::Scope = token.variant {
-                        } else {
-                            // Change the m_
-                            asm_info!(
-                                &token.info,
-                                "Expected a SCOPE as argument {}",
-                                hint!("See the documentation for information on the typing system")
-                            );
-                            asm_details!(&current_macro_safe.info, "Macro definition");
+                if lower.len() > 1 {
+                    match &lower[..2] {
+                        x if x == "s_" || x == "m_" => {
+                            if let TokenVariant::Scope = token.variant {
+                            } else {
+                                // Change the m_
+                                asm_info!(
+                                    &token.info,
+                                    "Expected a SCOPE as argument {}",
+                                    hint!(
+                                        "See the documentation for information on the typing system"
+                                    )
+                                );
+                                asm_details!(&current_macro_safe.info, "Macro definition");
+                            }
                         }
-                    }
-                    "l_" => match token.variant {
-                        TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. } => {}
+                        "l_" => match token.variant {
+                            TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. } => {}
+                            _ => {
+                                asm_info!(
+                                    &token.info,
+                                    "Expected a LITERAL as argument {}",
+                                    hint!(
+                                        "See the documentation for information on the typing system"
+                                    )
+                                );
+                                asm_details!(&current_macro_safe.info, "Macro definition");
+                            }
+                        },
+                        "a_" => {}
                         _ => {
-                            asm_info!(
-                                &token.info,
-                                "Expected a LITERAL as argument {}",
-                                hint!("See the documentation for information on the typing system")
-                            );
-                            asm_details!(&current_macro_safe.info, "Macro definition");
-                        }
-                    },
-                    "a_" => {}
-                    _ => {
-                        if let TokenVariant::Label { .. } = token.variant {
-                        } else {
-                            asm_info!(
-                                &token.info,
-                                "Expected a LABEL as argument, found {:?} {}",
-                                &token.variant,
-                                hint!("See the documentation for information on the typing system")
-                            );
-                            asm_details!(&current_macro_safe.info, "Macro definition");
+                            if let TokenVariant::Label { .. } = token.variant {
+                            } else {
+                                asm_info!(
+                                    &token.info,
+                                    "Expected a LABEL as argument, found {:?} {}",
+                                    &token.variant,
+                                    hint!(
+                                        "See the documentation for information on the typing system"
+                                    )
+                                );
+                                asm_details!(&current_macro_safe.info, "Macro definition");
+                            }
                         }
                     }
                 }
-            }
 
                 if let TokenVariant::Scope = token.variant {
                     mode = Mode::SCOPED_ARG;
@@ -415,7 +419,6 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
                 }
 
                 label_map.insert(name_to_replace.clone(), TokenOrTokenVec::Tok(token.clone()));
-
 
                 continue;
             }
@@ -462,7 +465,7 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
     // HACK
     if mode == Mode::ARGS {
         let current_macro_safe = current_macro.unwrap();
-    // It has read all arguments
+        // It has read all arguments
         let mut c = context.clone();
         c.push((0, caller_info.unwrap()));
         let mut body = generate_macro_body(current_macro_safe, macros, &label_map, c, depth);
@@ -470,8 +473,6 @@ pub fn insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>, depth:
         new_tokens.append(&mut suffix);
         has_inserted_macro = true;
         mode = Mode::NORMAL;
-
-
     }
     dbg!(mode);
 

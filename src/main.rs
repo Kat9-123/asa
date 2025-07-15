@@ -12,6 +12,7 @@ use std::env;
 mod parser;
 
 mod codegen;
+mod debugger;
 mod feedback;
 mod interpreter;
 mod mem_view;
@@ -20,10 +21,8 @@ mod preprocessor;
 mod symbols;
 mod testing;
 mod tokens;
-mod debugger;
 use clap::Parser;
 use std::time::Instant;
-
 
 /// Advanced Subleq Assembler
 #[derive(Parser, Debug)]
@@ -39,6 +38,7 @@ struct Args {
     // Hide info
     // Hide warnings
     // Run with debugger
+    // Type checking
     // Trace len
 }
 
@@ -57,7 +57,7 @@ fn main() {
     let (mut mem, tokens) = assemble(contents, file_path);
     //   mem_view::draw_mem(&mem, 0);
     debugger::debug(&mut mem, &tokens, true);
- //  interpreter::interpret(&mut mem, &tokens, false, true);
+    //  interpreter::interpret(&mut mem, &tokens, false, true);
 }
 
 fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {

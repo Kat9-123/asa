@@ -108,6 +108,8 @@ pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
     asm_msg(msg, info, Type::ERROR, false);
 }
 
+
+
 fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     let contents = get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();

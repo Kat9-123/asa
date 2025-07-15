@@ -25,8 +25,8 @@ pub enum IntOrString {
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
-   // pub macro_trace: Option<Vec<Info>>,
-    pub origin_info: Vec<(i32, Info)>// Option<Info>
+    // pub macro_trace: Option<Vec<Info>>,
+    pub origin_info: Vec<(i32, Info)>, // Option<Info>
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

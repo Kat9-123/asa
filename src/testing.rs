@@ -1,9 +1,3 @@
-
-
-
-
-
-
 #[cfg(test)]
 mod tests {
     use std::{fs, path::Path};
@@ -19,7 +13,6 @@ mod tests {
 
     use super::*;
     fn test_at_path(path: &str) {
-
         let paths = fs::read_dir(path).unwrap();
 
         for path in paths {
@@ -55,7 +48,7 @@ mod tests {
             }
             let expected_out = fs::read_to_string(fp).unwrap();
             let expected_out = generic_sanitisation(&expected_out);
-            let out = interpret(&mut mem, &tokens, true, false).unwrap();
+            let out = interpret(&mut mem, &tokens, true).unwrap().unwrap();
             assert_eq!(out, expected_out);
 
             println!();

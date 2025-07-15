@@ -1,5 +1,4 @@
 
-The assembler has a simple type-checker, which can be disabled.
 
 ## Introduction
 
@@ -38,6 +37,8 @@ c -> 9
 
 
 ### Types
+The assembler has a simple type-checker, which can be disabled.
+
 * `p_value` pointer
 * `p_p_value` pointer to pointer
 * `n_value` negated value

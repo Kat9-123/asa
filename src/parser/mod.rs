@@ -57,8 +57,6 @@ fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
     new_tokens
 }
 
-
-
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
 
@@ -100,7 +98,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
-    
     let tokens = fix_instructions_and_collapse_label_definitions(&tokens);
 
     log::debug!("Fixed");

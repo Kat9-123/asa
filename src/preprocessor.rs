@@ -47,7 +47,6 @@ pub fn include_imports(
             i += 2;
             continue;
         }
-        //println_debug!("{:?}", fp);
         currently_imported.push(path.clone());
 
         let contents = fs::read_to_string(&path).expect("Should have been able to read the file");

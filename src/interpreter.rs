@@ -6,7 +6,8 @@ use std::{
 use log::info;
 
 use crate::{
-    asm_details, asm_error_no_terminate, asm_instruction, asm_sub_instruction, feedback::terminate, mem_view, tokens::Token
+    asm_details, asm_error_no_terminate, asm_instruction, asm_sub_instruction, feedback::terminate,
+    mem_view, tokens::Token,
 };
 
 use crossterm::{ExecutableCommand, cursor, terminal};
@@ -14,9 +15,6 @@ use crossterm::{ExecutableCommand, cursor, terminal};
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
 const PERF_ADDR: i16 = -3;
-
-
-
 
 fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
     asm_error_no_terminate!(&tokens[prev_pc + 2].info, "Jump outside of memory bounds");
@@ -31,14 +29,12 @@ struct InstructionLog {
 }
 
 fn instruction_info(tokens: &Vec<Token>, jumped: bool, pc: usize) {
-   // let mut stdout = io::stdout();
+    // let mut stdout = io::stdout();
     //  stdout.execute(terminal::Clear(terminal::ClearType::All));
     //  stdout.execute(cursor::MoveTo(0,0));
     for i in ((tokens[pc + 1].origin_info).iter()).rev() {
         asm_instruction!(&i.1, "depth Instruction {}", i.0);
-
     }
-
 
     asm_sub_instruction!(&tokens[pc].info, "'A' part");
 
@@ -72,9 +68,10 @@ pub struct InstructionHistoryItem {
     pub pc: usize,
     pub original_value_at_b: u16,
     pub jumped: bool,
-    pub io_operation: IOOperation
+    pub io_operation: IOOperation,
 }
 
+#[derive(Debug)]
 pub enum RuntimeError {
     InstructionOutOfRange,
     AOutOfRange,
@@ -91,8 +88,10 @@ pub enum IOOperation {
     None,
 }
 
-pub fn interpret_single(mem: &mut Vec<u16>, pc: usize) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
-
+pub fn interpret_single(
+    mem: &mut Vec<u16>,
+    pc: usize,
+) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
     let a = if pc < mem.len() {
         mem[pc] as usize
     } else {
@@ -107,7 +106,6 @@ pub fn interpret_single(mem: &mut Vec<u16>, pc: usize) -> Result<(usize, IOOpera
         mem[pc + 2] as usize
     } else {
         return Err(RuntimeError::InstructionOutOfRange);
-
     };
 
     let mut original_value_at_b = 0;
@@ -117,63 +115,90 @@ pub fn interpret_single(mem: &mut Vec<u16>, pc: usize) -> Result<(usize, IOOpera
     if b == 0xFFFF {
         result = mem[a];
         io = IOOperation::Char(result as u8 as char);
-
     } else if b == 0xFFFE {
         result = mem[a];
         io = IOOperation::Debug(result);
-
     } else if a == 0xFFFF {
     } else {
-
         if a >= mem.len() {
             return Err(RuntimeError::AOutOfRange);
         }
         if b >= mem.len() {
             return Err(RuntimeError::BOutOfRange);
-
         }
         original_value_at_b = mem[b];
         result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
         mem[b] = result;
     }
 
-
     if result as i16 <= 0 {
         //  println!("JUMP!");
 
         match c as i16 {
             IO_ADDR => {
-                return Ok((pc, IOOperation::Halt, InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: IOOperation::Halt,}))
+                return Ok((
+                    pc,
+                    IOOperation::Halt,
+                    InstructionHistoryItem {
+                        pc,
+                        original_value_at_b,
+                        jumped: true,
+                        io_operation: IOOperation::Halt,
+                    },
+                ));
             }
             DEBUG_ADDR => {
                 // Breakpoint
 
-                return Ok((pc + 3, IOOperation::BreakPoint, InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: IOOperation::BreakPoint}));
+                return Ok((
+                    pc + 3,
+                    IOOperation::BreakPoint,
+                    InstructionHistoryItem {
+                        pc,
+                        original_value_at_b,
+                        jumped: true,
+                        io_operation: IOOperation::BreakPoint,
+                    },
+                ));
             }
             PERF_ADDR => {
                 todo!();
-            },
+            }
 
             _ => {
-                return Ok((c, io.clone(), InstructionHistoryItem {pc, original_value_at_b, jumped: true, io_operation: io}));
+                return Ok((
+                    c,
+                    io.clone(),
+                    InstructionHistoryItem {
+                        pc,
+                        original_value_at_b,
+                        jumped: true,
+                        io_operation: io,
+                    },
+                ));
             }
         }
     }
-    return Ok((pc + 3, io.clone(), InstructionHistoryItem {pc, original_value_at_b, jumped: false, io_operation: io}));
+    return Ok((
+        pc + 3,
+        io.clone(),
+        InstructionHistoryItem {
+            pc,
+            original_value_at_b,
+            jumped: false,
+            io_operation: io,
+        },
+    ));
 }
 
 pub fn interpret(
     mem: &mut Vec<u16>,
     tokens: &Vec<Token>,
     return_output: bool,
-    debugger: bool,
-) -> Option<String> {
+) -> Result<Option<String>, RuntimeError> {
     let mut programme_counter = 0;
     let mut prev_programme_counter = 0;
     let mut buf = String::new();
-    let mut instruction_logs: Vec<InstructionLog> = Vec::new();
-
-    let mut instruction_history: Vec<InstructionLog> = Vec::new();
 
     let mut performance_counter: Option<usize> = None;
     loop {
@@ -182,25 +207,19 @@ pub fn interpret(
         let a = if programme_counter < mem.len() {
             mem[programme_counter] as usize
         } else {
-            trace(&instruction_logs, tokens);
-            outside_mem_bounds_err(tokens, prev_programme_counter);
-            unreachable!();
+            return Err(RuntimeError::InstructionOutOfRange);
+
         };
         let b = if programme_counter + 1 < mem.len() {
             mem[programme_counter + 1] as usize
         } else {
-            trace(&instruction_logs, tokens);
+            return Err(RuntimeError::InstructionOutOfRange);
 
-            outside_mem_bounds_err(tokens, prev_programme_counter);
-            unreachable!();
         };
         let c = if programme_counter + 2 < mem.len() {
             mem[programme_counter + 2] as usize
         } else {
-            trace(&instruction_logs, tokens);
-
-            outside_mem_bounds_err(tokens, prev_programme_counter);
-            unreachable!();
+            return Err(RuntimeError::InstructionOutOfRange);
         };
 
         let mut result: u16 = 0;
@@ -220,23 +239,13 @@ pub fn interpret(
         } else if a == 0xFFFF {
         } else {
             if a >= mem.len() {
-                trace(&instruction_logs, tokens);
+                return Err(RuntimeError::AOutOfRange);
 
-                asm_error_no_terminate!(&tokens[programme_counter].info, "Address A out of range");
-                asm_details!(&tokens[programme_counter + 1].info, "'B' part");
-                asm_details!(&tokens[programme_counter + 2].info, "'C' part");
-                terminate();
             }
             if b >= mem.len() {
-                trace(&instruction_logs, tokens);
+                return Err(RuntimeError::BOutOfRange);
 
-                asm_error_no_terminate!(
-                    &tokens[programme_counter + 1].info,
-                    "Address B out of range"
-                );
-                asm_details!(&tokens[programme_counter].info, "'A' part");
-                asm_details!(&tokens[programme_counter + 2].info, "'C' part");
-                terminate();
+
             }
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;
@@ -249,13 +258,6 @@ pub fn interpret(
             jumped = true;
         }
 
-        if debugger {
-            mem_view::draw_mem(&mem, programme_counter);
-
-            instruction_info(tokens, jumped, programme_counter);
-            let mut inp: String = String::new();
-            io::stdin().read_line(&mut inp);
-        }
 
         if result as i16 <= 0 {
             jumped = true;
@@ -265,15 +267,12 @@ pub fn interpret(
                 IO_ADDR => break,
                 DEBUG_ADDR => {
                     // Breakpoint
-                   // trace(&instruction_logs, tokens);
+                    // trace(&instruction_logs, tokens);
 
-                    asm_error_no_terminate!(&tokens[programme_counter + 2].info, "Breakpoint");
-                    let mut inp: String = String::new();
-                    io::stdin().read_line(&mut inp);
                     programme_counter += 3;
-
                 }
                 PERF_ADDR => {
+                    /*
                     match performance_counter {
                         Some(x) => {
                             println!("{} instructions executed.", x - 1);
@@ -283,6 +282,7 @@ pub fn interpret(
                             performance_counter = Some(0);
                         }
                     }
+                     */
                     programme_counter += 3;
                 }
 
@@ -295,16 +295,9 @@ pub fn interpret(
             *x += 1;
         }
 
-        instruction_logs.push(InstructionLog {
-            pc: prev_programme_counter,
-            jumped,
-        });
-        if instruction_logs.len() > 5 {
-            instruction_logs.remove(0);
-        }
     }
     if return_output {
-        return Some(buf);
+        return Ok(Some(buf));
     }
-    None
+    Ok(None)
 }
