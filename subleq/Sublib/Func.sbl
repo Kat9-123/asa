@@ -41,12 +41,12 @@ function_stack -> !Stack::Create 128
         n_arg -= (arg_idx -> 0)
         cur_arg -= n_arg
         !IO::PrintLn cur_arg
-        !Debug arg_idx
-        !Debug ARGS_END
+     ;   !Debug arg_idx
+    ;    !Debug ARGS_END
         !IO::PrintLit "ARG "
         !Stack::Push function_stack cur_arg
         !Inc arg_idx
-        !Debug arg_idx
+     ;   !Debug arg_idx
         !BreakPoint
 
         !JumpIf::Le arg_idx ARGS_END .arg_loop

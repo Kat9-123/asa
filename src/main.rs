@@ -28,7 +28,7 @@ use std::time::Instant;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
+    /// File to assemble
     target: String,
 
     /// Number of times to greet
@@ -38,26 +38,30 @@ struct Args {
     // Hide info
     // Hide warnings
     // Run with debugger
-    // Type checking
-    // Trace len
+    /// Disable type checking
+    #[arg(long, default_value_t = false)]
+    disable_type_checking: bool,
+    /// Disable syntax suggestions
+    #[arg(long, default_value_t = false)]
+    disable_suggestions: bool
 }
 
 fn main() {
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Debug);
-    disable_raw_mode();
+    log::set_max_level(LevelFilter::Info);
+    //disable_raw_mode();
+    let args = Args::parse();
+   // let args: Vec<String> = env::args().collect();
 
-    let args: Vec<String> = env::args().collect();
-
-    let file_path = format!("./subleq/{}", args[1]);
+    let file_path = format!("./subleq/{}", args.target);
 
     info!("Assembling {file_path}");
     let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
     let (mut mem, tokens) = assemble(contents, file_path);
     //   mem_view::draw_mem(&mem, 0);
-    debugger::debug(&mut mem, &tokens, true);
-    //  interpreter::interpret(&mut mem, &tokens, false, true);
+    //debugger::debug(&mut mem, &tokens, false);
+   // interpreter::interpret(&mut mem, &tokens, false);
 }
 
 fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {

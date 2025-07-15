@@ -216,14 +216,17 @@ fn updated_context(
         },
 
         Context::MacroDeclaration => match cur_char {
-            ' ' | '\n' => (
+            c if c.is_alphanumeric() || c == '_' || c == ':' => {
+                (Context::MacroDeclaration, Some(cur_char), None)
+            }
+
+            _ => (
                 Context::DontMoveToNextChar,
                 None,
                 Some(TokenVariant::MacroDeclaration {
                     name: buffer.clone(),
                 }),
             ),
-            _ => (Context::MacroDeclaration, Some(cur_char), None),
         },
         Context::MacroCall => match cur_char {
             ' ' | '\n' => (

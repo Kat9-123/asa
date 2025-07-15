@@ -474,7 +474,6 @@ pub fn insert_macros(
         has_inserted_macro = true;
         mode = Mode::NORMAL;
     }
-    dbg!(mode);
 
     (has_inserted_macro, new_tokens)
 }

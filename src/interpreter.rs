@@ -208,13 +208,11 @@ pub fn interpret(
             mem[programme_counter] as usize
         } else {
             return Err(RuntimeError::InstructionOutOfRange);
-
         };
         let b = if programme_counter + 1 < mem.len() {
             mem[programme_counter + 1] as usize
         } else {
             return Err(RuntimeError::InstructionOutOfRange);
-
         };
         let c = if programme_counter + 2 < mem.len() {
             mem[programme_counter + 2] as usize
@@ -240,12 +238,9 @@ pub fn interpret(
         } else {
             if a >= mem.len() {
                 return Err(RuntimeError::AOutOfRange);
-
             }
             if b >= mem.len() {
                 return Err(RuntimeError::BOutOfRange);
-
-
             }
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;
@@ -257,7 +252,6 @@ pub fn interpret(
         if result as i16 <= 0 {
             jumped = true;
         }
-
 
         if result as i16 <= 0 {
             jumped = true;
@@ -294,7 +288,6 @@ pub fn interpret(
         if let Some(x) = performance_counter.as_mut() {
             *x += 1;
         }
-
     }
     if return_output {
         return Ok(Some(buf));

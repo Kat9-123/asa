@@ -1,6 +1,6 @@
-use crate::{asm_details, asm_error_no_terminate, asm_instruction};
 use crate::feedback::terminate;
 use crate::interpreter::RuntimeError;
+use crate::{asm_details, asm_error_no_terminate, asm_instruction};
 use crate::{
     interpreter::{self, IOOperation, InstructionHistoryItem},
     mem_view,
@@ -13,11 +13,11 @@ use crossterm::{
     terminal::{self, enable_raw_mode},
 };
 use std::fmt::LowerExp;
+use std::{fs, thread, time};
 use std::{
     io::{self, *},
     num::Wrapping,
 };
-use std::{fs, thread, time};
 
 pub fn revert_historic_instruction(
     mem: &mut Vec<u16>,
@@ -46,7 +46,7 @@ pub fn error(e: RuntimeError, pc: usize, tokens: &Vec<Token>) {
             asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");
             asm_details!(&tokens[pc].info, "'A' part");
             asm_details!(&tokens[pc + 1].info, "'B' part");
-        },
+        }
         _ => {}
     }
 }
@@ -74,19 +74,24 @@ pub fn apply_historic_instruction(
     }
     return inst.pc + 3;
 }
+enum DataType {
+    Char,
+    UInt,
+    SInt,
+    Hex,
+}
 
-fn address_to_string(addr: u16, mem: &Vec<u16>) -> String{
+fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
     match addr {
-        0xFFFF => {
-            "IO".to_string()
+        0xFFFF => "IO".to_string(),
+        0xFFFE => "Debug".to_string(),
+        0xFFFD => "Perf".to_string(),
+        _ => match data_type {
+            DataType::Char => format!("{}", mem[addr as usize] as u16 as u8 as char),
+            DataType::UInt => format!("{}", mem[addr as usize] as u16),
+            DataType::SInt => format!("{}", mem[addr as usize] as i16),
+            DataType::Hex => format!("{:X}", mem[addr as usize] as u16),
         },
-        0xFFFE => {
-            "Debug".to_string()
-        }
-        0xFFFD => {
-            "Perf".to_string()
-        },
-        _ => "Perf".to_string() //format!("{}", mem[addr as usize] as i16)
     }
 }
 
@@ -100,35 +105,53 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
     const UPPER_SIZE: i32 = 5;
     const LOWER_SIZE: i32 = 5;
 
-    let start_line = (info.line_number - 1 - UPPER_SIZE).max(0); // 0
-    let end_line = (info.line_number - 1 + LOWER_SIZE + 1).min(lines.len() as i32 - 1); // 10
-    let end_line = end_line + (UPPER_SIZE + LOWER_SIZE + 1 - (end_line - start_line));
-    let end_line = end_line.min(lines.len() as i32 - 1);
+    // There is probably a cleaner way to do this
+    let desired_start_line = info.line_number - 1 - UPPER_SIZE;
+    let desired_end_line = info.line_number - 1 + LOWER_SIZE + 1; //.min(lines.len() as i32 - 1); // 10
+
+    let actual_start_line = desired_start_line.max(0);
+    let actual_end_line = desired_end_line.min(lines.len() as i32 - 1);
+
+    let start_line = (actual_start_line - (desired_end_line - actual_end_line)).max(0);
+    let end_line =
+        (actual_end_line + (actual_start_line - desired_start_line)).min(lines.len() as i32 - 1);
+
     for i in start_line..end_line {
-        if i != info.line_number - 1{
-            println!("{: >4} | {: <90}", format!("{}", i + 1).bright_cyan(), lines[i as usize]);
-
+        if i != info.line_number - 1 {
+            println!(
+                "{: >4} | {: <100}",
+                format!("{}", i + 1).bright_cyan(),
+                lines[i as usize]
+            );
         } else {
-            println!("{: >4} {} {: <90}", format!("{}", i + 1).bright_cyan(), ">".blue(), format!("{}", lines[i as usize]).blue());
-
+            println!(
+                "{: >4} {} {: <100}",
+                format!("{}", i + 1).bright_cyan(),
+                ">".blue(),
+                format!("{}", lines[i as usize]).blue()
+            );
         }
     }
     println!("PC: {:X}", pc);
-    println!(" a: {: >4X}   mem[a]: {: <90}", mem[pc], address_to_string(mem[pc], mem));
-    println!(" b: {: >4X}   mem[b]: {: <90}", mem[pc + 1], address_to_string(mem[pc + 1], mem));
-    println!(" c: {} ", address_to_string(pc  as u16+ 2, mem));
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-    println!("{: <100}", ' ');
-
+    println!(
+        " a: {: >4X}   mem[a]: {: >7}  {: >4}  {: >4 }  ",
+        mem[pc],
+        address_to_string(mem[pc], mem, DataType::SInt),
+        address_to_string(mem[pc], mem, DataType::Hex),
+        address_to_string(mem[pc], mem, DataType::Char),
+    );
+    println!(
+        " b: {: >4X}   mem[b]: {: >7}  {: >4}  {: >4 }  ",
+        mem[pc + 1],
+        address_to_string(mem[pc + 1], mem, DataType::SInt),
+        address_to_string(mem[pc + 1], mem, DataType::Hex),
+        address_to_string(mem[pc + 1], mem, DataType::Char),
+    );
+    println!(
+        " c: {: <100} ",
+        address_to_string(pc as u16, mem, DataType::Hex)
+    );
 }
-
 
 pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool) {
     let mut pc = 0;
@@ -140,116 +163,120 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
     let mut stdout = io::stdout();
 
     stdout.execute(terminal::Clear(terminal::ClearType::All));
-    let stay_in_file = false;
+    let stay_in_file = true;
     let mut mem_mode: bool = false;
 
     loop {
-   //     stdout.execute(terminal::Clear(terminal::ClearType::All));
-        stdout.execute(crossterm::cursor::MoveTo(0, 0));
         let mut skip_interaction = false;
         let mut skip_exec: bool = false;
+        //     stdout.execute(terminal::Clear(terminal::ClearType::All));
+        if in_debugging_mode {
+            stdout.execute(crossterm::cursor::MoveTo(0, 0));
 
-        let origin_info = &tokens[pc].origin_info;
-        let info = if origin_info.len() == 0 {
-            &tokens[pc].info
-        } else {
-            let file_name = &origin_info[0].1.file; // Suboptimal
-
-            let mut deepest_in_file_depth = 999999;
-            if stay_in_file {
-                for (i, x) in origin_info.iter().enumerate() {
-                    if x.1.file == *file_name {
-                        deepest_in_file_depth = i;
-                    }
-                }
-            }
-
-            current_depth = current_depth.min(origin_info.len() - 1).min(deepest_in_file_depth);
-            &origin_info[current_depth].1
-        };
-
-        /*
-           if let Some(prev) = &prev_info {
-               if cur == prev {
-                   skip_interaction = true;
-               }
-           }
-        */
-        prev_info = Some(info.clone());
-
-        if !skip_interaction {
-            println!("{current_instruction_idx}, {}", instruction_history.len());
-
-           // asm_instruction!(info, "depth Instruction");
-            if !mem_mode {
-                display(info, pc, &mem);
-
+            let origin_info = &tokens[pc].origin_info;
+            let info = if origin_info.len() == 0 {
+                &tokens[pc].info
             } else {
-                mem_view::draw_mem(mem, pc);
-            }
-            //mem_view::draw_mem(mem, pc);
-            println!("{}", io_buffer);
+                let file_name = &origin_info[0].1.file; // Suboptimal
 
-            loop {
-                match read().unwrap() {
-                    Event::Key(event) => {
-                        if event.kind == KeyEventKind::Press {
-                            // Only works on windows??
-                            match event.code {
-                                KeyCode::Char(c) => match c {
-                                    ' ' => {
-                                        stdout.execute(terminal::Clear(terminal::ClearType::All));
-                                        mem_mode = !mem_mode;
-                                        skip_exec = true;
-                                    
-                                    },
-                                    _ => {}
-                                },
-                                KeyCode::Right => {
-                                    if current_instruction_idx + 1 < instruction_history.len() {
-                                        pc = apply_historic_instruction(
-                                            mem,
-                                            &instruction_history[current_instruction_idx],
-                                            &mut io_buffer,
-                                        );
-                                    }
-                                    current_instruction_idx += 1;
-                                }
-
-                                KeyCode::Left => {
-                                    if current_instruction_idx >= 1 {
-                                        current_instruction_idx -= 1;
-                                        pc = revert_historic_instruction(
-                                            mem,
-                                            &instruction_history[current_instruction_idx],
-                                            &mut io_buffer,
-                                        );
-                                    }
-                                }
-                                KeyCode::Down => {
-                                    current_depth += 1;
-                                    skip_exec = true;
-                                }
-                                KeyCode::Up => {
-                                    if current_depth > 0 {
-                                        current_depth -= 1;
-                                    }
-                                    skip_exec = true;
-                                }
-                                _ => {}
-                            }
-                            break;
+                let mut deepest_in_file_depth = 999999;
+                if stay_in_file {
+                    for (i, x) in origin_info.iter().enumerate() {
+                        if x.1.file == *file_name {
+                            deepest_in_file_depth = i;
                         }
                     }
-                    _ => {}
+                }
+
+                current_depth = current_depth
+                    .min(origin_info.len() - 1)
+                    .min(deepest_in_file_depth);
+                &origin_info[current_depth].1
+            };
+
+            /*
+            if let Some(prev) = &prev_info {
+                if info == prev {
+                    skip_interaction = true;
+                }
+            } */
+
+            prev_info = Some(info.clone());
+
+            if !skip_interaction {
+                println!("{current_instruction_idx}, {}", instruction_history.len());
+
+                // asm_instruction!(info, "depth Instruction");
+                if !mem_mode {
+                    display(info, pc, &mem);
+                } else {
+                    mem_view::draw_mem(mem, pc);
+                }
+                //mem_view::draw_mem(mem, pc);
+                println!("{: <100}", io_buffer);
+
+                loop {
+                    match read().unwrap() {
+                        Event::Key(event) => {
+                            if event.kind == KeyEventKind::Press {
+                                // Only works on windows??
+                                match event.code {
+                                    KeyCode::Char(c) => match c {
+                                        ' ' => {
+                                            stdout
+                                                .execute(terminal::Clear(terminal::ClearType::All));
+                                            mem_mode = !mem_mode;
+                                            skip_exec = true;
+                                        }
+                                        _ => {}
+                                    },
+                                    KeyCode::Right => {
+                                        if current_instruction_idx + 1 < instruction_history.len() {
+                                            pc = apply_historic_instruction(
+                                                mem,
+                                                &instruction_history[current_instruction_idx],
+                                                &mut io_buffer,
+                                            );
+                                        }
+                                        current_instruction_idx += 1;
+                                    }
+
+                                    KeyCode::Left => {
+                                        if current_instruction_idx >= 1 {
+                                            current_instruction_idx -= 1;
+                                            pc = revert_historic_instruction(
+                                                mem,
+                                                &instruction_history[current_instruction_idx],
+                                                &mut io_buffer,
+                                            );
+                                        }
+                                    }
+                                    KeyCode::Down => {
+                                        current_depth += 1;
+                                        skip_exec = true;
+                                    }
+                                    KeyCode::Up => {
+                                        if current_depth > 0 {
+                                            current_depth -= 1;
+                                        }
+                                        skip_exec = true;
+                                    }
+                                    _ => {}
+                                }
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
+
         if current_instruction_idx >= instruction_history.len() && !skip_exec {
             let result = interpreter::interpret_single(mem, pc);
             let result = match result {
                 Ok(e) => e,
-                Err(e) =>  {
+                Err(e) => {
                     current_instruction_idx -= 1;
                     pc = revert_historic_instruction(
                         mem,
@@ -260,7 +287,7 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                     let mut inp: String = String::new();
                     io::stdin().read_line(&mut inp);
                     continue;
-                   // panic!();
+                    // panic!();
                 }
             };
             let (new_pc, io_operation, instruction_history_item) = result;
