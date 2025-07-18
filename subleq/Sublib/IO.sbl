@@ -7,14 +7,14 @@
 
 @IO::Print string? {
     !Cpy string? ptr
-    !J _loop
+    !J .loop
     char        -> 0
     inv_char    -> 0
 
-    _loop ->
+    .loop ->
         inv_char    -= (ptr -> 0) ; 0 -= 0
         char        -= inv_char
-        char        -= ZERO            _fin  ; Null so we fin
+        char        -= ZERO            .fin  ; Null so we fin
 
         !IO         -= char
 
@@ -22,10 +22,10 @@
 
         !Clr inv_char
         !Clr char
-        Z           -= Z _loop
+        Z           -= Z .loop
 
 
-    _fin ->
+    .fin ->
 
 }
 

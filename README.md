@@ -11,3 +11,6 @@ Subleq or SUBtract and jump if Less than or EQual to zero is
 
 
 ## Usage
+
+
+## Debugger

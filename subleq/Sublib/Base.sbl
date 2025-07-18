@@ -5,8 +5,8 @@
 ]
 
 
-@Jump _address? [
-    W -= W  _address?
+@Jump .address? [
+    W -= W  .address?
 ]
 
 @J _address? [!Jump _address?]

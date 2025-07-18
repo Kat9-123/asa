@@ -1,5 +1,6 @@
 use crate::{
-    asm_error, asm_info, tokens::{LabelOffset, Token, TokenVariant}
+    asm_error, asm_info,
+    tokens::{LabelOffset, Token, TokenVariant},
 };
 
 pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> Vec<Token> {
@@ -84,12 +85,15 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
                 new_tokens.push(tokens[idx + 2].clone());
                 new_tokens.push(tokens[idx].clone());
                 new_tokens.push(tokens[idx + 3].clone());
-                if let TokenVariant::Label {name} = &tokens[idx + 3].variant {
+                if let TokenVariant::Label { name } = &tokens[idx + 3].variant {
                     // This is a little hack, because macros add their own name to the label, in the format: '?MACRO?label',
                     // here we only care about the 'label' part
                     let split_name = name.split('?');
                     if !split_name.last().unwrap().starts_with('.') {
-                        asm_info!(&tokens[idx + 3].info, "Labels which are jump targets should be prefixed with a '.'");
+                        asm_info!(
+                            &tokens[idx + 3].info,
+                            "Labels which are jump targets should be prefixed with a '.'"
+                        );
                     }
                 }
                 idx += 5;

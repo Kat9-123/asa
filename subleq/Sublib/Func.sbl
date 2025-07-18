@@ -19,21 +19,21 @@ HIGH
 function_stack -> !Stack::Create 128
 
 
-@Func name? body? [
+@Func name? s_body? [
 
     name? ->
     {
-        body?
+        s_body?
         !Func::Return
     }
 ]
 
 
 
-@Func::Call name? args? {
+@Func::Call name? s_args? {
     !Cpy ARG_BASE arg_idx
     !IO::PrintLit "RET "
-
+    !BreakPoint
     !Stack::Push function_stack _return_address
     .arg_loop ->
         !Clr n_arg
@@ -58,7 +58,7 @@ function_stack -> !Stack::Create 128
     cur_arg -> 0
     0xABCD
     ARG_BASE -> &1
-        args?
+        s_args?
         
     ARGS_END -> &0
 

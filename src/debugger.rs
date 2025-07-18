@@ -47,7 +47,22 @@ pub fn error(e: RuntimeError, pc: usize, tokens: &Vec<Token>) {
             asm_details!(&tokens[pc].info, "'A' part");
             asm_details!(&tokens[pc + 1].info, "'B' part");
         }
-        _ => {}
+        RuntimeError::AOutOfRange => {
+            asm_error_no_terminate!(
+                &tokens[pc].info,
+                "Address at 'A' is outside of memory bounds"
+            );
+            asm_details!(&tokens[pc + 1].info, "'B' part");
+            asm_details!(&tokens[pc + 2].info, "'C' part");
+        }
+        RuntimeError::BOutOfRange => {
+            asm_error_no_terminate!(
+                &tokens[pc + 1].info,
+                "Address at 'B' is outside of memory bounds"
+            );
+            asm_details!(&tokens[pc].info, "'A' part");
+            asm_details!(&tokens[pc + 2].info, "'C' part");
+        }
     }
 }
 
@@ -165,11 +180,52 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
     stdout.execute(terminal::Clear(terminal::ClearType::All));
     let stay_in_file = true;
     let mut mem_mode: bool = false;
-
+    let mut new_pc = 0;
+    let mut skip_exec: bool = false;
+    let mut apply_instruction: bool = false;
     loop {
         let mut skip_interaction = false;
-        let mut skip_exec: bool = false;
-        //     stdout.execute(terminal::Clear(terminal::ClearType::All));
+        let mut hist_item: Option<InstructionHistoryItem> = None;
+        if !skip_exec {
+            let result = interpreter::interpret_single(mem, pc);
+            let result = match result {
+                Ok(e) => e,
+                Err(e) => {
+                    error(e, pc, tokens);
+                    let mut inp: String = String::new();
+                    io::stdin().read_line(&mut inp);
+                    //continue;
+                    panic!();
+                }
+            };
+            let (p, io_operation, instruction_history_item) = result;
+            hist_item = Some(instruction_history_item.clone());
+            new_pc = p;
+            match io_operation {
+                IOOperation::Char(c) => {
+                    io_buffer.push(c);
+                    //   print!("{c}");
+                    //      io::stdout().flush();
+                }
+                IOOperation::Debug(i) => {
+                    let i = i as i16;
+                    println!("{i}");
+                    io::stdout().flush();
+                }
+                IOOperation::Halt => {
+                    return;
+                }
+                IOOperation::BreakPoint => {
+                    in_debugging_mode = true;
+                }
+                IOOperation::Perf => {
+                    todo!()
+                }
+                IOOperation::None => {}
+            }
+        }
+        skip_exec = false;
+
         if in_debugging_mode {
             stdout.execute(crossterm::cursor::MoveTo(0, 0));
 
@@ -214,7 +270,7 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                 }
                 //mem_view::draw_mem(mem, pc);
                 println!("{: <100}", io_buffer);
-
+                // dbg!(&instruction_history);
                 loop {
                     match read().unwrap() {
                         Event::Key(event) => {
@@ -231,14 +287,17 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                                         _ => {}
                                     },
                                     KeyCode::Right => {
-                                        if current_instruction_idx + 1 < instruction_history.len() {
+                                        skip_exec = false;
+                                        // Still not quite correct
+                                        if current_instruction_idx < instruction_history.len() {
                                             pc = apply_historic_instruction(
                                                 mem,
                                                 &instruction_history[current_instruction_idx],
                                                 &mut io_buffer,
                                             );
+                                            current_instruction_idx += 1;
+                                            skip_exec = true;
                                         }
-                                        current_instruction_idx += 1;
                                     }
 
                                     KeyCode::Left => {
@@ -250,6 +309,7 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                                                 &mut io_buffer,
                                             );
                                         }
+                                        skip_exec = true;
                                     }
                                     KeyCode::Down => {
                                         current_depth += 1;
@@ -261,6 +321,9 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                                         }
                                         skip_exec = true;
                                     }
+                                    KeyCode::Esc => {
+                                        in_debugging_mode = false;
+                                    }
                                     _ => {}
                                 }
                                 break;
@@ -271,51 +334,10 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
                 }
             }
         }
-
-        if current_instruction_idx >= instruction_history.len() && !skip_exec {
-            let result = interpreter::interpret_single(mem, pc);
-            let result = match result {
-                Ok(e) => e,
-                Err(e) => {
-                    current_instruction_idx -= 1;
-                    pc = revert_historic_instruction(
-                        mem,
-                        &instruction_history[current_instruction_idx - 1],
-                        &mut io_buffer,
-                    );
-                    error(e, pc, tokens);
-                    let mut inp: String = String::new();
-                    io::stdin().read_line(&mut inp);
-                    continue;
-                    // panic!();
-                }
-            };
-            let (new_pc, io_operation, instruction_history_item) = result;
-            pc = new_pc;
-            match io_operation {
-                IOOperation::Char(c) => {
-                    io_buffer.push(c);
-                    //   print!("{c}");
-                    //      io::stdout().flush();
-                }
-                IOOperation::Debug(i) => {
-                    let i = i as i16;
-                    println!("{i}");
-                    io::stdout().flush();
-                }
-                IOOperation::Halt => {
-                    return;
-                }
-                IOOperation::BreakPoint => {
-                    in_debugging_mode = true;
-                }
-                IOOperation::Perf => {
-                    todo!()
-                }
-                IOOperation::None => {}
-            }
-            instruction_history.push(instruction_history_item);
+        if !skip_exec && hist_item.is_some() {
+            instruction_history.push(hist_item.unwrap());
             current_instruction_idx = instruction_history.len();
+            pc = new_pc;
         }
     }
 }

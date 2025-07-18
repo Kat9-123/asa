@@ -63,6 +63,7 @@ pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usiz
     terminate();
 }
     */
+#[derive(Debug, PartialEq, Eq, Clone)]
 
 pub struct InstructionHistoryItem {
     pub pc: usize,

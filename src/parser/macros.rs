@@ -17,16 +17,16 @@ pub struct Macro {
 }
 
 pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut macros: HashMap<String, Macro> = HashMap::new();
 
     enum Mode {
-        NORMAL,
-        ARGS,
-        BODY,
-        BODY_BOUNDED_BY_SCOPES,
+        Normal,
+        Args,
+        Body,
+        BodyBoundedByScopes,
     }
-    let mut mode: Mode = Mode::NORMAL;
+    let mut mode: Mode = Mode::Normal;
     let mut scope_tracker = 0;
 
     let mut macro_name: String = String::new();
@@ -38,9 +38,10 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     for i in 0..tokens.len() {
         let token: &Token = &tokens[i];
         match mode {
-            Mode::NORMAL => match &token.variant {
+            Mode::Normal => match &token.variant {
                 TokenVariant::MacroDeclaration { name } => {
                     macro_name = name.clone();
+
                     if let Some(x) = macros.get(&macro_name) {
                         asm_warn!(
                             &token.info,
@@ -49,21 +50,18 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         asm_details!(&x.info, "Here");
                     }
                     macro_info = Some(token.info.clone());
-                    mode = Mode::ARGS;
-                    continue;
+                    mode = Mode::Args;
                 }
                 TokenVariant::MacroBodyStart | TokenVariant::MacroBodyEnd => {
                     asm_error!(&token.info, "Unexpected token");
                 }
                 _ => {
                     new_tokens.push(token.clone());
-                    continue;
                 }
             },
-            Mode::ARGS => match &token.variant {
-                TokenVariant::Linebreak => {
-                    continue;
-                }
+            Mode::Args => match &token.variant {
+                TokenVariant::Linebreak => { /* Linebreaks are allowed between arguments */ }
+
                 TokenVariant::Label { name } => {
                     macro_args.push(name.clone());
                     if !name.ends_with('?') {
@@ -73,17 +71,14 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                             hint!("'{name}' -> '{name}?'")
                         );
                     }
-                    continue;
                 }
                 TokenVariant::MacroBodyStart => {
-                    mode = Mode::BODY;
-                    continue;
+                    mode = Mode::Body;
                 }
                 TokenVariant::Scope => {
-                    mode = Mode::BODY_BOUNDED_BY_SCOPES;
+                    mode = Mode::BodyBoundedByScopes;
                     macro_body.push(token.clone());
                     scope_tracker += 1;
-                    continue;
                 }
 
                 _ => {
@@ -93,7 +88,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     );
                 }
             },
-            Mode::BODY => match &token.variant {
+            Mode::Body => match &token.variant {
                 TokenVariant::LabelArrow { offset } => {
                     macro_body.push(token.clone());
                     asm_warn!(
@@ -125,7 +120,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     macro_info = None;
                     macro_name = String::new();
                     in_macro_label_definitions = Vec::new();
-                    mode = Mode::NORMAL;
+                    mode = Mode::Normal;
                     continue;
                 }
                 _ => {
@@ -133,7 +128,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     continue;
                 }
             },
-            Mode::BODY_BOUNDED_BY_SCOPES => match &token.variant {
+            Mode::BodyBoundedByScopes => match &token.variant {
                 // HACK
                 TokenVariant::LabelArrow { offset } => {
                     macro_body.push(token.clone());
@@ -179,7 +174,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     macro_info = None;
 
                     in_macro_label_definitions = Vec::new();
-                    mode = Mode::NORMAL;
+                    mode = Mode::Normal;
                     continue;
                 }
                 _ => {
@@ -271,7 +266,7 @@ fn generate_macro_body(
     // dbg!(&body);
 
     //dbg!(&macros);
-    let (_, body) = insert_macros(body, macros, depth, context);
+    body = insert_macros(body, macros, depth, context);
     //dbg!(&body);
 
     return body;
@@ -288,18 +283,17 @@ pub fn insert_macros(
     macros: &HashMap<String, Macro>,
     depth: i32,
     context: Vec<(i32, Info)>,
-) -> (bool, Vec<Token>) {
+) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
     #[derive(Debug, PartialEq)]
     enum Mode {
-        NORMAL,
-        ARGS,
+        Normal,
+        Args,
         SCOPED_ARG,
     }
     let mut scope_tracker = 1;
 
-    let mut has_inserted_macro = false;
-    let mut mode = Mode::NORMAL;
+    let mut mode = Mode::Normal;
     let mut current_macro: Option<&Macro> = None;
     let mut label_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
     let mut caller_info: Option<Info> = None;
@@ -309,7 +303,7 @@ pub fn insert_macros(
     for token in &tokens {
         i += 1;
         match mode {
-            Mode::NORMAL => match &token.variant {
+            Mode::Normal => match &token.variant {
                 TokenVariant::MacroCall { name } => {
                     let mac = macros.get(name);
                     match mac {
@@ -320,7 +314,7 @@ pub fn insert_macros(
                             current_macro = Some(x);
                             caller_info = Some(token.info.clone());
 
-                            mode = Mode::ARGS;
+                            mode = Mode::Args;
                         }
                     }
                     continue;
@@ -329,7 +323,7 @@ pub fn insert_macros(
                     new_tokens.push(token.clone());
                 }
             },
-            Mode::ARGS => {
+            Mode::Args => {
                 let current_macro_safe = current_macro.unwrap();
                 // It has read all arguments
                 if label_map.len() >= current_macro_safe.args.len() {
@@ -341,8 +335,7 @@ pub fn insert_macros(
                     new_tokens.append(&mut suffix);
                     caller_info = None;
                     suffix = Vec::new();
-                    has_inserted_macro = true;
-                    mode = Mode::NORMAL;
+                    mode = Mode::Normal;
                     current_macro = None;
                     label_map = HashMap::new();
                     new_tokens.push(token.clone());
@@ -447,7 +440,7 @@ pub fn insert_macros(
                         continue;
                     }
                     cur_arg_name.clear();
-                    mode = Mode::ARGS;
+                    mode = Mode::Args;
                 }
                 _ => {
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
@@ -463,7 +456,7 @@ pub fn insert_macros(
     }
 
     // HACK
-    if mode == Mode::ARGS {
+    if mode == Mode::Args {
         let current_macro_safe = current_macro.unwrap();
         // It has read all arguments
         let mut c = context.clone();
@@ -471,28 +464,6 @@ pub fn insert_macros(
         let mut body = generate_macro_body(current_macro_safe, macros, &label_map, c, depth);
         new_tokens.append(&mut body);
         new_tokens.append(&mut suffix);
-        has_inserted_macro = true;
-        mode = Mode::NORMAL;
     }
-
-    (has_inserted_macro, new_tokens)
+    return new_tokens;
 }
-
-/*
-pub fn loop_insert_macros(tokens: Vec<Token>, macros: &HashMap<String, Macro>) -> Vec<Token> {
-    let mut has_inserted;
-    let mut t = tokens;
-    let mut i = 0;
-    loop {
-        (has_inserted, t) = insert_macros(t, macros, 0);
-
-        if !has_inserted {
-            return t;
-        }
-        i += 1;
-        if i > 100 {
-            panic!();
-        }
-    }
-}
- */

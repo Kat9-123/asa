@@ -185,6 +185,67 @@ fn find_label(
     asm_error!(info, "No definition for label '{name}' found");
 }
 
+/*
+    _ASM    _ASM    &1
+    *ID*ptr *ID*ptr &1
+    ptr     _ASM    &1
+    _ASM    *ID*ptr &1
+    a -= (*ID*ptr -> 0)
+*/
+fn make_deref_instructions(
+    info: &Info,
+    origin_info: &Vec<(i32, Info)>,
+    label_with_id: &String,
+    label_without_id: &String,
+) -> Vec<Token> {
+    let tokens_variants = vec![
+        TokenVariant::Linebreak,
+        TokenVariant::Label {
+            name: "_ASM".to_string(),
+        },
+        TokenVariant::Label {
+            name: "_ASM".to_string(),
+        },
+        TokenVariant::Relative { offset: 1 },
+        TokenVariant::Linebreak,
+        TokenVariant::Label {
+            name: label_with_id.clone(),
+        },
+        TokenVariant::Label {
+            name: label_with_id.clone(),
+        },
+        TokenVariant::Relative { offset: 1 },
+        TokenVariant::Linebreak,
+        TokenVariant::Label {
+            name: label_without_id.to_string(),
+        },
+        TokenVariant::Label {
+            name: "_ASM".to_string(),
+        },
+        TokenVariant::Relative { offset: 1 },
+        TokenVariant::Linebreak,
+        TokenVariant::Label {
+            name: "_ASM".to_string(),
+        },
+        TokenVariant::Label {
+            name: label_with_id.clone(),
+        },
+        TokenVariant::Relative { offset: 1 },
+        TokenVariant::Linebreak,
+    ];
+
+    let mut deref: Vec<Token> = Vec::new();
+    for i in tokens_variants {
+        deref.push(Token {
+            info: info.clone(),
+            origin_info: origin_info.clone(),
+            variant: i,
+        })
+    }
+
+    return deref;
+}
+
 pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 
@@ -200,116 +261,12 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
                     && let TokenVariant::Label { name } = &tokens[i + 1].variant
                 {
                     let info = &tokens[i].info;
+                    let origin_info = &tokens[i].origin_info;
                     let in_instruction_label = format!("*{id}*{name}");
-                    /*
-                    Z Z &1
-                    *ID*name *ID*name &1
-                    name Z &1
-                    Z *ID*name &1
-                     */
-                    let deref: Vec<Token> = vec![
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Linebreak,
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: "_ASM".to_string(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: "_ASM".to_string(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Linebreak,
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: in_instruction_label.clone(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: in_instruction_label.clone(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Linebreak,
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: name.to_string(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: "_ASM".to_string(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Linebreak,
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: "_ASM".to_string(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Label {
-                                name: in_instruction_label.clone(),
-                            },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Relative { offset: 1 },
-                            origin_info: vec![],
-                        },
-                        Token {
-                            info: info.clone(),
-                            variant: TokenVariant::Linebreak,
-                            origin_info: vec![],
-                        },
-                    ];
+
+
+                    let deref =
+                        make_deref_instructions(info, origin_info, &in_instruction_label, name);
                     address += 12;
                     new_tokens.splice(
                         last_linebreak_idx..last_linebreak_idx,

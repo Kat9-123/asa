@@ -5,8 +5,8 @@ pub enum LabelOffset {
     Char(char),
     Int(i32),
 }
-#[derive(Debug, PartialEq, Eq, Clone)]
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Info {
     pub start_char: i32,
     pub length: i32,
@@ -68,9 +68,11 @@ impl Token {
             | TokenVariant::Relative { .. }
             | TokenVariant::Label { .. }
             | TokenVariant::BracedLabelDefinition { .. } => 1,
+
             TokenVariant::HexLiteral { .. }
             | TokenVariant::CharLiteral { .. }
             | TokenVariant::StrLiteral { .. } => todo!(),
+
             _ => 0,
         }
     }

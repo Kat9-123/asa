@@ -72,7 +72,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
-    let (_, tokens) = insert_macros(tokens, &macros, 0, vec![]);
+    tokens = insert_macros(tokens, &macros, 0, vec![]);
     //let  tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");

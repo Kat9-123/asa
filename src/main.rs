@@ -35,15 +35,23 @@ struct Args {
     #[arg(short, long, default_value_t = 1)]
     count: u8,
     // Debug mode
+    //#[arg(long, default_value_t = false)]
+    // assembler_debug_mode: bool,
     // Hide info
     // Hide warnings
     // Run with debugger
+    /// Root path
+    // #[arg(long)]
+    // root_path: String,
+    /// Out file
+    //#[arg(short, long,default_value_t = "".to_string())]
+    // out_file: String,
     /// Disable type checking
     #[arg(long, default_value_t = false)]
     disable_type_checking: bool,
     /// Disable syntax suggestions
     #[arg(long, default_value_t = false)]
-    disable_suggestions: bool
+    disable_suggestions: bool,
 }
 
 fn main() {
@@ -51,7 +59,7 @@ fn main() {
     log::set_max_level(LevelFilter::Info);
     //disable_raw_mode();
     let args = Args::parse();
-   // let args: Vec<String> = env::args().collect();
+    // let args: Vec<String> = env::args().collect();
 
     let file_path = format!("./subleq/{}", args.target);
 
@@ -60,8 +68,8 @@ fn main() {
 
     let (mut mem, tokens) = assemble(contents, file_path);
     //   mem_view::draw_mem(&mem, 0);
-    //debugger::debug(&mut mem, &tokens, false);
-   // interpreter::interpret(&mut mem, &tokens, false);
+    //debugger::debug(&mut mem, &tokens, true);
+    interpreter::interpret(&mut mem, &tokens, false);
 }
 
 fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
