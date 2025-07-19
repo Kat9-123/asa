@@ -1,5 +1,6 @@
 use std::io::Read;
 use std::path::Path;
+use std::rc::Rc;
 use std::{fs, path::PathBuf};
 
 use crate::mem_view::draw_mem;
@@ -15,8 +16,8 @@ mod codegen;
 mod debugger;
 mod feedback;
 mod interpreter;
+mod lexer;
 mod mem_view;
-mod new_lexer;
 mod preprocessor;
 mod symbols;
 mod testing;
@@ -24,16 +25,29 @@ mod tokens;
 use clap::Parser;
 use std::time::Instant;
 
+
+#[macro_export]
+macro_rules! args {
+    () => {
+        ARGS.with(|a| a.clone())
+    };
+}
+thread_local! {
+    pub static ARGS: Rc<Args> = Rc::new(Args::parse());
+}
+
+
 /// Advanced Subleq Assembler
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// File to assemble
-    target: String,
+    #[arg(short, long, default_value = "")]
+    pub target: String,
 
     /// Number of times to greet
     #[arg(short, long, default_value_t = 1)]
-    count: u8,
+    pub count: u8,
     // Debug mode
     //#[arg(long, default_value_t = false)]
     // assembler_debug_mode: bool,
@@ -44,14 +58,14 @@ struct Args {
     // #[arg(long)]
     // root_path: String,
     /// Out file
-    //#[arg(short, long,default_value_t = "".to_string())]
-    // out_file: String,
+   // #[arg(short, long,default_value_t = "")]
+   // out_file: str,
     /// Disable type checking
     #[arg(long, default_value_t = false)]
-    disable_type_checking: bool,
-    /// Disable syntax suggestions
+    pub disable_type_checking: bool,
+    /// Disable notes
     #[arg(long, default_value_t = false)]
-    disable_suggestions: bool,
+    pub disable_notes: bool,
 }
 
 fn main() {
@@ -60,13 +74,13 @@ fn main() {
     //disable_raw_mode();
     let args = Args::parse();
     // let args: Vec<String> = env::args().collect();
-
-    let file_path = format!("./subleq/{}", args.target);
+        let file_path = format!("./subleq/{}", args.target);
 
     info!("Assembling {file_path}");
     let contents = fs::read_to_string(&file_path).expect("Should have been able to read the file");
 
     let (mut mem, tokens) = assemble(contents, file_path);
+    println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
     //debugger::debug(&mut mem, &tokens, true);
     interpreter::interpret(&mut mem, &tokens, false);
@@ -77,11 +91,11 @@ fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
 
     let mut currently_imported: Vec<PathBuf> = vec![Path::new(&path).to_path_buf()];
 
-    let with_imports = preprocessor::include_imports(text, &mut currently_imported, true);
+    let with_imports = preprocessor::include_imports(text, &mut currently_imported);
     debug!("With imports: ");
     print_debug!("{}", with_imports);
 
-    let tokens = new_lexer::tokenise(with_imports, path);
+    let tokens = lexer::tokenise(with_imports, path);
     println_debug!("Tokens:");
 
     for i in &tokens {

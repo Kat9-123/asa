@@ -264,7 +264,6 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
                     let origin_info = &tokens[i].origin_info;
                     let in_instruction_label = format!("*{id}*{name}");
 
-
                     let deref =
                         make_deref_instructions(info, origin_info, &in_instruction_label, name);
                     address += 12;

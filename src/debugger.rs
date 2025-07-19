@@ -12,7 +12,6 @@ use crossterm::{
     event::{Event, KeyCode, KeyEventKind, read},
     terminal::{self, enable_raw_mode},
 };
-use std::fmt::LowerExp;
 use std::{fs, thread, time};
 use std::{
     io::{self, *},

@@ -1,4 +1,5 @@
 use colored::Colorize;
+use crate::args;
 #[derive(PartialEq)]
 enum Type {
     INFO,
@@ -90,7 +91,7 @@ use std::{fs, process::exit};
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
 
-use crate::tokens::Info;
+use crate::{tokens::Info, ARGS};
 
 fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
@@ -246,10 +247,14 @@ pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
+    if args!().disable_notes {
+        return;
+    }
     println!();
 
-    log::info!(
-        "({file_name}:{line}) {}:{}:{}",
+    println!(
+        "{} + ({file_name}:{line}) {}:{}:{}",
+        "NOTE".blue(),
         info.file,
         info.line_number,
         info.start_char
@@ -281,6 +286,7 @@ pub fn _asm_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
     );
     asm_msg(msg, info, Type::INSTRUCTION, false);
 }
+
 
 #[macro_export]
 macro_rules! println_debug {

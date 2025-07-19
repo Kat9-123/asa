@@ -3,15 +3,19 @@ use crate::asm_info;
 use crate::feedback::*;
 use crate::hint;
 use crate::println_debug;
+use crate::symbols;
 use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
+use std::env::args;
+use crate::args;
+use crate::ARGS;
 
 #[derive(Debug)]
 pub struct Macro {
     name: String,
     info: Info,
-    args: Vec<String>,
+    args: Vec<(String, Info)>,
     body: Vec<Token>,
     labels_defined_in_macro: Vec<String>,
 }
@@ -23,15 +27,14 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     enum Mode {
         Normal,
         Args,
-        Body,
-        BodyBoundedByScopes,
+        Body { bounded_by_scopes: bool },
     }
     let mut mode: Mode = Mode::Normal;
     let mut scope_tracker = 0;
 
     let mut macro_name: String = String::new();
     let mut macro_body: Vec<Token> = Vec::new();
-    let mut macro_args: Vec<String> = Vec::new();
+    let mut macro_args: Vec<(String, Info)> = Vec::new();
     let mut macro_info: Option<Info> = None;
     let mut in_macro_label_definitions: Vec<String> = Vec::new();
 
@@ -63,7 +66,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 TokenVariant::Linebreak => { /* Linebreaks are allowed between arguments */ }
 
                 TokenVariant::Label { name } => {
-                    macro_args.push(name.clone());
+                    macro_args.push((name.clone(), token.info.clone()));
                     if !name.ends_with('?') {
                         asm_info!(
                             &token.info,
@@ -73,10 +76,14 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     }
                 }
                 TokenVariant::MacroBodyStart => {
-                    mode = Mode::Body;
+                    mode = Mode::Body {
+                        bounded_by_scopes: false,
+                    };
                 }
                 TokenVariant::Scope => {
-                    mode = Mode::BodyBoundedByScopes;
+                    mode = Mode::Body {
+                        bounded_by_scopes: true,
+                    };
                     macro_body.push(token.clone());
                     scope_tracker += 1;
                 }
@@ -88,8 +95,8 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     );
                 }
             },
-            Mode::Body => match &token.variant {
-                TokenVariant::LabelArrow { offset } => {
+            Mode::Body { bounded_by_scopes } => match &token.variant {
+                TokenVariant::LabelArrow { offset } if !bounded_by_scopes => {
                     macro_body.push(token.clone());
                     asm_warn!(
                         &token.info,
@@ -97,9 +104,29 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         hint!("Use '{{' and '}}' instead of '[' and ']'")
                     );
                 }
+                // HACK
+                TokenVariant::LabelArrow { offset } if bounded_by_scopes => {
+                    macro_body.push(token.clone());
+                    match &tokens[i - 1].variant {
+                        TokenVariant::Label { name } => {
+                            in_macro_label_definitions.push(name.clone());
+                        }
+                        _ => todo!(),
+                    }
+                }
+                TokenVariant::Scope if bounded_by_scopes => {
+                    macro_body.push(token.clone());
+                    scope_tracker += 1;
+                }
 
-                // Token::macrostart error
-                TokenVariant::MacroBodyEnd => {
+                TokenVariant::MacroDeclaration { .. } => {
+                    asm_error!(
+                        &token.info,
+                        "Macros may not be defined inside of other macros"
+                    );
+                }
+
+                TokenVariant::MacroBodyEnd if !bounded_by_scopes => {
                     if let TokenVariant::Linebreak = macro_body[0].variant {
                         macro_body.remove(0);
                     }
@@ -121,31 +148,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     macro_name = String::new();
                     in_macro_label_definitions = Vec::new();
                     mode = Mode::Normal;
-                    continue;
-                }
-                _ => {
-                    macro_body.push(token.clone());
-                    continue;
-                }
-            },
-            Mode::BodyBoundedByScopes => match &token.variant {
-                // HACK
-                TokenVariant::LabelArrow { offset } => {
-                    macro_body.push(token.clone());
-                    match &tokens[i - 1].variant {
-                        TokenVariant::Label { name } => {
-                            in_macro_label_definitions.push(name.clone());
-                        }
-                        _ => todo!(),
-                    }
-                }
-                TokenVariant::Scope => {
-                    macro_body.push(token.clone());
-                    scope_tracker += 1;
-                    continue;
                 }
 
-                TokenVariant::Unscope => {
+                TokenVariant::Unscope if bounded_by_scopes => {
                     macro_body.push(token.clone());
                     scope_tracker -= 1;
                     if scope_tracker != 0 {
@@ -175,11 +180,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
                     in_macro_label_definitions = Vec::new();
                     mode = Mode::Normal;
-                    continue;
                 }
                 _ => {
                     macro_body.push(token.clone());
-                    continue;
                 }
             },
         }
@@ -215,9 +218,6 @@ fn generate_macro_body(
                                 copy.origin_info = context.clone();
                                 copy.origin_info.push((0, base_body_token.info.clone()));
 
-                                //copy.origin_info.push((depth, base_body_token.info.clone()));
-                                //dbg!(&copy.origin_info);
-
                                 body.push(copy);
                             }
                             TokenOrTokenVec::TokVec(v) => {
@@ -225,11 +225,6 @@ fn generate_macro_body(
                                     let mut copy = i.clone();
                                     copy.origin_info = context.clone();
                                     copy.origin_info.push((0, base_body_token.info.clone()));
-
-                                    // copy.origin_info.push(calling_info.clone());
-                                    //copy.origin_info.push((depth,base_body_token.info.clone()));
-
-                                    //copy.origin_info.push(base_body_token.info.clone());
 
                                     body.push(copy);
                                 }
@@ -239,7 +234,6 @@ fn generate_macro_body(
                     }
                     None => {
                         let mut origin_info = base_body_token.origin_info.clone();
-                        //origin_info.push((depth, base_body_token.info.clone()));
                         origin_info = context.clone();
                         origin_info.push((0, base_body_token.info.clone()));
 
@@ -278,6 +272,58 @@ enum TokenOrTokenVec {
     TokVec(Vec<Token>),
 }
 
+fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argument_name: &String) {
+    if args!().disable_type_checking {
+        return;
+    }
+    let lower = argument_name.to_ascii_lowercase();
+    if lower.len() > 1 {
+        match &lower[..2] {
+            x if x == symbols::SCOPE_TYPE_PREFIX || x == symbols::MACRO_TYPE_PREFIX => {
+                if let TokenVariant::Scope = token.variant {
+                } else {
+                    // Change the m_
+                    asm_info!(
+                        &token.info,
+                        "Expected a SCOPE as argument {}",
+                        hint!("See the documentation for information on the typing system")
+                    );
+                    asm_details!(label_to_replace_info, "Macro definition");
+                }
+                return;
+            }
+            symbols::LITERAL_TYPE_PREFIX => match token.variant {
+                TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. } => {
+                    return;
+                }
+                _ => {
+                    asm_info!(
+                        &token.info,
+                        "Expected a LITERAL as argument {}",
+                        hint!("See the documentation for information on the typing system")
+                    );
+                    asm_details!(label_to_replace_info, "Macro definition");
+                    return;
+                }
+            },
+            symbols::ANY_TYPE_PREFIX => {
+                return;
+            }
+            _ => {}
+        }
+    }
+    if let TokenVariant::Label { .. } = token.variant {
+    } else {
+        asm_info!(
+            &token.info,
+            "Expected a LABEL as argument, found {:?} {}",
+            &token.variant,
+            hint!("See the documentation for information on the typing system")
+        );
+        asm_details!(label_to_replace_info, "Argument in macro definition");
+    }
+}
+
 pub fn insert_macros(
     tokens: Vec<Token>,
     macros: &HashMap<String, Macro>,
@@ -285,11 +331,12 @@ pub fn insert_macros(
     context: Vec<(i32, Info)>,
 ) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
+
     #[derive(Debug, PartialEq)]
     enum Mode {
         Normal,
         Args,
-        SCOPED_ARG,
+        ScopedArg,
     }
     let mut scope_tracker = 1;
 
@@ -299,9 +346,7 @@ pub fn insert_macros(
     let mut caller_info: Option<Info> = None;
     let mut suffix: Vec<Token> = Vec::new();
     let mut cur_arg_name: String = String::new();
-    let mut i: i32 = -1;
     for token in &tokens {
-        i += 1;
         match mode {
             Mode::Normal => match &token.variant {
                 TokenVariant::MacroCall { name } => {
@@ -317,7 +362,6 @@ pub fn insert_macros(
                             mode = Mode::Args;
                         }
                     }
-                    continue;
                 }
                 _ => {
                     new_tokens.push(token.clone());
@@ -344,8 +388,9 @@ pub fn insert_macros(
 
                     continue;
                 }
-
-                let name_to_replace = &current_macro_safe.args[label_map.len()];
+                let label_to_replace = &current_macro_safe.args[label_map.len()];
+                let name_to_replace = &label_to_replace.0;
+                let label_to_replace_info = &label_to_replace.1;
                 if let TokenVariant::Linebreak = token.variant {
                     continue;
                 }
@@ -354,56 +399,10 @@ pub fn insert_macros(
                     suffix.push(token.clone());
                     continue;
                 }
-                let lower = name_to_replace.to_ascii_lowercase();
-                if lower.len() > 1 {
-                    match &lower[..2] {
-                        x if x == "s_" || x == "m_" => {
-                            if let TokenVariant::Scope = token.variant {
-                            } else {
-                                // Change the m_
-                                asm_info!(
-                                    &token.info,
-                                    "Expected a SCOPE as argument {}",
-                                    hint!(
-                                        "See the documentation for information on the typing system"
-                                    )
-                                );
-                                asm_details!(&current_macro_safe.info, "Macro definition");
-                            }
-                        }
-                        "l_" => match token.variant {
-                            TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. } => {}
-                            _ => {
-                                asm_info!(
-                                    &token.info,
-                                    "Expected a LITERAL as argument {}",
-                                    hint!(
-                                        "See the documentation for information on the typing system"
-                                    )
-                                );
-                                asm_details!(&current_macro_safe.info, "Macro definition");
-                            }
-                        },
-                        "a_" => {}
-                        _ => {
-                            if let TokenVariant::Label { .. } = token.variant {
-                            } else {
-                                asm_info!(
-                                    &token.info,
-                                    "Expected a LABEL as argument, found {:?} {}",
-                                    &token.variant,
-                                    hint!(
-                                        "See the documentation for information on the typing system"
-                                    )
-                                );
-                                asm_details!(&current_macro_safe.info, "Macro definition");
-                            }
-                        }
-                    }
-                }
+                macro_argument_type_check(label_to_replace_info, token, name_to_replace);
 
                 if let TokenVariant::Scope = token.variant {
-                    mode = Mode::SCOPED_ARG;
+                    mode = Mode::ScopedArg;
                     let toks: Vec<Token> = vec![token.clone()];
                     label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
                     cur_arg_name = name_to_replace.clone();
@@ -412,11 +411,9 @@ pub fn insert_macros(
                 }
 
                 label_map.insert(name_to_replace.clone(), TokenOrTokenVec::Tok(token.clone()));
-
-                continue;
             }
 
-            Mode::SCOPED_ARG => match token.variant {
+            Mode::ScopedArg => match token.variant {
                 TokenVariant::Scope => {
                     scope_tracker += 1;
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
@@ -458,6 +455,12 @@ pub fn insert_macros(
     // HACK
     if mode == Mode::Args {
         let current_macro_safe = current_macro.unwrap();
+        if current_macro_safe.args.len() != label_map.len() {
+            asm_error!(
+                &caller_info.unwrap(),
+                "Not enough arguments have been supplied"
+            );
+        }
         // It has read all arguments
         let mut c = context.clone();
         c.push((0, caller_info.unwrap()));

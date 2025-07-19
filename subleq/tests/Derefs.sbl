@@ -11,6 +11,7 @@ _ASM *0*ptr &1
 *ptr -= *ptr
 Z -= C
 *ptr -= Z
+
 -1 -= *ptr
 
 

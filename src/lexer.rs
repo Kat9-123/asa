@@ -1,7 +1,7 @@
 use colored::Colorize;
 
 use crate::{
-    asm_error, hint,
+    asm_error, hint, preprocessor,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 
@@ -287,14 +287,9 @@ fn updated_context(
     }
 }
 
-pub fn clean(text: String) -> String {
-    let cleaned_string: String = text.replace("\r\n", "\n").replace("\t", " ");
-    cleaned_string
-}
-
 pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
-    text = clean(text);
-    text.push('\n');
+    text = preprocessor::generic_sanitisation(&text);
+    text.push('\n'); // Little hack
 
     let mut name_space_stack: Vec<String> = vec![path.clone()];
     let mut line_number_stack: Vec<i32> = Vec::new();

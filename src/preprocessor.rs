@@ -5,11 +5,7 @@ pub fn generic_sanitisation(text: &String) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")
 }
 
-pub fn include_imports(
-    text: String,
-    currently_imported: &mut Vec<PathBuf>,
-    source_level: bool,
-) -> String {
+pub fn include_imports(text: String, currently_imported: &mut Vec<PathBuf>) -> String {
     let cleaned_string: String = generic_sanitisation(&text);
 
     let str_split = cleaned_string.split("\n").collect::<Vec<&str>>();
@@ -51,7 +47,7 @@ pub fn include_imports(
 
         let contents = fs::read_to_string(&path).expect("Should have been able to read the file");
         let contents = generic_sanitisation(&contents);
-        let contents = include_imports(contents, currently_imported, false);
+        let contents = include_imports(contents, currently_imported);
 
         split.insert(i + 1, contents);
         split.insert(i + 2, "/".to_owned()); // '/' is used to delimit EOF

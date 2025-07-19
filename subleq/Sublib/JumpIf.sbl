@@ -1,6 +1,9 @@
 
 
 ; https://gist.github.com/howerj/4e0741370bd22b3181443bf3e0ba6697
+**
+    This routine is expensive, but necessary.
+**
 @JumpIf::Le a? b? .address? {
 
     !Cpy a? a_plus_one

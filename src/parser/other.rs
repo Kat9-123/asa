@@ -3,6 +3,53 @@ use crate::{
     tokens::{LabelOffset, Token, TokenVariant},
 };
 
+pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
+    let mut address: i32 = 0;
+    let mut new_tokens: Vec<Token> = Vec::new();
+
+    for token in tokens {
+        match token.variant {
+            TokenVariant::Relative { offset } => {
+                new_tokens.push(Token {
+                    info: token.info.clone(),
+                    variant: TokenVariant::DecLiteral {
+                        value: address + offset,
+                    },
+                    origin_info: token.origin_info.clone(),
+                    //macro_trace: token.macro_trace.clone()
+                });
+            }
+            _ => new_tokens.push(token.clone()),
+        }
+        address += token.size();
+    }
+    new_tokens
+}
+
+pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
+    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut i = 0;
+    while i < tokens.len() {
+        if i + 1 < tokens.len()
+            && let TokenVariant::Asterisk = tokens[i + 1].variant
+        {
+            match &tokens[i + 2].variant {
+                TokenVariant::DecLiteral { value: count } => {
+                    for mult_i in 0..*count {
+                        new_tokens.push(tokens[i].clone());
+                    }
+                    i += 3;
+                    continue;
+                }
+                _ => {} // its the deref operator
+            }
+        }
+        new_tokens.push(tokens[i].clone());
+        i += 1;
+    }
+    new_tokens
+}
+
 pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::new();
 
@@ -49,7 +96,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
         if idx + 1 < tokens.len()
             && let TokenVariant::Subleq = &tokens[idx + 1].variant
         {
-            /*  doesnt work, shouldnt trigger for b -= ZERO...
+            /*  doesnt work, shouldnt trigger for ZERO -= ZERO...
             if let TokenVariant::Label {name} = &tokens[idx].variant {
                 if name.len() > 1 {
                     if name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {

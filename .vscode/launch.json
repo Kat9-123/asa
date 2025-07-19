@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["sublib/func.sbl"],
+            "args": ["Warntest.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {

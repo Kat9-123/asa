@@ -1,61 +1,14 @@
 mod labels;
 mod literals;
 mod macros;
-pub mod statements;
+pub mod other;
 
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
-use crate::parser::statements::*;
+use crate::parser::other::*;
 use crate::tokens::{Token, TokenVariant};
 use crate::{print_debug, println_debug};
-
-fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
-    let mut address: i32 = 0;
-    let mut new_tokens: Vec<Token> = Vec::new();
-
-    for token in tokens {
-        match token.variant {
-            TokenVariant::Relative { offset } => {
-                new_tokens.push(Token {
-                    info: token.info.clone(),
-                    variant: TokenVariant::DecLiteral {
-                        value: address + offset,
-                    },
-                    origin_info: token.origin_info.clone(),
-                    //macro_trace: token.macro_trace.clone()
-                });
-            }
-            _ => new_tokens.push(token.clone()),
-        }
-        address += token.size();
-    }
-    new_tokens
-}
-
-fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::new();
-    let mut i = 0;
-    while i < tokens.len() {
-        if i + 1 < tokens.len()
-            && let TokenVariant::Asterisk = tokens[i + 1].variant
-        {
-            match &tokens[i + 2].variant {
-                TokenVariant::DecLiteral { value: count } => {
-                    for mult_i in 0..*count {
-                        new_tokens.push(tokens[i].clone());
-                    }
-                    i += 3;
-                    continue;
-                }
-                _ => {} // its the deref operator
-            }
-        }
-        new_tokens.push(tokens[i].clone());
-        i += 1;
-    }
-    new_tokens
-}
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
