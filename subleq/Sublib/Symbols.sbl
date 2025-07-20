@@ -7,6 +7,9 @@ N_ONE -> -1
 ONE -> 1
 ZERO -> 0
 
+FALSE -> 0
+TRUE -> 1
+
 LINEBREAK -> 0xA
 
 

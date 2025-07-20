@@ -1,6 +1,7 @@
-!J .main
+Z -= Z .main
 #Sublib
 #Sublib/Stack
+#Sublib/Control
 **
 LOW
 ....
@@ -14,6 +15,18 @@ Return address
 arg1
 .. etc
 HIGH
+**
+**
+a -> &2 1
+b -> &2 2
+Z -> 0
+
+@TestMac s_a? {
+    s_a?
+}
+
+.main ->
+    a b
 **
 
 function_stack -> !Stack::Create 128
@@ -31,35 +44,39 @@ function_stack -> !Stack::Create 128
 
 
 @Func::Call name? s_args? {
-    !Cpy ARG_BASE arg_idx
-    !IO::PrintLit "RET "
-    !BreakPoint
+    !Cpy ARGS_END arg_idx
+ ;   !IO::PrintLit "RET "
+    ;!BreakPoint
     !Stack::Push function_stack _return_address
     .arg_loop ->
         !Clr n_arg
         !Clr cur_arg
+        !Dec arg_idx
+        !JumpIf::Le arg_idx ARG_BASE name?
+
         n_arg -= (arg_idx -> 0)
         cur_arg -= n_arg
-        !IO::PrintLn cur_arg
+
+        !DerefAndCopy cur_arg derefed_cur_arg
+        
+       ; !Debug cur_arg
+        ;!IO::PrintLn cur_arg
      ;   !Debug arg_idx
     ;    !Debug ARGS_END
-        !IO::PrintLit "ARG "
-        !Stack::Push function_stack cur_arg
-        !Inc arg_idx
+       ; !IO::PrintLit "ARG "
+        !Stack::Push function_stack derefed_cur_arg
+        !J .arg_loop
      ;   !Debug arg_idx
-        !BreakPoint
+       ; !BreakPoint
 
-        !JumpIf::Le arg_idx ARGS_END .arg_loop
 
-    !IO::PrintLnLit "JP"
+   ; !IO::PrintLnLit "JP"
 
-    !J name?
     n_arg -> 0
+    derefed_cur_arg -> 0
     cur_arg -> 0
     0xABCD
-    ARG_BASE -> &1
-        s_args?
-        
+    ARG_BASE -> &s_args?
     ARGS_END -> &0
 
     _return_address -> &1
@@ -78,20 +95,31 @@ function_stack -> !Stack::Create 128
     name? -> 0
 ]
 
+
 !Func FUNtest {
     !Arg a
-    !Arg b
+    !Arg c
 
     !IO::PrintLn a
-    !IO::PrintLn b
-    !Halt
+
+
+   ; !Debug c
+
+    !If c {
+        !Func::Call FUNtest {a FALSE }
+    } 
+   ; !IO::PrintLnLit "A"
+
+    !Func::Return
 }
 
-p -> &"Test" 0
-p2 -> &"string" 0
-
+b -> &"Test" 0
+a -> &"string" 0
+d -> &"APPOL" 0
 .main ->
 
-    !Func::Call FUNtest {p p2}
+    !Func::Call FUNtest { a TRUE }
 
+    !IO::PrintLnLit "END"
     !Halt
+

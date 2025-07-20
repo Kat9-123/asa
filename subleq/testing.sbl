@@ -1,0 +1,18 @@
+a -> 1
+b -> 2
+c -> 3
+x -> 100
+@Mac2 s_b {
+    .test
+    s_b
+    .test ->
+}
+
+@Mac b s_thing {
+    b
+    !Mac2 s_thing
+    x -= x
+}
+
+
+!Mac x {a b c}

@@ -6,7 +6,8 @@ mod tests {
     use simple_logger::SimpleLogger;
 
     use crate::{
-        assemble, codegen,
+        assembler::assemble,
+        codegen,
         interpreter::{self, interpret},
         preprocessor::generic_sanitisation,
     };

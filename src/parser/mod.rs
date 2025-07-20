@@ -26,6 +26,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     println_debug!();
 
     tokens = insert_macros(tokens, &macros, 0, vec![]);
+
     //let  tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");
@@ -38,9 +39,12 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
+
+
     let tokens = convert_strings(tokens);
     let tokens = expand_mults(&tokens);
     let tokens = expand_derefs(&tokens);
+
     log::debug!("Derefs and Literals");
     for token in &tokens {
         if let TokenVariant::Linebreak = token.variant {

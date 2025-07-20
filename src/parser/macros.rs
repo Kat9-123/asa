@@ -1,3 +1,4 @@
+use crate::args;
 use crate::asm_details;
 use crate::asm_info;
 use crate::feedback::*;
@@ -7,9 +8,6 @@ use crate::symbols;
 use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
-use std::env::args;
-use crate::args;
-use crate::ARGS;
 
 #[derive(Debug)]
 pub struct Macro {
@@ -124,6 +122,15 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         &token.info,
                         "Macros may not be defined inside of other macros"
                     );
+                }
+                TokenVariant::MacroCall { name } => {
+                    if *name == macro_name {
+                        asm_error!(
+                            &token.info,
+                            "Macros may not contain a call to themselves"
+                        );
+                    }
+                    macro_body.push(token.clone());
                 }
 
                 TokenVariant::MacroBodyEnd if !bounded_by_scopes => {
@@ -273,7 +280,7 @@ enum TokenOrTokenVec {
 }
 
 fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argument_name: &String) {
-    if args!().disable_type_checking {
+    if args::exist() && args::get().disable_type_checking {
         return;
     }
     let lower = argument_name.to_ascii_lowercase();
