@@ -10,6 +10,7 @@ This Subleq assembler uses a custom assembly-like language that will be directly
 * In depth assembler feedback
 * Optional typing system
 * Fully fledged standard lib including functions and high level control flow constructs like If or While
+* Scopes
 
 ## What is Subleq?
 Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that had only one instruction, nameley Subleq. The instruction has three operands: A, B, C
