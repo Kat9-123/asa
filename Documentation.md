@@ -3,10 +3,14 @@
 ### Basics
 
 ```clojure
+1 2 3 ; Standard subleq, eq to mem[2] -= mem[1] jump to 3 if leq otherwise next instruction
+; memory adresses may be labeled
+a -> 1
+b -> 2
 a -= b ; Subtract b from a
 a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
 
-; If no `c` is given, the next instruction will always be executed
+; If no `c` is given, the next instruction will always be executed, even if the result is leq
 
 ; These two are equivalent
 a -= b
@@ -17,7 +21,7 @@ b a &1 ; This syntax works but is not recommended, since it makes it harder for 
 
 ; Other examples
 a -= b 0x0000
-0x0000 -= 0x000 c
+0x0000 -= 0x0000 c
 
 ```
 
@@ -124,7 +128,9 @@ ptr -> &1 0x1234
 ptr -> &1 "String"
 ; or
 ptr -> &'A'
-ptr -> &"String" ; Doesn't work for Hex or Dec literals
+ptr -> &"String" ; Doesn't work for Hex or Dec literals, for those there must be a space in beteeen the & and the number
+pre -> & 123
+; because &123 would be a relative address +123
 ```
 
 #### Dereferencing
