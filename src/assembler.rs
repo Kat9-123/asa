@@ -9,7 +9,7 @@ use log::{LevelFilter, debug, info};
 
 use std::time::Instant;
 
-pub fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
+pub fn assemble(text: &String, path: String) -> (Vec<u16>, Vec<Token>) {
     let timer = Instant::now();
 
     let mut currently_imported: Vec<PathBuf> = vec![Path::new(&path).to_path_buf()];
@@ -32,7 +32,5 @@ pub fn assemble(text: String, path: String) -> (Vec<u16>, Vec<Token>) {
     let tokens = parser::parse(tokens);
     let result = codegen::generate(tokens);
     info!("Assembled in: {:.3?}", timer.elapsed());
-    println!();
-    draw_mem(&result.0, 0);
     result
 }

@@ -8,20 +8,21 @@
 @IO::Print string? {
     !Cpy string? ptr
     !J .loop
-    char        -> 0
-    inv_char    -> 0
+
 
     .loop ->
-        inv_char    -= (ptr -> 0) ; 0 -= 0
-        char        -= inv_char
+        !AssignZero char
+        !AssignZero n_char
+
+        n_char    -= (ptr -> 0) ; 0 -= 0
+        char        -= n_char
         char        -= ZERO            .fin  ; Null so we fin
 
         !IO         -= char
 
         !Inc ptr
 
-        !Clr inv_char
-        !Clr char
+
         Z           -= Z .loop
 
 

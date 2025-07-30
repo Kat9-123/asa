@@ -6,10 +6,10 @@
 ]
 
 @Stack::Push p_stack? val? {
-    !J .
+    !J .start
     i_val -> 0
 
-    . ->
+    .start ->
     !Inc p_stack?
 
     !Clear i_val
@@ -22,10 +22,10 @@
 
 }
 
-@Stack::PushLit p_stack? l_val? {
+@Stack::PushLit p_stack? L_VAL? {
     !J .
     i_val -> 0
-    val -> l_val?
+    val -> L_VAL?
 
     . ->
     !Inc p_stack?
@@ -39,11 +39,10 @@
 @Stack::Pop p_stack? out? {
 
 
-    !Copy p_stack? p_write
-    !Copy p_stack? p_read
 
-    !Copy (p_read -> 0) out?
-    (p_write -> 0) -= out?
+    !DerefAndCopy p_stack? out?
+
+    *p_stack? -= out?
 
     !Dec p_stack?
    ; !IO::PrintLnLit "POP"

@@ -10,7 +10,9 @@ pub struct Args {
     /// File to assemble
     pub target: String,
 
-
+    /// Debug mode
+    #[arg(long, default_value_t = log::Level::Info)]
+    feedback_level: log::Level,
     /// Debug mode
     #[arg(long, default_value_t = true)]
     assembler_debug_mode: bool,
@@ -18,7 +20,7 @@ pub struct Args {
     #[arg(long, default_value_t = false)]
     pub debugger: bool,
     /// Root path. This is the path includes are resolved from.
-    #[arg(long, default_value = "") ]
+    #[arg(long, default_value = "")]
     root_path: String,
     /// Out file.
     #[arg(short, long, default_value = "")]
@@ -33,7 +35,6 @@ pub struct Args {
     #[arg(long, default_value_t = false)]
     pub disable_warnings: bool,
 }
-
 
 pub fn get() -> &'static Args {
     ARGS.get().unwrap()

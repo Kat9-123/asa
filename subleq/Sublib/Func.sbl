@@ -52,6 +52,7 @@ function_stack -> !Stack::Create 128
         !Clr n_arg
         !Clr cur_arg
         !Dec arg_idx
+
         !JumpIf::Le arg_idx ARG_BASE name?
 
         n_arg -= (arg_idx -> 0)
@@ -100,17 +101,19 @@ function_stack -> !Stack::Create 128
     !Arg a
     !Arg c
 
-    !IO::PrintLn a
 
 
    ; !Debug c
+    !IO::PrintLn a
 
-    !If c {
-        !Func::Call FUNtest {a FALSE }
-    } 
-   ; !IO::PrintLnLit "A"
+    !IfElse c {
+        !Func::Call FUNtest {d FALSE }
+    } **Else** {
+        !IO::PrintLnLit "FIN"
+    }
 
-    !Func::Return
+    !IO::PrintLn a
+
 }
 
 b -> &"Test" 0

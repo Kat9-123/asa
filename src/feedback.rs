@@ -1,12 +1,17 @@
 use colored::Colorize;
-#[derive(PartialEq)]
+
+use std::cell::RefCell;
+thread_local!(static feedback_type: RefCell<log::Level> = RefCell::new(log::Level::Debug));
+
+#[derive(PartialEq, Clone)]
+
 enum Type {
-    INFO,
-    WARN,
-    ERROR,
-    DETAILS,
-    INSTRUCTION,
-    SUB_INSTRUCTION,
+    Info,
+    Warn,
+    Error,
+    Details,
+    Instruction,
+    SubInstruction,
 }
 #[macro_export]
 macro_rules! asm_sub_instruction {
@@ -39,6 +44,7 @@ macro_rules! asm_info {
 #[macro_export]
 macro_rules! asm_details {
     ($info:expr, $($arg:tt)*) => {
+
         {
             $crate::feedback::_asm_details(format!($($arg)*), $info, file!(), line!());
         }
@@ -97,6 +103,8 @@ fn get_file_contents(path: &String) -> String {
 }
 
 pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
+    feedback_type.set(log::Level::Error);
+
     println!();
     log::error!(
         "({file_name}:{line}) {}:{}:{}",
@@ -105,7 +113,7 @@ pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
         info.start_char
     );
 
-    asm_msg(msg, info, Type::ERROR, false);
+    asm_msg(msg, info, Type::Error, false);
 }
 
 fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
@@ -114,7 +122,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     let prefix = if !sub_msg { "" } else { "     |" };
 
     //  println!("{:?}",info);
-    if msg_type != Type::SUB_INSTRUCTION && info.line_number - 3 >= 0 {
+    if msg_type != Type::SubInstruction && info.line_number - 3 >= 0 {
         println!(
             "{}{: >4} | {}",
             prefix,
@@ -122,7 +130,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
             lines[(info.line_number - 3) as usize]
         );
     }
-    if msg_type != Type::SUB_INSTRUCTION && info.line_number - 2 >= 0 {
+    if msg_type != Type::SubInstruction && info.line_number - 2 >= 0 {
         println!(
             "{}{: >4} | {}",
             prefix,
@@ -132,42 +140,42 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     }
 
     match msg_type {
-        Type::ERROR => println!(
+        Type::Error => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).red(),
             " > ".red(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::WARN => println!(
+        Type::Warn => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).yellow(),
             " > ".yellow(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::INFO => println!(
+        Type::Info => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::INSTRUCTION => println!(
+        Type::Instruction => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::DETAILS => println!(
+        Type::Details => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::SUB_INSTRUCTION => println!(
+        Type::SubInstruction => println!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
@@ -175,7 +183,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
             lines[(info.line_number - 1) as usize]
         ),
     }
-    if msg_type == Type::INSTRUCTION && info.line_number + 1 < lines.len() as i32 {
+    if msg_type == Type::Instruction && info.line_number + 1 < lines.len() as i32 {
         println!(
             "{}{: >4} | {}",
             prefix,
@@ -190,7 +198,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     }
     let prefix = if !sub_msg { "     | " } else { "     |     | " };
 
-    if msg_type != Type::INSTRUCTION {
+    if msg_type != Type::Instruction {
         print!("{prefix}");
 
         for _ in 0..start - 1 {
@@ -198,12 +206,12 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         }
         for _ in 0..length {
             match msg_type {
-                Type::ERROR => print!("{}", "~".red()),
-                Type::WARN => print!("{}", "~".yellow()),
-                Type::INFO => print!("{}", "~".blue()),
-                Type::INSTRUCTION => {}
-                Type::DETAILS => print!("{}", "~".blue()),
-                Type::SUB_INSTRUCTION => print!("{}", "~".bright_cyan()),
+                Type::Error => print!("{}", "~".red()),
+                Type::Warn => print!("{}", "~".yellow()),
+                Type::Info => print!("{}", "~".blue()),
+                Type::Instruction => {}
+                Type::Details => print!("{}", "~".blue()),
+                Type::SubInstruction => print!("{}", "~".bright_cyan()),
             }
         }
         println!();
@@ -212,16 +220,20 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     let prefix = if !sub_msg { "     - " } else { "     |     - " };
 
     match msg_type {
-        Type::ERROR => println!("{}{}", prefix, msg.red()),
-        Type::WARN => println!("{}{}", prefix, msg.bold().yellow()),
-        Type::INFO => println!("{}{}", prefix, msg.bold()),
-        Type::DETAILS => println!("{}{}", prefix, msg.bold()),
-        Type::INSTRUCTION => println!("{}{}", prefix, msg.bold()),
-        Type::SUB_INSTRUCTION => {}
+        Type::Error => println!("{}{}", prefix, msg.red()),
+        Type::Warn => println!("{}{}", prefix, msg.bold().yellow()),
+        Type::Info => println!("{}{}", prefix, msg.bold()),
+        Type::Details => println!("{}{}", prefix, msg.bold()),
+        Type::Instruction => println!("{}{}", prefix, msg.bold()),
+        Type::SubInstruction => {}
     }
 }
 
 pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
+    feedback_type.set(log::Level::Warn);
+    if log::max_level() < log::Level::Warn {
+        return;
+    }
     println!();
 
     log::warn!(
@@ -230,7 +242,7 @@ pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::WARN, false);
+    asm_msg(msg, info, Type::Warn, false);
 }
 
 pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
@@ -242,11 +254,13 @@ pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::SUB_INSTRUCTION, true);
+    asm_msg(msg, info, Type::SubInstruction, true);
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
-    if args::exist() && args::get().disable_notes {
+    feedback_type.set(log::Level::Info);
+
+    if (args::exist() && args::get().disable_notes) || log::max_level() < log::Level::Info {
         return;
     }
     println!();
@@ -258,19 +272,26 @@ pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::INFO, false);
+    asm_msg(msg, info, Type::Info, false);
 }
 
 pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
+    if feedback_type.with(|cell| {
+        let t = cell.borrow();
+
+        log::max_level() < *t
+    }) {
+        return;
+    }
     println!("     |");
     println!(
         "     + {} ({file_name}:{line}) {}:{}:{}",
-        "DETAILS".blue(),
+        "Details".blue(),
         info.file,
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::INFO, true);
+    asm_msg(msg, info, Type::Info, true);
 }
 
 pub fn _asm_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
@@ -278,12 +299,12 @@ pub fn _asm_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
 
     println!(
         "{} ({file_name}:{line}) {}:{}:{}",
-        "INSTRUCTION".blue(),
+        "Instruction".blue(),
         info.file,
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::INSTRUCTION, false);
+    asm_msg(msg, info, Type::Instruction, false);
 }
 
 #[macro_export]

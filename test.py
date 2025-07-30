@@ -1,3 +1,10 @@
+import random
+for i in range(50):
+    a = random.randint(-0x8000, 0x7FFF)
+    b = random.randint(a, 0x7FFF)
+    print(f"!TestJumpIfLe {a} {b}")
+
+exit()
 result = 0
 val = 0b0110_0001_0110_1001
 print(val)

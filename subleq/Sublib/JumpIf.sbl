@@ -6,6 +6,21 @@
 **
 @JumpIf::Le a? b? .address? {
 
+**
+	const int a0 = leq0(a);
+	const int b0 = leq0(b);
+	if (a0 && !b0)
+		return 1;
+	if (!a0 && b0)
+		return 0;
+	if (a0 && b0) {
+		if (!leq0(a + 1) && leq0(b + 1))
+			return 0;
+	}
+	const int l = leq0((uint16_t)(a - b));
+	return l ? leq0((uint16_t)((a + 1) - b)) : 0;
+**
+
     !Cpy a? a_plus_one
     !Cpy b? b_plus_one
     !Cpy a? l
@@ -15,7 +30,7 @@
     a? -= ZERO .a_not_b
     !J .not_a_b
 
-.a_not_b ->   ; a<=0 && !b<=0
+.a_not_b -> ; a<=0 && !b<=0
     b? -= ZERO .a_b
     !J .address?
 

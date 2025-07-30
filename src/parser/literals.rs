@@ -24,7 +24,7 @@ pub fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
 }
 
 pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     for token in tokens {
         match token.variant {
             TokenVariant::StrLiteral { value } => {
@@ -42,4 +42,65 @@ pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
     }
 
     new_tokens
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_char_hex_to_dec() {
+        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::CharLiteral { value: '~' },
+            TokenVariant::CharLiteral { value: '\0' },
+            TokenVariant::CharLiteral { value: 'P' },
+            TokenVariant::HexLiteral {
+                value: "8000".to_string(),
+            },
+            TokenVariant::HexLiteral {
+                value: "0123".to_string(),
+            },
+            TokenVariant::HexLiteral {
+                value: "-00AA".to_string(),
+            },
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::DecLiteral { value: 126 },
+            TokenVariant::DecLiteral { value: 0 },
+            TokenVariant::DecLiteral { value: 80 },
+            TokenVariant::DecLiteral { value: 32768 },
+            TokenVariant::DecLiteral { value: 291 },
+            TokenVariant::DecLiteral { value: -170 },
+        ]);
+        char_and_hex_to_dec(&mut input);
+        assert_eq!(input, expected);
+    }
+
+    #[test]
+    fn test_convert_strings() {
+        let input: Vec<Token> = tokens_from_token_variant_vec(vec![TokenVariant::StrLiteral {
+            value: "Hello, \t\nW0rld!".to_string(),
+        }]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::DecLiteral { value: 72 },
+            TokenVariant::DecLiteral { value: 101 },
+            TokenVariant::DecLiteral { value: 108 },
+            TokenVariant::DecLiteral { value: 108 },
+            TokenVariant::DecLiteral { value: 111 },
+            TokenVariant::DecLiteral { value: 44 },
+            TokenVariant::DecLiteral { value: 32 },
+            TokenVariant::DecLiteral { value: 9 },
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::DecLiteral { value: 87 },
+            TokenVariant::DecLiteral { value: 48 },
+            TokenVariant::DecLiteral { value: 114 },
+            TokenVariant::DecLiteral { value: 108 },
+            TokenVariant::DecLiteral { value: 100 },
+            TokenVariant::DecLiteral { value: 33 },
+        ]);
+
+        let output = convert_strings(input);
+        assert_eq!(output, expected);
+    }
 }

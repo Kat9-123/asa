@@ -18,7 +18,76 @@ c -> 0
 d -> 1233
 
 
+@TestJumpIfLe L_A? L_B? {
+    !JumpIf::Le a b .contd
+    !J .err
+    .contd ->
+    !JumpIf::Le b a .err
+    !J .fin
+
+    a -> L_A?
+    b -> L_B?
+    .fin ->
+}
+
 .main ->
+    !TestJumpIfLe -15965 16423
+    !TestJumpIfLe 20112 25597
+    !TestJumpIfLe -3417 16335
+    !TestJumpIfLe 13996 22218
+    !TestJumpIfLe 30975 31420
+    !TestJumpIfLe 17590 23230
+    !TestJumpIfLe -7374 24686
+    !TestJumpIfLe -6623 27912
+    !TestJumpIfLe 30512 30971
+    !TestJumpIfLe 19522 31963
+    !TestJumpIfLe -28326 32279
+    !TestJumpIfLe 14976 20649
+    !TestJumpIfLe -25204 14702
+    !TestJumpIfLe -21855 12460
+    !TestJumpIfLe 15552 26420
+    !TestJumpIfLe 10175 13333
+    !TestJumpIfLe 24378 30816
+    !TestJumpIfLe 8939 25299
+    !TestJumpIfLe -29499 12900
+    !TestJumpIfLe -4856 20724
+    !TestJumpIfLe 29168 31183
+    !TestJumpIfLe 1099 16420
+    !TestJumpIfLe -4637 19488
+    !TestJumpIfLe 507 25449
+    !TestJumpIfLe -2328 8986
+    !TestJumpIfLe -20501 27222
+    !TestJumpIfLe 26229 28094
+    !TestJumpIfLe 3466 20132
+    !TestJumpIfLe 22674 26210
+    !TestJumpIfLe -24224 18596
+    !TestJumpIfLe -7911 2710
+    !TestJumpIfLe -17278 -7340
+    !TestJumpIfLe 31527 32708
+    !TestJumpIfLe 21523 32354
+    !TestJumpIfLe 15005 20414
+    !TestJumpIfLe -17640 31974
+    !TestJumpIfLe 31732 32560
+    !TestJumpIfLe -31671 -16739
+    !TestJumpIfLe 12887 21108
+    !TestJumpIfLe 24990 27219
+    !TestJumpIfLe -30958 8266
+    !TestJumpIfLe 16228 32094
+    !TestJumpIfLe -11202 -3007
+    !TestJumpIfLe -17765 29769
+    !TestJumpIfLe 5013 22570
+    !TestJumpIfLe 11330 21776
+    !TestJumpIfLe -17007 -12591
+    !TestJumpIfLe 12178 20795
+    !TestJumpIfLe 5128 9909
+    !TestJumpIfLe -27647 29155
+
+    !TestJumpIfLe 0x8000 -1
+    !TestJumpIfLe 0x8000 0
+    !TestJumpIfLe -1 0
+    !TestJumpIfLe 0 1
+
+
 
     !JumpIf::Le a b .err
     !JumpIf::Le b a .T1

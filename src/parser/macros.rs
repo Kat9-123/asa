@@ -6,8 +6,10 @@ use crate::hint;
 use crate::println_debug;
 use crate::symbols;
 use crate::tokens::*;
+
 use colored::Colorize;
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Macro {
@@ -16,6 +18,17 @@ pub struct Macro {
     args: Vec<(String, Info)>,
     body: Vec<Token>,
     labels_defined_in_macro: Vec<String>,
+}
+
+impl fmt::Display for Macro {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{}:    ", self.name.yellow())?;
+        for i in &self.args {
+            write!(fmt, "{} ", i.0)?;
+        }
+        write!(fmt, "\n{: >4?}\n", self.body)?;
+        Ok(())
+    }
 }
 
 pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
@@ -125,10 +138,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
                 TokenVariant::MacroCall { name } => {
                     if *name == macro_name {
-                        asm_error!(
-                            &token.info,
-                            "Macros may not contain a call to themselves"
-                        );
+                        asm_error!(&token.info, "Macros may not contain a call to themselves");
                     }
                     macro_body.push(token.clone());
                 }
@@ -205,7 +215,7 @@ fn generate_macro_body(
     depth: i32,
 ) -> Vec<Token> {
     let mut body: Vec<Token> = Vec::new();
-    println_debug!("{:?}", label_map);
+    // println_debug!("{:?}", label_map);
 
     for base_body_token in &current_macro.body {
         match &base_body_token.variant {
@@ -337,7 +347,7 @@ pub fn insert_macros(
     depth: i32,
     context: Vec<(i32, Info)>,
 ) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     #[derive(Debug, PartialEq)]
     enum Mode {

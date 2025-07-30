@@ -42,9 +42,24 @@
 }
 
 
+@_WhileBase m_conditional? s_body? {
+
+    .repeat ->
+        s_body?
+    m_conditional? .repeat
+
+}
+
+@While::Ge a? b? s_body? {
+    !_WhileBase {!JumpIf::Ge a? b?} s_body?
+}
+
+
+
 @If::Eq a? b? s_body? {
     !_IfBase {!JumpIf::Eq a? b?} s_body?
 }
+
 
 
 @If::Neq a? b? s_body? {

@@ -3,6 +3,8 @@ mod literals;
 mod macros;
 pub mod other;
 
+use std::time::Instant;
+
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
@@ -18,10 +20,9 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let tokens = grab_braced_label_definitions(tokens);
 
     let (mut tokens, macros) = read_macros(tokens);
-
     log::debug!("Found macros:");
     for i in &macros {
-        println_debug!("{i:?}");
+        println_debug!("{}", i.1);
     }
     println_debug!();
 
@@ -35,11 +36,9 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
             println_debug!("");
             continue;
         }
-        print_debug!("{:?} ", token);
+        print_debug!("{:?}  ", token);
     }
     println_debug!();
-
-
 
     let tokens = convert_strings(tokens);
     let tokens = expand_mults(&tokens);
@@ -51,7 +50,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
             println_debug!("");
             continue;
         }
-        print_debug!("{:?} ", token);
+        print_debug!("{:?}  ", token);
     }
     println_debug!();
 
@@ -66,12 +65,13 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let scoped_label_table = assign_addresses_to_labels(&tokens);
 
     log::debug!("Label Table");
+
     println_debug!("{:?}", scoped_label_table);
     println_debug!();
 
-    log::debug!("Label Table");
-
     let tokens = resolve_labels(&tokens, &scoped_label_table);
+    log::debug!("Resolved Labels");
+
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }

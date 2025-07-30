@@ -9,7 +9,7 @@ use crate::tokens::*;
 use colored::Colorize;
 
 pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
-    let mut updated_tokens: Vec<Token> = Vec::new();
+    let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
 
     while i < tokens.len() {
@@ -104,7 +104,7 @@ pub fn resolve_labels(
     tokens: &Vec<Token>,
     scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
 ) -> Vec<Token> {
-    let mut updated_tokens: Vec<Token> = Vec::new();
+    let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
@@ -234,7 +234,7 @@ fn make_deref_instructions(
         TokenVariant::Linebreak,
     ];
 
-    let mut deref: Vec<Token> = Vec::new();
+    let mut deref: Vec<Token> = Vec::with_capacity(tokens_variants.len());
     for i in tokens_variants {
         deref.push(Token {
             info: info.clone(),
@@ -249,7 +249,7 @@ fn make_deref_instructions(
 pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
     let mut last_linebreak_idx = 0;
     let mut id = 0;

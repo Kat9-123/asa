@@ -14,7 +14,9 @@
 @Clear a? [
     a?      -= a?
 ]
-@Clr a? [!Clear a? ]
+@Clr a? [
+    a? -= a?
+]
 
 
 @Flip m_mac? .addr? {
@@ -39,6 +41,15 @@
     to? -= Z
 ]
 
+@Cpy from? to? [
+    !Clr Z
+    !Clr to?
+
+    Z   -= from?
+    to? -= Z
+]
+
+
 
 @FFlip target? { .fin
     !J target?
@@ -46,7 +57,6 @@
 }
 
 
-@Cpy from? to? [!Copy from? to?]
 
 ; a += b
 @Add a? b? [
@@ -55,13 +65,13 @@
     a?  -= Z
 ]
 
-@Assign value? target? [
-    !Clr Z
-
-    target? -= target?
-    Z       -= value?
-    target  -= Z
-]
+;@Assign value? target? [
+;    !Clr Z
+;
+ ;   target? -= target?
+ ;   Z       -= value?
+ ;   target  -= Z
+;]
 
 
 
@@ -88,7 +98,16 @@
     to? -= Z
 }
 
+@AssignZero name? [
+    name? -= name? &2
+    name? -> 0
+]
 
+
+@AssignToLabel name? label? {
+    !Cpy label? name?
+
+}
 
 
 @Repeat l_times? body? {

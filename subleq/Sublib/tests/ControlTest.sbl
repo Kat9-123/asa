@@ -1,0 +1,24 @@
+!J .main
+#Sublib
+#Sublib/Control
+
+
+.err -> {
+    !IO::PrintLnLit "Failed"
+    !Halt
+}
+
+i -> 3
+
+.main -> {
+    !If::Eq ZERO ONE {
+        !J .err
+    }
+    !While::Ge i ZERO {
+        !If::Neq ZERO SNEG {
+            !IO::PrintLnLit "A"
+        }
+
+        !Dec i
+    }
+}

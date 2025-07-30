@@ -16,42 +16,6 @@ const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
 const PERF_ADDR: i16 = -3;
 
-fn outside_mem_bounds_err(tokens: &Vec<Token>, prev_pc: usize) {
-    asm_error_no_terminate!(&tokens[prev_pc + 2].info, "Jump outside of memory bounds");
-    asm_details!(&tokens[prev_pc].info, "'A' part");
-    asm_details!(&tokens[prev_pc + 1].info, "'B' part");
-    terminate();
-}
-
-struct InstructionLog {
-    pub pc: usize,
-    pub jumped: bool,
-}
-
-fn instruction_info(tokens: &Vec<Token>, jumped: bool, pc: usize) {
-    // let mut stdout = io::stdout();
-    //  stdout.execute(terminal::Clear(terminal::ClearType::All));
-    //  stdout.execute(cursor::MoveTo(0,0));
-    for i in ((tokens[pc + 1].origin_info).iter()).rev() {
-        asm_instruction!(&i.1, "depth Instruction {}", i.0);
-    }
-
-    asm_sub_instruction!(&tokens[pc].info, "'A' part");
-
-    asm_sub_instruction!(&tokens[pc + 1].info, "'B' part");
-    if jumped {
-        asm_sub_instruction!(&tokens[pc + 2].info, "'C' part. JUMPED");
-    } else {
-        asm_sub_instruction!(&tokens[pc + 2].info, "'C' part. DIDN'T JUMP");
-    }
-    println!();
-}
-
-fn trace(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>) {
-    for i in instruction_logs {
-        instruction_info(tokens, i.jumped, i.pc)
-    }
-}
 
 /*
 pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usize, reason: (usize, &str), first: (usize, &str), second: (usize, &str)) {
@@ -68,7 +32,6 @@ pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usiz
 pub struct InstructionHistoryItem {
     pub pc: usize,
     pub original_value_at_b: u16,
-    pub jumped: bool,
     pub io_operation: IOOperation,
 }
 
@@ -143,7 +106,6 @@ pub fn interpret_single(
                     InstructionHistoryItem {
                         pc,
                         original_value_at_b,
-                        jumped: true,
                         io_operation: IOOperation::Halt,
                     },
                 ));
@@ -157,7 +119,6 @@ pub fn interpret_single(
                     InstructionHistoryItem {
                         pc,
                         original_value_at_b,
-                        jumped: true,
                         io_operation: IOOperation::BreakPoint,
                     },
                 ));
@@ -173,7 +134,6 @@ pub fn interpret_single(
                     InstructionHistoryItem {
                         pc,
                         original_value_at_b,
-                        jumped: true,
                         io_operation: io,
                     },
                 ));
@@ -186,7 +146,6 @@ pub fn interpret_single(
         InstructionHistoryItem {
             pc,
             original_value_at_b,
-            jumped: false,
             io_operation: io,
         },
     ));
@@ -197,11 +156,38 @@ pub fn interpret(
     tokens: &Vec<Token>,
     return_output: bool,
 ) -> Result<Option<String>, RuntimeError> {
-    let mut programme_counter = 0;
-    let mut prev_programme_counter = 0;
+    let mut pc: usize = 0;
     let mut buf = String::new();
+    loop {
+        let (new_pc, io_operation, _) = interpret_single(mem, pc)?;
+        pc = new_pc;
+        match io_operation {
+            IOOperation::Char(ch) => {
+                buf.push(ch);
+                //  print!("{ch}");
+                //  io::stdout().flush();
+            }
+            IOOperation::Debug(ch) => {
+                let ch = ch.to_string();
+                buf.push_str(&ch);
+                //  println!("{ch}");
+                // io::stdout().flush();
+            }
+            IOOperation::Halt => {
+                if return_output {
+                    return Ok(Some(buf));
+                }
+                return Ok(None);
+            }
+            IOOperation::BreakPoint => {}
+            IOOperation::Perf => {}
+            IOOperation::None => {}
+        }
+    }
+}
 
-    let mut performance_counter: Option<usize> = None;
+pub fn interpret_fast(mem: &mut Vec<u16>) -> Result<(), RuntimeError> {
+    let mut programme_counter = 0;
     loop {
         // mem_view::draw_mem(&mem, programme_counter);
 
@@ -226,15 +212,11 @@ pub fn interpret(
         if b == 0xFFFF {
             result = mem[a];
             let ch = result as u8 as char;
-            buf.push(ch);
-            print!("{ch}");
-            io::stdout().flush();
+            //   print!("{ch}");
         } else if b == 0xFFFE {
             result = mem[a];
-            let ch = (result as i16).to_string();
-            buf.push_str(&ch);
-            println!("{ch}");
-            io::stdout().flush();
+            // let ch = (result as i16).to_string();
+            // println!("{ch}");
         } else if a == 0xFFFF {
         } else {
             if a >= mem.len() {
@@ -247,15 +229,7 @@ pub fn interpret(
             mem[b] = result;
         }
 
-        prev_programme_counter = programme_counter;
-        let mut jumped = false;
-
         if result as i16 <= 0 {
-            jumped = true;
-        }
-
-        if result as i16 <= 0 {
-            jumped = true;
             //  println!("JUMP!");
 
             match c as i16 {
@@ -286,12 +260,7 @@ pub fn interpret(
         } else {
             programme_counter += 3;
         }
-        if let Some(x) = performance_counter.as_mut() {
-            *x += 1;
-        }
     }
-    if return_output {
-        return Ok(Some(buf));
-    }
-    Ok(None)
+
+    Ok(())
 }

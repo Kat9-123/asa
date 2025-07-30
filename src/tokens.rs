@@ -6,7 +6,7 @@ pub enum LabelOffset {
     Int(i32),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Info {
     pub start_char: i32,
     pub length: i32,
@@ -61,6 +61,13 @@ pub enum TokenVariant {
     NamespaceEnd,
 }
 
+pub fn tokens_from_token_variant_vec(token_variants: Vec<TokenVariant>) -> Vec<Token> {
+    token_variants
+        .iter()
+        .map(|x| Token::new(x.clone()))
+        .collect()
+}
+
 impl Token {
     pub fn size(&self) -> i32 {
         match self.variant {
@@ -74,6 +81,13 @@ impl Token {
             | TokenVariant::StrLiteral { .. } => todo!(),
 
             _ => 0,
+        }
+    }
+    pub fn new(token_variant: TokenVariant) -> Self {
+        Token {
+            info: Default::default(),
+            origin_info: Vec::new(),
+            variant: token_variant,
         }
     }
 }

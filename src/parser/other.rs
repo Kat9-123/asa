@@ -5,7 +5,7 @@ use crate::{
 
 pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     let mut address: i32 = 0;
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     for token in tokens {
         match token.variant {
@@ -27,7 +27,7 @@ pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
 }
 
 pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
     while i < tokens.len() {
         if i + 1 < tokens.len()
@@ -35,7 +35,7 @@ pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
         {
             match &tokens[i + 2].variant {
                 TokenVariant::DecLiteral { value: count } => {
-                    for mult_i in 0..*count {
+                    for _ in 0..*count {
                         new_tokens.push(tokens[i].clone());
                     }
                     i += 3;
@@ -51,7 +51,7 @@ pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
 }
 
 pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     let mut idx = 0;
 
