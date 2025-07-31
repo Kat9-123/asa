@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-
 /// Does some basic and safe sanitisation. It's fine to apply it multiple times.
 pub fn generic_sanitisation(text: &str) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")

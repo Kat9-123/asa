@@ -1,0 +1,509 @@
+W -= W .main 
+ #./subleq/Sublib\Sublib.sbl 
+ #./subleq/Sublib/Symbols.sbl 
+ Z -> 0 
+ W -> 0 
+ _ASM -> 0 
+ _ -> 0 
+ 
+ N_ONE -> -1 
+ ONE -> 1 
+ ZERO -> 0 
+ 
+ FALSE -> 0 
+ TRUE -> 1 
+ 
+ LINEBREAK -> 10 
+ 
+ 
+ SNEG -> 32768 
+ 
+ \ 
+ #./subleq/Sublib/Base.sbl 
+ #./subleq/Sublib/Symbols.sbl 
+ \ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ #./subleq/Sublib/IO.sbl 
+ #./subleq/Sublib/Symbols.sbl 
+ \ 
+ #./subleq/Sublib/Base.sbl 
+ \ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ #./subleq/Sublib/JumpIf.sbl 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ #./subleq/Sublib/Arithmetic.sbl 
+ #./subleq/Sublib/Base.sbl 
+ \ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ #./subleq/Sublib/Logic.sbl 
+ #./subleq/Sublib\Sublib.sbl 
+ \ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ 
+ \ 
+ #./subleq/Sublib/Control.sbl 
+ #./subleq/Sublib\Sublib.sbl 
+ \ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ \ 
+ 
+ 
+ i -> 3 
+ a -> 65 
+ .main -> 
+ 
+ { 
+ 	{ 
+ 		
+ 		?_WhileBase?.repeat -> 
+ 		
+ 		{ 
+ 			{ 
+ 				{ 
+ 					{ 
+ 						a -= ZERO ?JIF:GeZero?.fin 
+ 						W -= W ?Flip?.contd 
+ 						?JIF:GeZero?.fin -> 
+ 					} 
+ 					W -= W ?_IfBase?.false 
+ 					
+ 					?Flip?.contd -> 
+ 				} 
+ 				
+ 				-1 -= a 
+ 				
+ 				?_IfBase?.false -> 
+ 			} 
+ 		} 
+ 		
+ 		i -= ONE 
+ 		
+ 		{ 
+ 			{ 
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				
+ 				Z -= Z 
+ 				?JumpIf::Le?a_plus_one -= ?JumpIf::Le?a_plus_one 
+ 				
+ 				Z -= ZERO 
+ 				?JumpIf::Le?a_plus_one -= Z 
+ 				Z -= Z 
+ 				?JumpIf::Le?b_plus_one -= ?JumpIf::Le?b_plus_one 
+ 				
+ 				Z -= i 
+ 				?JumpIf::Le?b_plus_one -= Z 
+ 				Z -= Z 
+ 				?JumpIf::Le?l -= ?JumpIf::Le?l 
+ 				
+ 				Z -= ZERO 
+ 				?JumpIf::Le?l -= Z 
+ 				?JumpIf::Le?a_plus_one -= N_ONE 
+ 				?JumpIf::Le?b_plus_one -= N_ONE 
+ 				
+ 				ZERO -= ZERO ?JumpIf::Le?.a_not_b 
+ 				W -= W ?JumpIf::Le?.not_a_b 
+ 				
+ 				?JumpIf::Le?.a_not_b -> 
+ 				i -= ZERO ?JumpIf::Le?.a_b 
+ 				W -= W ?_WhileBase?.repeat 
+ 				
+ 				?JumpIf::Le?.not_a_b -> 
+ 				i -= ZERO ?JumpIf::Le?.fin 
+ 				W -= W ?JumpIf::Le?.a_b 
+ 				
+ 				?JumpIf::Le?.a_b -> 
+ 				ZERO -= ZERO ?JumpIf::Le?S 
+ 				W -= W ?JumpIf::Le?.final 
+ 				?JumpIf::Le?S -> 
+ 				i -= ZERO ?JumpIf::Le?N 
+ 				W -= W ?JumpIf::Le?.final 
+ 				?JumpIf::Le?N -> 
+ 				
+ 				
+ 				?JumpIf::Le?a_plus_one -= ZERO ?JumpIf::Le?.final 
+ 				?JumpIf::Le?b_plus_one -= ZERO ?JumpIf::Le?.fin 
+ 				
+ 				
+ 				?JumpIf::Le?.final -> 
+ 				?JumpIf::Le?l -= i ?JumpIf::Le?TN 
+ 				W -= W ?JumpIf::Le?.fin 
+ 				
+ 				
+ 				?JumpIf::Le?TN -> 
+ 				
+ 				?JumpIf::Le?a_plus_one -= i ?_WhileBase?.repeat 
+ 				
+ 				W -= W ?JumpIf::Le?.fin 
+ 				
+ 				?JumpIf::Le?a_plus_one -> 0 
+ 				?JumpIf::Le?b_plus_one -> 0 
+ 				?JumpIf::Le?l -> 0 
+ 				
+ 				?JumpIf::Le?.fin -> 
+ 			} 
+ 		} 
+ 		
+ 	} 
+ } 
+ W -= W -1 
+ 
+ 

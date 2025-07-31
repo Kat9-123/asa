@@ -1,4 +1,4 @@
-use std::num::Wrapping;
+use std::{io::{self, Write}, num::Wrapping};
 
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
@@ -147,14 +147,14 @@ pub fn interpret(mem: &mut Vec<u16>, return_output: bool) -> Result<Option<Strin
         match io_operation {
             IOOperation::Char(ch) => {
                 buf.push(ch);
-                //  print!("{ch}");
-                //  io::stdout().flush();
+                print!("{ch}");
+                io::stdout().flush();
             }
             IOOperation::Debug(ch) => {
                 let ch = ch.to_string();
                 buf.push_str(&ch);
-                //  println!("{ch}");
-                // io::stdout().flush();
+                println!("{ch}");
+                io::stdout().flush();
             }
             IOOperation::Halt => {
                 if return_output {

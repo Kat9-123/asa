@@ -9,6 +9,7 @@ use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
+use std::thread::scope;
 
 #[derive(Debug)]
 pub struct Macro {
@@ -409,19 +410,14 @@ pub fn insert_macros(
                 if let TokenVariant::Linebreak = token.variant {
                     continue;
                 }
-
-                if let TokenVariant::Unscope = token.variant {
-                    suffix.push(token.clone());
-                    continue;
-                }
                 macro_argument_type_check(label_to_replace_info, token, name_to_replace);
 
                 if let TokenVariant::Scope = token.variant {
                     mode = Mode::ScopedArg;
-                    let toks: Vec<Token> = vec![token.clone()];
+                    let toks: Vec<Token> = vec![];
                     label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
                     cur_arg_name = name_to_replace.clone();
-
+                    scope_tracker = 1;
                     continue;
                 }
 
@@ -441,6 +437,12 @@ pub fn insert_macros(
                 }
                 TokenVariant::Unscope => {
                     scope_tracker -= 1;
+                    if scope_tracker <= 0 {
+                        cur_arg_name.clear();
+                        mode = Mode::Args;
+                        continue;
+                    }
+
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
@@ -448,11 +450,7 @@ pub fn insert_macros(
                             v.push(token.clone());
                         }
                     }
-                    if scope_tracker > 0 {
-                        continue;
-                    }
-                    cur_arg_name.clear();
-                    mode = Mode::Args;
+
                 }
                 _ => {
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();

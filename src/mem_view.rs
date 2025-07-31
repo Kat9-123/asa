@@ -1,6 +1,5 @@
 use colored::Colorize;
 
-
 /// Prints a pretty overview of the memory. The instruction, A, B and C are highlighted
 pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
     /*

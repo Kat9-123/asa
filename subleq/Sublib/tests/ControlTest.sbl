@@ -3,22 +3,15 @@
 #Sublib/Control
 
 
-.err -> {
-    !IO::PrintLnLit "Failed"
-    !Halt
-}
-
 i -> 3
+a -> 'A'
+.main ->
 
-.main -> {
-    !If::Eq ZERO ONE {
-        !J .err
-    }
-    !While::Ge i ZERO {
-        !If::Neq ZERO SNEG {
-            !IO::PrintLnLit "A"
+    !While::Ge i ZERO { ;::Ge i ZERO {
+        !If::GeZero ONE {
+            !IO -= a
         }
 
         !Dec i
     }
-}
+    !Halt

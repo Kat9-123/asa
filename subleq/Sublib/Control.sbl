@@ -50,10 +50,29 @@
 
 }
 
-@While::Ge a? b? s_body? {
-    !_WhileBase {!JumpIf::Ge a? b?} s_body?
+@JIF:GeZero a? .target? {
+    a -= ZERO .fin
+    !J .target?
+    .fin ->
 }
 
+@While::Ge a? b? s_body? {
+    !_WhileBase {!JumpIf::Ge a? b?} { s_body? }
+}
+
+@If::GeZero a? s_body? {
+    !_IfBase {!JIF:GeZero a?} { s_body? }
+}
+
+@While::GeZero A? s_body? {
+.repeat ->
+    A? -= ZERO .fin
+
+    s_body?
+
+    !J .repeat
+.fin ->
+}
 
 
 @If::Eq a? b? s_body? {

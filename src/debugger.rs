@@ -155,7 +155,7 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
     );
 }
 
-pub fn user_input() -> KeyCode{
+pub fn user_input() -> KeyCode {
     loop {
         match read().unwrap() {
             Event::Key(event) => {
@@ -168,7 +168,12 @@ pub fn user_input() -> KeyCode{
     }
 }
 
-pub fn debug<T: FnMut() -> KeyCode>(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool, mut input: T) {
+pub fn debug<T: FnMut() -> KeyCode>(
+    mem: &mut Vec<u16>,
+    tokens: &Vec<Token>,
+    mut in_debugging_mode: bool,
+    mut input: T,
+) {
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
     let mut io_buffer: String = String::new();
@@ -231,12 +236,11 @@ pub fn debug<T: FnMut() -> KeyCode>(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut
 
                 println!("{: <100}", io_buffer);
                 // dbg!(&instruction_history);
-// Only works on windows??
+                // Only works on windows??
                 match input() {
                     KeyCode::Char(c) => match c {
                         'm' => {
-                            stdout
-                                .execute(terminal::Clear(terminal::ClearType::All));
+                            stdout.execute(terminal::Clear(terminal::ClearType::All));
                             mem_mode = !mem_mode;
                             skip_exec = true;
                         }
@@ -244,18 +248,14 @@ pub fn debug<T: FnMut() -> KeyCode>(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut
                         ' ' => {}
                         _ => {}
                     },
-                    KeyCode::Right => {},
+                    KeyCode::Right => {}
                     KeyCode::Left => {
                         skip_exec = true;
 
                         let instr = instruction_history.pop();
                         match instr {
                             Some(x) => {
-                                pc = revert_historic_instruction(
-                                    mem,
-                                    &x,
-                                    &mut io_buffer,
-                                );
+                                pc = revert_historic_instruction(mem, &x, &mut io_buffer);
                             }
                             None => break,
                         }
@@ -321,13 +321,10 @@ pub fn debug<T: FnMut() -> KeyCode>(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut
     }
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
 
-    use crate::tokens::{self, tokens_from_token_variant_vec, TokenVariant};
+    use crate::tokens::{self, TokenVariant, tokens_from_token_variant_vec};
 
     use super::*;
 
@@ -383,9 +380,8 @@ mod tests {
             TokenVariant::DecLiteral { value: 1 },
             TokenVariant::DecLiteral { value: 0 },
         ]);
-    
+
         debug(&mut mem, tokens, true, simulate_input());
         assert_eq!(mem, expected);
     }
-
 }

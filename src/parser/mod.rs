@@ -3,10 +3,13 @@ mod literals;
 mod macros;
 pub mod other;
 
+use std::fs::File;
+
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
+use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 use crate::{print_debug, println_debug};
 
@@ -51,6 +54,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         print_debug!("{:?}  ", token);
     }
     println_debug!();
+    dump_tokens("temp.sbl", &tokens);
 
     let tokens = fix_instructions_and_collapse_label_definitions(&tokens);
 

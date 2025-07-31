@@ -26,9 +26,6 @@ pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     new_tokens
 }
 
-
-
-
 pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -156,9 +153,6 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
     new_tokens
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
 
@@ -190,14 +184,18 @@ mod tests {
     fn test_mult() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
             TokenVariant::Asterisk,
-            TokenVariant::Label {name: "label".to_owned()},
+            TokenVariant::Label {
+                name: "label".to_owned(),
+            },
             TokenVariant::DecLiteral { value: 10 },
             TokenVariant::Asterisk,
-            TokenVariant::DecLiteral { value: 5},
+            TokenVariant::DecLiteral { value: 5 },
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
             TokenVariant::Asterisk,
-            TokenVariant::Label {name: "label".to_owned()},
+            TokenVariant::Label {
+                name: "label".to_owned(),
+            },
             TokenVariant::DecLiteral { value: 10 },
             TokenVariant::DecLiteral { value: 10 },
             TokenVariant::DecLiteral { value: 10 },
@@ -207,33 +205,56 @@ mod tests {
         let output = expand_mults(&mut input);
         assert_eq!(output, expected);
     }
-    #[test]
 
+    #[test]
     fn test_fix_instructions_and_collapse_label_definitions() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::Label { name: "label".to_owned() },
-            TokenVariant::LabelArrow { offset: tokens::LabelOffset::Int(0) },
-            TokenVariant::Label { name: "a".to_owned() },
+            TokenVariant::Label {
+                name: "label".to_owned(),
+            },
+            TokenVariant::LabelArrow {
+                offset: tokens::LabelOffset::Int(0),
+            },
+            TokenVariant::Label {
+                name: "a".to_owned(),
+            },
             TokenVariant::Subleq,
-            TokenVariant::Label { name: "b".to_owned() },
+            TokenVariant::Label {
+                name: "b".to_owned(),
+            },
             TokenVariant::Linebreak,
-            TokenVariant::Label { name: "b".to_owned() },
-            TokenVariant::Label { name: "a".to_owned() },
-            TokenVariant::Label { name: "c".to_owned() },
+            TokenVariant::Label {
+                name: "b".to_owned(),
+            },
+            TokenVariant::Label {
+                name: "a".to_owned(),
+            },
+            TokenVariant::Label {
+                name: "c".to_owned(),
+            },
             TokenVariant::Linebreak,
-
-
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::LabelDefinition { name: "label".to_owned(), offset: 0 },
-            TokenVariant::Label { name: "b".to_owned() },
-            TokenVariant::Label { name: "a".to_owned() },
-            TokenVariant::Relative {offset: 1},
-
-            TokenVariant::Label { name: "b".to_owned() },
-            TokenVariant::Label { name: "a".to_owned() },
-            TokenVariant::Label { name: "c".to_owned() },
-
+            TokenVariant::LabelDefinition {
+                name: "label".to_owned(),
+                offset: 0,
+            },
+            TokenVariant::Label {
+                name: "b".to_owned(),
+            },
+            TokenVariant::Label {
+                name: "a".to_owned(),
+            },
+            TokenVariant::Relative { offset: 1 },
+            TokenVariant::Label {
+                name: "b".to_owned(),
+            },
+            TokenVariant::Label {
+                name: "a".to_owned(),
+            },
+            TokenVariant::Label {
+                name: "c".to_owned(),
+            },
         ]);
         let output = fix_instructions_and_collapse_label_definitions(&mut input);
         assert_eq!(output, expected);
