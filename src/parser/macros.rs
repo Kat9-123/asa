@@ -1,8 +1,9 @@
 use crate::args;
 use crate::asm_details;
+use crate::asm_error_no_terminate;
+use crate::asm_hint;
 use crate::asm_info;
 use crate::feedback::*;
-use crate::hint;
 use crate::symbols;
 use crate::tokens::*;
 
@@ -82,7 +83,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         asm_info!(
                             &token.info,
                             "Notate macro arguments with a trailing question mark {}",
-                            hint!("'{name}' -> '{name}?'")
+                            asm_hint!("'{name}' -> '{name}?'")
                         );
                     }
                 }
@@ -112,7 +113,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     asm_warn!(
                         &token.info,
                         "Label definitions in non-scoped macros are very dangerous {}",
-                        hint!("Use '{{' and '}}' instead of '[' and ']'")
+                        asm_hint!("Use '{{' and '}}' instead of '[' and ']'")
                     );
                 }
                 // HACK
@@ -302,7 +303,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
                     asm_info!(
                         &token.info,
                         "Expected a SCOPE as argument {}",
-                        hint!("See the documentation for information on the typing system")
+                        asm_hint!("See the documentation for information on the typing system")
                     );
                     asm_details!(label_to_replace_info, "Macro definition");
                 }
@@ -316,7 +317,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
                     asm_info!(
                         &token.info,
                         "Expected a LITERAL as argument {}",
-                        hint!("See the documentation for information on the typing system")
+                        asm_hint!("See the documentation for information on the typing system")
                     );
                     asm_details!(label_to_replace_info, "Macro definition");
                     return;
@@ -334,7 +335,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
             &token.info,
             "Expected a LABEL as argument, found {:?} {}",
             &token.variant,
-            hint!("See the documentation for information on the typing system")
+            asm_hint!("See the documentation for information on the typing system")
         );
         asm_details!(label_to_replace_info, "Argument in macro definition");
     }
@@ -349,10 +350,15 @@ pub fn insert_macros(
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     #[derive(Debug, PartialEq)]
+    enum CompoundArgType {
+        Braced,
+        Scoped,
+    }
+    #[derive(Debug, PartialEq)]
     enum Mode {
         Normal,
         Args,
-        ScopedArg,
+        CompoundArg(CompoundArgType),
     }
     let mut scope_tracker = 1;
 
@@ -363,7 +369,7 @@ pub fn insert_macros(
     let mut suffix: Vec<Token> = Vec::new();
     let mut cur_arg_name: String = String::new();
     for token in &tokens {
-        match mode {
+        match &mode {
             Mode::Normal => match &token.variant {
                 TokenVariant::MacroCall { name } => {
                     let mac = macros.get(name);
@@ -413,19 +419,36 @@ pub fn insert_macros(
                 macro_argument_type_check(label_to_replace_info, token, name_to_replace);
 
                 if let TokenVariant::Scope = token.variant {
-                    mode = Mode::ScopedArg;
+                    mode = Mode::CompoundArg(CompoundArgType::Scoped);
+                    let toks: Vec<Token> = vec![token.clone()];
+                    label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
+                    cur_arg_name = name_to_replace.clone();
+                    scope_tracker = 1;
+                    continue;
+                }
+                if TokenVariant::Unscope == token.variant {
+                    asm_error!(
+                        &token.info,
+                        "Unexpected token{}",
+                        asm_hint!(
+                            "If you want to pass a macro as an argument, you must surround it with '(' and ')' instead of '{{' and '}}'"
+                        )
+                    );
+                }
+
+                if let TokenVariant::BraceOpen = token.variant {
+                    mode = Mode::CompoundArg(CompoundArgType::Braced);
                     let toks: Vec<Token> = vec![];
                     label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
                     cur_arg_name = name_to_replace.clone();
                     scope_tracker = 1;
                     continue;
                 }
-
                 label_map.insert(name_to_replace.clone(), TokenOrTokenVec::Tok(token.clone()));
             }
 
-            Mode::ScopedArg => match token.variant {
-                TokenVariant::Scope => {
+            Mode::CompoundArg(arg_type) => match token.variant {
+                TokenVariant::Scope if *arg_type == CompoundArgType::Scoped => {
                     scope_tracker += 1;
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
                     match tok_vec {
@@ -435,7 +458,33 @@ pub fn insert_macros(
                         }
                     }
                 }
-                TokenVariant::Unscope => {
+                TokenVariant::Unscope if *arg_type == CompoundArgType::Scoped => {
+                    scope_tracker -= 1;
+
+                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    match tok_vec {
+                        TokenOrTokenVec::Tok(x) => todo!(),
+                        TokenOrTokenVec::TokVec(v) => {
+                            v.push(token.clone());
+                        }
+                    }
+                    if scope_tracker > 0 {
+                        continue;
+                    }
+                    cur_arg_name.clear();
+                    mode = Mode::Args;
+                }
+                TokenVariant::BraceOpen if *arg_type == CompoundArgType::Braced => {
+                    scope_tracker += 1;
+                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    match tok_vec {
+                        TokenOrTokenVec::Tok(x) => todo!(),
+                        TokenOrTokenVec::TokVec(v) => {
+                            v.push(token.clone());
+                        }
+                    }
+                }
+                TokenVariant::BraceClose if *arg_type == CompoundArgType::Braced => {
                     scope_tracker -= 1;
                     if scope_tracker <= 0 {
                         cur_arg_name.clear();
@@ -450,7 +499,6 @@ pub fn insert_macros(
                             v.push(token.clone());
                         }
                     }
-
                 }
                 _ => {
                     let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();

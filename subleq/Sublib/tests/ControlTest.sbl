@@ -2,16 +2,24 @@
 #Sublib
 #Sublib/Control
 
-
+THREE -> 3
 i -> 3
+p -> 0
+TWO -> 2
 a -> 'A'
+LINEBREAK -> '\n'
 .main ->
+    !While::Neq p TWO {
+        !Cpy THREE i
+        !While::Ge i ZERO { ;::Ge i ZERO {
+            !If::Neq SNEG ONE {
+                !IO -= a
+            }
 
-    !While::Ge i ZERO { ;::Ge i ZERO {
-        !If::GeZero ONE {
-            !IO -= a
+            !Dec i
         }
-
-        !Dec i
+        !IO -= LINEBREAK
+        !Inc p
     }
+
     !Halt

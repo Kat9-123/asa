@@ -62,7 +62,7 @@ mod tests {
                 value: "0123".to_string(),
             },
             TokenVariant::HexLiteral {
-                value: "-00AA".to_string(),
+                value: "-0AA".to_string(),
             },
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![

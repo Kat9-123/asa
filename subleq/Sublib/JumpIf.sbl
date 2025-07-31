@@ -84,7 +84,7 @@ l -> 0
 }
 
 @JumpIf::Geq a? b? .address? {
-    !Flip {!JumpIf::Le a? b? } .address?
+    !Flip (!JumpIf::Le a? b? ) .address?
 }
 
 @JumpIf::Leq A? B? .address? {

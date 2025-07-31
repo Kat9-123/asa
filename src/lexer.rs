@@ -3,7 +3,7 @@
 use colored::Colorize;
 
 use crate::{
-    asm_error, hint, preprocessor,
+    asm_error, asm_hint, preprocessor,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 
@@ -77,7 +77,7 @@ fn updated_context(
             '?' => asm_error!(
                 info,
                 "Unexpected character {}",
-                hint!("Labels may not start with a '?'")
+                asm_hint!("Labels may not start with a '?'")
             ),
             _ => asm_error!(info, "Unexpected character"),
         },
@@ -159,7 +159,7 @@ fn updated_context(
             c if c.is_ascii_alphabetic() => asm_error!(
                 info,
                 "Unexpected character when defining Hex or Dec literal {}",
-                hint!("Labels may not start with a number")
+                asm_hint!("Labels may not start with a number")
             ),
             _ => (
                 Context::DontMoveToNextChar,
@@ -272,7 +272,7 @@ fn updated_context(
                         asm_error!(
                             info,
                             "& may not directly precede a hex number {}",
-                            hint!(
+                            asm_hint!(
                                 "Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"
                             )
                         );

@@ -24,7 +24,7 @@ fn main() {
     let (mut mem, tokens) = assembler::assemble(&contents, file_path);
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-   // debugger::debug(&mut mem, &tokens, true, user_input);
+    // debugger::debug(&mut mem, &tokens, true, user_input);
     interpreter::interpret(&mut mem, false).unwrap();
     //  interpreter::interpret_fast(&mut mem);
 }

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::asm_details;
+use crate::asm_hint;
 use crate::feedback::*;
-use crate::hint;
 use crate::println_debug;
 use crate::tokens;
 use crate::tokens::*;
@@ -13,7 +13,9 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut i = 0;
 
     while i < tokens.len() {
-        if let TokenVariant::BraceOpen = &tokens[i].variant {
+        if let TokenVariant::BraceOpen = &tokens[i].variant
+            && let TokenVariant::LabelArrow { .. } = &tokens[i + 2].variant
+        {
             let name = match &tokens[i + 1].variant {
                 TokenVariant::Label { name } => name,
                 _ => todo!(),
@@ -174,10 +176,10 @@ fn find_label(
         asm_error!(
             info,
             "No definition for label '{name}' found {}{}",
-            hint!(
+            asm_hint!(
                 "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
             ),
-            hint!(
+            asm_hint!(
                 "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
             )
         );

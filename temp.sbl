@@ -1,4 +1,7 @@
 W -= W .main 
+ string2 -> &1 105 115 32 99 111 111 108 33 32 0 
+ 
+ 
  #./subleq/Sublib\Sublib.sbl 
  #./subleq/Sublib/Symbols.sbl 
  Z -> 0 
@@ -350,160 +353,135 @@ W -= W .main
  \ 
  
  \ 
- #./subleq/Sublib/Control.sbl 
- #./subleq/Sublib\Sublib.sbl 
- \ 
  
+ string -> &1 83 117 98 108 101 113 32 0 
  
+ i -> 1 
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- \ 
- 
- 
- i -> 3 
- a -> 65 
  .main -> 
- 
  { 
- 	{ 
- 		
- 		?_WhileBase?.repeat -> 
- 		
- 		{ 
- 			{ 
- 				{ 
- 					{ 
- 						a -= ZERO ?JIF:GeZero?.fin 
- 						W -= W ?Flip?.contd 
- 						?JIF:GeZero?.fin -> 
- 					} 
- 					W -= W ?_IfBase?.false 
- 					
- 					?Flip?.contd -> 
- 				} 
- 				
- 				-1 -= a 
- 				
- 				?_IfBase?.false -> 
- 			} 
- 		} 
- 		
- 		i -= ONE 
- 		
- 		{ 
- 			{ 
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				
- 				Z -= Z 
- 				?JumpIf::Le?a_plus_one -= ?JumpIf::Le?a_plus_one 
- 				
- 				Z -= ZERO 
- 				?JumpIf::Le?a_plus_one -= Z 
- 				Z -= Z 
- 				?JumpIf::Le?b_plus_one -= ?JumpIf::Le?b_plus_one 
- 				
- 				Z -= i 
- 				?JumpIf::Le?b_plus_one -= Z 
- 				Z -= Z 
- 				?JumpIf::Le?l -= ?JumpIf::Le?l 
- 				
- 				Z -= ZERO 
- 				?JumpIf::Le?l -= Z 
- 				?JumpIf::Le?a_plus_one -= N_ONE 
- 				?JumpIf::Le?b_plus_one -= N_ONE 
- 				
- 				ZERO -= ZERO ?JumpIf::Le?.a_not_b 
- 				W -= W ?JumpIf::Le?.not_a_b 
- 				
- 				?JumpIf::Le?.a_not_b -> 
- 				i -= ZERO ?JumpIf::Le?.a_b 
- 				W -= W ?_WhileBase?.repeat 
- 				
- 				?JumpIf::Le?.not_a_b -> 
- 				i -= ZERO ?JumpIf::Le?.fin 
- 				W -= W ?JumpIf::Le?.a_b 
- 				
- 				?JumpIf::Le?.a_b -> 
- 				ZERO -= ZERO ?JumpIf::Le?S 
- 				W -= W ?JumpIf::Le?.final 
- 				?JumpIf::Le?S -> 
- 				i -= ZERO ?JumpIf::Le?N 
- 				W -= W ?JumpIf::Le?.final 
- 				?JumpIf::Le?N -> 
- 				
- 				
- 				?JumpIf::Le?a_plus_one -= ZERO ?JumpIf::Le?.final 
- 				?JumpIf::Le?b_plus_one -= ZERO ?JumpIf::Le?.fin 
- 				
- 				
- 				?JumpIf::Le?.final -> 
- 				?JumpIf::Le?l -= i ?JumpIf::Le?TN 
- 				W -= W ?JumpIf::Le?.fin 
- 				
- 				
- 				?JumpIf::Le?TN -> 
- 				
- 				?JumpIf::Le?a_plus_one -= i ?_WhileBase?.repeat 
- 				
- 				W -= W ?JumpIf::Le?.fin 
- 				
- 				?JumpIf::Le?a_plus_one -> 0 
- 				?JumpIf::Le?b_plus_one -> 0 
- 				?JumpIf::Le?l -> 0 
- 				
- 				?JumpIf::Le?.fin -> 
- 			} 
- 		} 
- 		
- 	} 
+ 	Z -= Z 
+ 	ptr -= ptr 
+ 	
+ 	Z -= string 
+ 	ptr -= Z 
+ 	W -= W ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.loop -> 
+ 	char -= char &2 
+ 	char -> 0 
+ 	n_char -= n_char &2 
+ 	n_char -> 0 
+ 	
+ 	n_char -= (ptr -> ..) 
+ 	char -= n_char 
+ 	char -= ZERO ?IO::Print?.fin 
+ 	
+ 	-1 -= char 
+ 	
+ 	ptr -= N_ONE 
+ 	
+ 	
+ 	Z -= Z ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.fin -> 
+ 	
  } 
+ { 
+ 	Z -= Z 
+ 	ptr -= ptr 
+ 	
+ 	Z -= string2 
+ 	ptr -= Z 
+ 	W -= W ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.loop -> 
+ 	char -= char &2 
+ 	char -> 0 
+ 	n_char -= n_char &2 
+ 	n_char -> 0 
+ 	
+ 	n_char -= (ptr -> ..) 
+ 	char -= n_char 
+ 	char -= ZERO ?IO::Print?.fin 
+ 	
+ 	-1 -= char 
+ 	
+ 	ptr -= N_ONE 
+ 	
+ 	
+ 	Z -= Z ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.fin -> 
+ 	
+ } 
+ { 
+ 	Z -= Z 
+ 	ptr -= ptr 
+ 	
+ 	Z -= string 
+ 	ptr -= Z 
+ 	W -= W ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.loop -> 
+ 	char -= char &2 
+ 	char -> 0 
+ 	n_char -= n_char &2 
+ 	n_char -> 0 
+ 	
+ 	n_char -= (ptr -> ..) 
+ 	char -= n_char 
+ 	char -= ZERO ?IO::Print?.fin 
+ 	
+ 	-1 -= char 
+ 	
+ 	ptr -= N_ONE 
+ 	
+ 	
+ 	Z -= Z ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.fin -> 
+ 	
+ } 
+ { 
+ 	Z -= Z 
+ 	ptr -= ptr 
+ 	
+ 	Z -= string2 
+ 	ptr -= Z 
+ 	W -= W ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.loop -> 
+ 	char -= char &2 
+ 	char -> 0 
+ 	n_char -= n_char &2 
+ 	n_char -> 0 
+ 	
+ 	n_char -= (ptr -> ..) 
+ 	char -= n_char 
+ 	char -= ZERO ?IO::Print?.fin 
+ 	
+ 	-1 -= char 
+ 	
+ 	ptr -= N_ONE 
+ 	
+ 	
+ 	Z -= Z ?IO::Print?.loop 
+ 	
+ 	
+ 	?IO::Print?.fin -> 
+ 	
+ } 
+ i -= ZERO 65535 
+ i -= ONE 
+ W -= W .main 
  W -= W -1 
  
  

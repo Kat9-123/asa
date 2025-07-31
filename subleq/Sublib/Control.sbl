@@ -57,11 +57,11 @@
 }
 
 @While::Ge a? b? s_body? {
-    !_WhileBase {!JumpIf::Ge a? b?} { s_body? }
+    !_WhileBase (!JumpIf::Ge a? b? ) { s_body? }
 }
 
 @If::GeZero a? s_body? {
-    !_IfBase {!JIF:GeZero a?} { s_body? }
+    !_IfBase (!JIF:GeZero a?) { s_body? }
 }
 
 @While::GeZero A? s_body? {
@@ -76,7 +76,11 @@
 
 
 @If::Eq a? b? s_body? {
-    !_IfBase {!JumpIf::Eq a? b?} s_body?
+    !_IfBase (!JumpIf::Eq a? b?) s_body?
+}
+
+@While::Neq a? b? s_body? {
+    !_WhileBase (!JumpIf::Neq a? b?) s_body?
 }
 
 
@@ -89,10 +93,10 @@
 
 
 @IfElse::Eq a? b? s_true? s_false? {
-    !_IfElseBase {!Eq a? b? } s_true? s_false?
+    !_IfElseBase (!Eq a? b? ) s_true? s_false?
 }
 @IfElse::Neq a? b? true? false? {
-    !_IfElseBase {!JumpIf::Eq a? b? } true? false?
+    !_IfElseBase (!JumpIf::Eq a? b? ) true? false?
 }
 
 
