@@ -41,9 +41,7 @@ fn test_at_path(path: &str) {
         }
         let expected_out = fs::read_to_string(fp).unwrap();
         let expected_out = preprocessor::generic_sanitisation(&expected_out);
-        let out = interpreter::interpret(&mut mem, &tokens, true)
-            .unwrap()
-            .unwrap();
+        let out = interpreter::interpret(&mut mem, true).unwrap().unwrap();
         assert_eq!(out, expected_out);
 
         println!();

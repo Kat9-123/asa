@@ -61,7 +61,7 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
                 current_scope_indexes.pop();
             }
 
-            TokenVariant::BracedLabelDefinition { name, data } => {
+            TokenVariant::BracedLabelDefinition { name, .. } => {
                 if let Some(x) =
                     scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name)
                 {
@@ -120,7 +120,7 @@ pub fn resolve_labels(
                 current_scope_indexes.pop();
             }
             TokenVariant::Label { name } => {
-                let (val, inf) = find_label(
+                let (val, ..) = find_label(
                     name,
                     scoped_label_table,
                     &current_scope_indexes,
@@ -138,8 +138,8 @@ pub fn resolve_labels(
                     variant: TokenVariant::DecLiteral { value: *x },
                     origin_info: token.origin_info.clone(),
                 }),
-                IntOrString::Str(string) => {
-                    let (val, inf) = find_label(
+                IntOrString::Str(..) => {
+                    let (val, ..) = find_label(
                         name,
                         scoped_label_table,
                         &current_scope_indexes,
@@ -161,8 +161,8 @@ pub fn resolve_labels(
 
 fn find_label(
     name: &String,
-    scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
-    current_scope_indexes: &Vec<usize>,
+    scoped_label_table: &[HashMap<String, (i32, Info)>],
+    current_scope_indexes: &[usize],
     info: &Info,
 ) -> (i32, Info) {
     for scope in current_scope_indexes.iter().rev() {
@@ -194,8 +194,8 @@ fn find_label(
 */
 fn make_deref_instructions(
     info: &Info,
-    origin_info: &Vec<(i32, Info)>,
-    label_with_id: &String,
+    origin_info: &[(i32, Info)],
+    label_with_id: &str,
     label_without_id: &String,
 ) -> Vec<Token> {
     let tokens_variants = vec![
@@ -209,10 +209,10 @@ fn make_deref_instructions(
         TokenVariant::Relative { offset: 1 },
         TokenVariant::Linebreak,
         TokenVariant::Label {
-            name: label_with_id.clone(),
+            name: label_with_id.to_owned(),
         },
         TokenVariant::Label {
-            name: label_with_id.clone(),
+            name: label_with_id.to_owned(),
         },
         TokenVariant::Relative { offset: 1 },
         TokenVariant::Linebreak,
@@ -228,7 +228,7 @@ fn make_deref_instructions(
             name: "_ASM".to_string(),
         },
         TokenVariant::Label {
-            name: label_with_id.clone(),
+            name: label_with_id.to_owned(),
         },
         TokenVariant::Relative { offset: 1 },
         TokenVariant::Linebreak,
@@ -238,22 +238,21 @@ fn make_deref_instructions(
     for i in tokens_variants {
         deref.push(Token {
             info: info.clone(),
-            origin_info: origin_info.clone(),
+            origin_info: origin_info.to_owned(),
             variant: i,
         })
     }
 
-    return deref;
+    deref
 }
 
-pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
+pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
     let mut last_linebreak_idx = 0;
     let mut id = 0;
-    let mut address = 0;
     while i < tokens.len() {
         match tokens[i].variant {
             TokenVariant::Asterisk => {
@@ -266,7 +265,6 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
 
                     let deref =
                         make_deref_instructions(info, origin_info, &in_instruction_label, name);
-                    address += 12;
                     new_tokens.splice(
                         last_linebreak_idx..last_linebreak_idx,
                         deref.iter().cloned(),
@@ -282,18 +280,14 @@ pub fn expand_derefs(tokens: &Vec<Token>) -> Vec<Token> {
                     last_linebreak_idx += INSERTED_INSTRUCTIONS_SIZE;
                     id += 1;
                     i += 2;
-                    address += 1;
                 }
             }
             TokenVariant::Linebreak => {
                 last_linebreak_idx = i + id * (INSERTED_INSTRUCTIONS_SIZE - 1);
-                address += tokens[i].size();
                 new_tokens.push(tokens[i].clone());
                 i += 1;
             }
             _ => {
-                address += tokens[i].size();
-
                 new_tokens.push(tokens[i].clone());
                 i += 1;
             }

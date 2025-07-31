@@ -3,7 +3,6 @@ use crate::asm_details;
 use crate::asm_info;
 use crate::feedback::*;
 use crate::hint;
-use crate::println_debug;
 use crate::symbols;
 use crate::tokens::*;
 
@@ -107,7 +106,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::Body { bounded_by_scopes } => match &token.variant {
-                TokenVariant::LabelArrow { offset } if !bounded_by_scopes => {
+                TokenVariant::LabelArrow { .. } if !bounded_by_scopes => {
                     macro_body.push(token.clone());
                     asm_warn!(
                         &token.info,
@@ -116,7 +115,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     );
                 }
                 // HACK
-                TokenVariant::LabelArrow { offset } if bounded_by_scopes => {
+                TokenVariant::LabelArrow { .. } if bounded_by_scopes => {
                     macro_body.push(token.clone());
                     match &tokens[i - 1].variant {
                         TokenVariant::Label { name } => {
@@ -250,14 +249,13 @@ fn generate_macro_body(
                         continue;
                     }
                     None => {
-                        let mut origin_info = base_body_token.origin_info.clone();
-                        origin_info = context.clone();
+                        let mut origin_info = context.clone();
                         origin_info.push((0, base_body_token.info.clone()));
 
                         body.push(Token {
                             info: base_body_token.info.clone(),
                             variant: TokenVariant::Label { name: n },
-                            origin_info: origin_info, // macro_trace: macro_trace
+                            origin_info, // macro_trace: macro_trace
                         });
                         continue;
                     }
@@ -280,7 +278,7 @@ fn generate_macro_body(
     body = insert_macros(body, macros, depth, context);
     //dbg!(&body);
 
-    return body;
+    body
 }
 
 #[derive(Debug)]
@@ -289,7 +287,7 @@ enum TokenOrTokenVec {
     TokVec(Vec<Token>),
 }
 
-fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argument_name: &String) {
+fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argument_name: &str) {
     if args::exist() && args::get().disable_type_checking {
         return;
     }
@@ -485,5 +483,5 @@ pub fn insert_macros(
         new_tokens.append(&mut body);
         new_tokens.append(&mut suffix);
     }
-    return new_tokens;
+    new_tokens
 }

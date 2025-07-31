@@ -1,3 +1,5 @@
+//! Converts a string into a vector of tokens.
+
 use colored::Colorize;
 
 use crate::{

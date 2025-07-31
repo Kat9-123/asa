@@ -6,10 +6,10 @@ use std::hint::black_box;
 fn runtimes(c: &mut Criterion) {
     let contents = fs::read_to_string("subleq/sublib/tests/jumpiftest.sbl").unwrap();
 
-    let (mut mem, tokens) =
+    let (mut mem, _) =
         assembler::assemble(&contents, "subleq/sublib/tests/jumpiftest.sbl".to_owned());
     c.bench_function("slow", |b| {
-        b.iter(|| interpreter::interpret(&mut mem, &tokens, black_box(false)))
+        b.iter(|| interpreter::interpret(&mut mem, black_box(false)))
     });
     c.bench_function("fast", |b| b.iter(|| interpreter::interpret_fast(&mut mem)));
 }

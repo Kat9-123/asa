@@ -1,11 +1,9 @@
-use std::{fs, path::PathBuf, process::exit};
+use std::{fs, process::exit};
 
-use crate::{feedback::terminate, tokens::Token};
-use log::{LevelFilter, debug, info};
+use log::{LevelFilter, info};
 use simple_logger::SimpleLogger;
-use std::env;
 
-use asa::*;
+use asa::{debugger::user_input, *};
 fn main() {
     SimpleLogger::new().init().unwrap();
     log::set_max_level(LevelFilter::Info);
@@ -19,14 +17,14 @@ fn main() {
         Ok(c) => c,
         Err(e) => {
             log::error!("Error reading file: {}. {}", file_path, e);
-            exit(1)
+            exit(1);
         }
     };
 
     let (mut mem, tokens) = assembler::assemble(&contents, file_path);
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-    // debugger::debug(&mut mem, &tokens, true);
-    interpreter::interpret(&mut mem, &tokens, false);
+    debugger::debug(&mut mem, &tokens, true, user_input);
+    //interpreter::interpret(&mut mem, false).unwrap();
     //  interpreter::interpret_fast(&mut mem);
 }

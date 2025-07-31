@@ -1,21 +1,8 @@
-use std::{
-    io::{self, Write},
-    num::Wrapping,
-};
-
-use log::info;
-
-use crate::{
-    asm_details, asm_error_no_terminate, asm_instruction, asm_sub_instruction, feedback::terminate,
-    mem_view, tokens::Token,
-};
-
-use crossterm::{ExecutableCommand, cursor, terminal};
+use std::num::Wrapping;
 
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
 const PERF_ADDR: i16 = -3;
-
 
 /*
 pub fn die(instruction_logs: &Vec<InstructionLog>, tokens: &Vec<Token>, pc: usize, reason: (usize, &str), first: (usize, &str), second: (usize, &str)) {
@@ -151,11 +138,7 @@ pub fn interpret_single(
     ));
 }
 
-pub fn interpret(
-    mem: &mut Vec<u16>,
-    tokens: &Vec<Token>,
-    return_output: bool,
-) -> Result<Option<String>, RuntimeError> {
+pub fn interpret(mem: &mut Vec<u16>, return_output: bool) -> Result<Option<String>, RuntimeError> {
     let mut pc: usize = 0;
     let mut buf = String::new();
     loop {
@@ -186,7 +169,7 @@ pub fn interpret(
     }
 }
 
-pub fn interpret_fast(mem: &mut Vec<u16>) -> Result<(), RuntimeError> {
+pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
     let mut programme_counter = 0;
     loop {
         // mem_view::draw_mem(&mem, programme_counter);

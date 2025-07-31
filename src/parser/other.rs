@@ -26,23 +26,24 @@ pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     new_tokens
 }
 
-pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
+
+
+
+pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
     while i < tokens.len() {
         if i + 1 < tokens.len()
             && let TokenVariant::Asterisk = tokens[i + 1].variant
         {
-            match &tokens[i + 2].variant {
-                TokenVariant::DecLiteral { value: count } => {
-                    for _ in 0..*count {
-                        new_tokens.push(tokens[i].clone());
-                    }
-                    i += 3;
-                    continue;
+            if let TokenVariant::DecLiteral { value: count } = &tokens[i + 2].variant {
+                for _ in 0..*count {
+                    new_tokens.push(tokens[i].clone());
                 }
-                _ => {} // its the deref operator
+                i += 3;
+                continue;
             }
+            // its the deref operator
         }
         new_tokens.push(tokens[i].clone());
         i += 1;
@@ -50,7 +51,7 @@ pub fn expand_mults(tokens: &Vec<Token>) -> Vec<Token> {
     new_tokens
 }
 
-pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> Vec<Token> {
+pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
     let mut idx = 0;
@@ -135,8 +136,8 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
                 if let TokenVariant::Label { name } = &tokens[idx + 3].variant {
                     // This is a little hack, because macros add their own name to the label, in the format: '?MACRO?label',
                     // here we only care about the 'label' part
-                    let split_name = name.split('?');
-                    if !split_name.last().unwrap().starts_with('.') {
+                    let mut split_name = name.split('?');
+                    if !split_name.next_back().unwrap().starts_with('.') {
                         asm_info!(
                             &tokens[idx + 3].info,
                             "Labels which are jump targets should be prefixed with a '.'"
@@ -153,4 +154,88 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &Vec<Token>) -> V
         idx += 1;
     }
     new_tokens
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+
+    use crate::tokens::{self, tokens_from_token_variant_vec};
+
+    use super::*;
+
+    #[test]
+    fn test_relatives() {
+        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::Relative { offset: 4 },
+            TokenVariant::Relative { offset: -4 },
+            TokenVariant::Relative { offset: 123 },
+            TokenVariant::Relative { offset: 0 },
+            TokenVariant::Relative { offset: 1 },
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::DecLiteral { value: 4 },
+            TokenVariant::DecLiteral { value: -3 },
+            TokenVariant::DecLiteral { value: 125 },
+            TokenVariant::DecLiteral { value: 3 },
+            TokenVariant::DecLiteral { value: 5 },
+        ]);
+        let output = resolve_relatives(&mut input);
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_mult() {
+        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::Asterisk,
+            TokenVariant::Label {name: "label".to_owned()},
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::Asterisk,
+            TokenVariant::DecLiteral { value: 5},
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::Asterisk,
+            TokenVariant::Label {name: "label".to_owned()},
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::DecLiteral { value: 10 },
+            TokenVariant::DecLiteral { value: 10 },
+        ]);
+        let output = expand_mults(&mut input);
+        assert_eq!(output, expected);
+    }
+    #[test]
+
+    fn test_fix_instructions_and_collapse_label_definitions() {
+        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::Label { name: "label".to_owned() },
+            TokenVariant::LabelArrow { offset: tokens::LabelOffset::Int(0) },
+            TokenVariant::Label { name: "a".to_owned() },
+            TokenVariant::Subleq,
+            TokenVariant::Label { name: "b".to_owned() },
+            TokenVariant::Linebreak,
+            TokenVariant::Label { name: "b".to_owned() },
+            TokenVariant::Label { name: "a".to_owned() },
+            TokenVariant::Label { name: "c".to_owned() },
+            TokenVariant::Linebreak,
+
+
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            TokenVariant::LabelDefinition { name: "label".to_owned(), offset: 0 },
+            TokenVariant::Label { name: "b".to_owned() },
+            TokenVariant::Label { name: "a".to_owned() },
+            TokenVariant::Relative {offset: 1},
+
+            TokenVariant::Label { name: "b".to_owned() },
+            TokenVariant::Label { name: "a".to_owned() },
+            TokenVariant::Label { name: "c".to_owned() },
+
+        ]);
+        let output = fix_instructions_and_collapse_label_definitions(&mut input);
+        assert_eq!(output, expected);
+    }
 }

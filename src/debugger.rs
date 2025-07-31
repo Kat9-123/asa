@@ -1,6 +1,5 @@
-use crate::feedback::terminate;
 use crate::interpreter::RuntimeError;
-use crate::{asm_details, asm_error_no_terminate, asm_instruction};
+use crate::{asm_details, asm_error_no_terminate};
 use crate::{
     interpreter::{self, IOOperation, InstructionHistoryItem},
     mem_view,
@@ -12,11 +11,8 @@ use crossterm::{
     event::{Event, KeyCode, KeyEventKind, read},
     terminal::{self, enable_raw_mode},
 };
-use std::{fs, thread, time};
-use std::{
-    io::{self, *},
-    num::Wrapping,
-};
+use std::fs;
+use std::io::{self, *};
 
 pub fn revert_historic_instruction(
     mem: &mut Vec<u16>,
@@ -92,6 +88,9 @@ fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
 }
 pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
+    if info.file == "" {
+        return;
+    }
     let contents = get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
 
@@ -156,7 +155,20 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
     );
 }
 
-pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool) {
+pub fn user_input() -> KeyCode{
+    loop {
+        match read().unwrap() {
+            Event::Key(event) => {
+                if event.kind == KeyEventKind::Press {
+                    return event.code;
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+pub fn debug<T: FnMut() -> KeyCode>(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool, mut input: T) {
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
     let mut io_buffer: String = String::new();
@@ -219,64 +231,53 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
 
                 println!("{: <100}", io_buffer);
                 // dbg!(&instruction_history);
-                loop {
-                    match read().unwrap() {
-                        Event::Key(event) => {
-                            if event.kind == KeyEventKind::Press {
-                                // Only works on windows??
-                                match event.code {
-                                    KeyCode::Char(c) => match c {
-                                        'm' => {
-                                            stdout
-                                                .execute(terminal::Clear(terminal::ClearType::All));
-                                            mem_mode = !mem_mode;
-                                            skip_exec = true;
-                                        }
-                                        ' ' => {}
-                                        _ => {}
-                                    },
-                                    KeyCode::Right => {}
-
-                                    KeyCode::Left => {
-                                        skip_exec = true;
-
-                                        let instr = instruction_history.pop();
-                                        match instr {
-                                            Some(x) => {
-                                                pc = revert_historic_instruction(
-                                                    mem,
-                                                    &x,
-                                                    &mut io_buffer,
-                                                );
-                                            }
-                                            None => break,
-                                        }
-                                    }
-                                    KeyCode::Down => {
-                                        current_depth += 1;
-                                        skip_exec = true;
-                                    }
-                                    KeyCode::Up => {
-                                        if current_depth > 0 {
-                                            current_depth -= 1;
-                                        }
-                                        skip_exec = true;
-                                    }
-                                    KeyCode::Esc => {
-                                        in_debugging_mode = false;
-                                    }
-                                    _ => {}
-                                }
-                                break;
-                            }
+// Only works on windows??
+                match input() {
+                    KeyCode::Char(c) => match c {
+                        'm' => {
+                            stdout
+                                .execute(terminal::Clear(terminal::ClearType::All));
+                            mem_mode = !mem_mode;
+                            skip_exec = true;
                         }
+                        'h' => return,
+                        ' ' => {}
                         _ => {}
+                    },
+                    KeyCode::Right => {},
+                    KeyCode::Left => {
+                        skip_exec = true;
+
+                        let instr = instruction_history.pop();
+                        match instr {
+                            Some(x) => {
+                                pc = revert_historic_instruction(
+                                    mem,
+                                    &x,
+                                    &mut io_buffer,
+                                );
+                            }
+                            None => break,
+                        }
                     }
+                    KeyCode::Down => {
+                        current_depth += 1;
+                        skip_exec = true;
+                    }
+                    KeyCode::Up => {
+                        if current_depth > 0 {
+                            current_depth -= 1;
+                        }
+                        skip_exec = true;
+                    }
+                    KeyCode::Esc => {
+                        in_debugging_mode = false;
+                    }
+                    _ => {}
                 }
             }
         }
 
-        let mut hist_item: Option<InstructionHistoryItem> = None;
         if !skip_exec {
             let result = interpreter::interpret_single(mem, pc);
             let result = match result {
@@ -291,7 +292,7 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
             };
             let (new_pc, io_operation, instruction_history_item) = result;
             pc = new_pc;
-            hist_item = Some(instruction_history_item.clone());
+            let hist_item = Some(instruction_history_item.clone());
             match io_operation {
                 IOOperation::Char(c) => {
                     io_buffer.push(c);
@@ -318,4 +319,73 @@ pub fn debug(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: boo
         }
         skip_exec = false;
     }
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+
+    use crate::tokens::{self, tokens_from_token_variant_vec, TokenVariant};
+
+    use super::*;
+
+    #[test]
+    fn test_debugger() {
+        fn simulate_input() -> impl FnMut() -> KeyCode {
+            let keys = vec![
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Right,
+                KeyCode::Left,
+                KeyCode::Char('o'),
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Right,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Left,
+                KeyCode::Char('h'),
+            ];
+            let mut iter = keys.into_iter();
+
+            move || iter.next().unwrap()
+        }
+        let mut mem: Vec<u16> = vec![14, 12, 3, 14, 13, 6, 13, 14, 9, 12, 12, 0, 0, 1, 0];
+        let expected: Vec<u16> = vec![14, 12, 3, 14, 13, 6, 13, 14, 9, 12, 12, 0, 0, 1, 0xFFFF];
+        let tokens = &tokens_from_token_variant_vec(vec![
+            TokenVariant::DecLiteral { value: 14 },
+            TokenVariant::DecLiteral { value: 12 },
+            TokenVariant::DecLiteral { value: 3 },
+            TokenVariant::DecLiteral { value: 14 },
+            TokenVariant::DecLiteral { value: 13 },
+            TokenVariant::DecLiteral { value: 6 },
+            TokenVariant::DecLiteral { value: 13 },
+            TokenVariant::DecLiteral { value: 14 },
+            TokenVariant::DecLiteral { value: 9 },
+            TokenVariant::DecLiteral { value: 12 },
+            TokenVariant::DecLiteral { value: 12 },
+            TokenVariant::DecLiteral { value: 0 },
+            TokenVariant::DecLiteral { value: 0 },
+            TokenVariant::DecLiteral { value: 1 },
+            TokenVariant::DecLiteral { value: 0 },
+        ]);
+    
+        debug(&mut mem, tokens, true, simulate_input());
+        assert_eq!(mem, expected);
+    }
+
 }

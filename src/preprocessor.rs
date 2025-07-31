@@ -1,11 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn generic_sanitisation(text: &String) -> String {
+
+/// Does some basic and safe sanitisation. It's fine to apply it multiple times.
+pub fn generic_sanitisation(text: &str) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")
 }
 
-pub fn include_imports(text: &String, currently_imported: &mut Vec<PathBuf>) -> String {
+pub fn include_imports(text: &str, currently_imported: &mut Vec<PathBuf>) -> String {
     let cleaned_string: String = generic_sanitisation(text);
 
     let str_split = cleaned_string.split("\n").collect::<Vec<&str>>();

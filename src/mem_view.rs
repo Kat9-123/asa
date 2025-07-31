@@ -1,10 +1,7 @@
 use colored::Colorize;
-use std::io::{self};
 
-pub fn setup() {
-    let stdout = io::stdout();
-}
 
+/// Prints a pretty overview of the memory. The instruction, A, B and C are highlighted
 pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
     /*
        println!("LEGEND");
@@ -13,7 +10,6 @@ pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
        println!("{}", "b".purple());
        println!("{}", "c".red());
     */
-    let stdout = io::stdout();
     //  stdout.execute(cursor::MoveTo(0,0));
 
     print!("----  ");

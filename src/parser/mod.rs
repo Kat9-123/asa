@@ -3,8 +3,6 @@ mod literals;
 mod macros;
 pub mod other;
 
-use std::time::Instant;
-
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;

@@ -1,7 +1,7 @@
 use colored::Colorize;
 
 use std::cell::RefCell;
-thread_local!(static feedback_type: RefCell<log::Level> = RefCell::new(log::Level::Debug));
+thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
 
 #[derive(PartialEq, Clone)]
 
@@ -103,7 +103,7 @@ fn get_file_contents(path: &String) -> String {
 }
 
 pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
-    feedback_type.set(log::Level::Error);
+    FEEDBACK_TYPE.set(log::Level::Error);
 
     println!();
     log::error!(
@@ -230,7 +230,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
 }
 
 pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
-    feedback_type.set(log::Level::Warn);
+    FEEDBACK_TYPE.set(log::Level::Warn);
     if log::max_level() < log::Level::Warn {
         return;
     }
@@ -258,7 +258,7 @@ pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
-    feedback_type.set(log::Level::Info);
+    FEEDBACK_TYPE.set(log::Level::Info);
 
     if (args::exist() && args::get().disable_notes) || log::max_level() < log::Level::Info {
         return;
@@ -276,7 +276,7 @@ pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
 }
 
 pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
-    if feedback_type.with(|cell| {
+    if FEEDBACK_TYPE.with(|cell| {
         let t = cell.borrow();
 
         log::max_level() < *t

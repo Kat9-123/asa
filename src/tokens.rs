@@ -21,7 +21,16 @@ pub enum IntOrString {
     Int(i32),
 }
 
-#[derive(PartialEq, Eq, Clone)]
+
+use std::cmp::PartialEq;
+
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        self.variant == other.variant
+    }
+}
+
+#[derive(Clone)]
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
