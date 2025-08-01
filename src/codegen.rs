@@ -43,6 +43,7 @@ pub fn to_text(data: &Vec<u16>) -> String {
 pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::new();
     let mut final_tokens: Vec<Token> = Vec::new();
+
     for statement in statements {
         match &statement.variant {
             TokenVariant::DecLiteral { value } => {

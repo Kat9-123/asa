@@ -6,7 +6,7 @@ use simple_logger::SimpleLogger;
 use asa::{debugger::user_input, *};
 fn main() {
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Debug);
+    log::set_max_level(LevelFilter::Info);
     args::read();
     //disable_raw_mode();
     let file_path = format!("./subleq/{}", args::get().target);

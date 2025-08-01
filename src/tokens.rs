@@ -35,7 +35,6 @@ impl PartialEq for Token {
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
-    // pub macro_trace: Option<Vec<Info>>,
     pub origin_info: Vec<(i32, Info)>, // Option<Info>
 }
 

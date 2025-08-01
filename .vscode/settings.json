@@ -3,12 +3,16 @@
         "codegen",
         "derefs",
         "Dont",
+        "hexdigit",
+        "mults",
+        "sanitisation",
         "sanitise",
         "sanitised",
         "sanitiser",
         "sblx",
         "Subleq",
         "Sublib",
-        "tokenise"
+        "tokenise",
+        "toks"
     ]
 }

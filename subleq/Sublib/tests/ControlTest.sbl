@@ -3,14 +3,19 @@
 #Sublib/Control
 
 THREE -> 3
-i -> 3
-p -> 0
+
 TWO -> 2
-a -> 'A'
-LINEBREAK -> '\n'
-.main ->
+a -> 'Y'
+LINEBREAK -> "\n"
+
+i -> 0
+p -> 0
+@Mac m_copy? {
+    !CopyLit 0 p
+
     !While::Neq p TWO {
-        !Cpy THREE i
+        m_copy? i
+
         !While::Ge i ZERO { ;::Ge i ZERO {
             !If::Neq SNEG ONE {
                 !IO -= a
@@ -20,6 +25,18 @@ LINEBREAK -> '\n'
         }
         !IO -= LINEBREAK
         !Inc p
+    }
+}
+
+.main ->
+    !If::Eq SNEG SNEG {
+
+        !Mac (!CopyLit 3)
+    }
+    !IO -= LINEBREAK
+    !If::Ge ZERO SNEG {
+
+        !Mac (!CopyLit 2)
     }
 
     !Halt

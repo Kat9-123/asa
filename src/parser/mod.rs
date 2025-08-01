@@ -54,7 +54,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         print_debug!("{:?}  ", token);
     }
     println_debug!();
-    dump_tokens("temp.sbl", &tokens);
 
     let tokens = fix_instructions_and_collapse_label_definitions(&tokens);
 
@@ -77,11 +76,12 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }
-    println_debug!();
 
     let tokens = resolve_relatives(&tokens);
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }
+    println!("AAA");
+
     tokens
 }

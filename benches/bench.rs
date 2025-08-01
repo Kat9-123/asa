@@ -17,9 +17,9 @@ fn runtimes(c: &mut Criterion) {
 fn assembler(c: &mut Criterion) {
     let contents = fs::read_to_string("subleq/sublib/tests/jumpiftest.sbl").unwrap();
     c.bench_function("assembler", |b| {
-        b.iter(|| assembler::assemble(&contents, "subleq/sublib/tests/jumpiftest.sbl".to_owned()))
+        b.iter(|| assembler::assemble(&contents, "subleq/sublib/tests/ControlTest.sbl".to_owned()))
     });
 }
 
-criterion_group!(benches, runtimes, assembler);
+criterion_group!(benches, assembler);
 criterion_main!(benches);

@@ -296,13 +296,24 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
     let lower = argument_name.to_ascii_lowercase();
     if lower.len() > 1 {
         match &lower[..2] {
-            x if x == symbols::SCOPE_TYPE_PREFIX || x == symbols::MACRO_TYPE_PREFIX => {
+            symbols::SCOPE_TYPE_PREFIX => {
                 if let TokenVariant::Scope = token.variant {
                 } else {
-                    // Change the m_
                     asm_info!(
                         &token.info,
                         "Expected a SCOPE as argument {}",
+                        asm_hint!("See the documentation for information on the typing system")
+                    );
+                    asm_details!(label_to_replace_info, "Macro definition");
+                }
+                return;
+            }
+            symbols::MACRO_TYPE_PREFIX => {
+                if let TokenVariant::BraceOpen = token.variant {
+                } else {
+                    asm_info!(
+                        &token.info,
+                        "Expected a BRACED as argument {}",
                         asm_hint!("See the documentation for information on the typing system")
                     );
                     asm_details!(label_to_replace_info, "Macro definition");

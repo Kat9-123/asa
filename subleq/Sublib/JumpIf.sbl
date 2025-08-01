@@ -39,12 +39,12 @@
     !J .a_b
 
 .a_b ->   ; a<=0 && b<=0
-    a? -= ZERO S
+    a? -= ZERO .S
     !J .final
-S ->
-    b? -= ZERO N
+.S ->
+    b? -= ZERO .N
     !J .final
-N ->
+.N ->
 
 
     a_plus_one -= ZERO .final
@@ -52,11 +52,11 @@ N ->
 
 
 .final ->
-    l -= b? TN
+    l -= b? .TN
     !J .fin
 
 
-TN ->
+.TN ->
 
     a_plus_one -= b? .address?
 

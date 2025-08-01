@@ -8,9 +8,9 @@
     .false ->
 }
 
-@_IfBase m_conditional? body? {
-    !Flip {m_conditional?} .false
-    body?
+@_IfBase m_conditional? s_body? {
+    !Flip (m_conditional?) .false
+    s_body?
     .false ->
 }
 
@@ -98,6 +98,7 @@
 @IfElse::Neq a? b? true? false? {
     !_IfElseBase (!JumpIf::Eq a? b? ) true? false?
 }
+@If::Ge a? b? s_body? [ !_IfBase (!JumpIf::Ge a? b?) s_body? ]
 
 
 
