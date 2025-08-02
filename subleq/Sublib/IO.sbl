@@ -5,8 +5,8 @@
 @DEBUG_ADDR [-2]
 @PERF_ADDR [-3]
 
-@IO::Print string? {
-    !Cpy string? ptr
+@IO::Print p_string? {
+    !Cpy p_string? ptr
     !J .loop
 
 
@@ -48,7 +48,7 @@
 
 @IO::PrintLit l_string? {
     !J .
-    string -> &l_string? 0
+    string -> &l_string?
     . ->
     !IO::Print string
 }

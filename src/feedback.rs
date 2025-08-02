@@ -22,12 +22,23 @@ macro_rules! asm_sub_instruction {
     }
 }
 
+#[cfg(not(test))]
 #[macro_export]
 macro_rules! asm_error {
     ($info:expr, $($arg:tt)*) => {
         {
             $crate::feedback::_asm_error(format!($($arg)*), $info, file!(), line!());
             std::process::exit(1);
+
+        }
+    };
+}
+#[cfg(test)]
+#[macro_export]
+macro_rules! asm_error {
+    ($info:expr, $($arg:tt)*) => {
+        {
+            panic!("{}", format!($($arg)*))
 
         }
     };
@@ -141,50 +152,56 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         );
     }
 
-    match msg_type {
-        Type::Error => println!(
+    let fmt = match msg_type {
+        Type::Error => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).red(),
             " > ".red(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::Warn => println!(
+        Type::Warn => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).yellow(),
             " > ".yellow(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::Info => println!(
+        Type::Info => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::Instruction => println!(
+        Type::Instruction => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::Details => println!(
+        Type::Details => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".blue(),
             lines[(info.line_number - 1) as usize]
         ),
-        Type::SubInstruction => println!(
+        Type::SubInstruction => format!(
             "{}{: >4}{}{}",
             prefix,
             format!("{}", info.line_number).blue(),
             " > ".bright_cyan(),
             lines[(info.line_number - 1) as usize]
         ),
+    };
+    if let Some(x) = &info.append_to_sourceline {
+        println!("{} {}", fmt, x.purple());
+    } else {
+        println!("{}", fmt);
     }
+
     if msg_type == Type::Instruction && info.line_number + 1 < lines.len() as i32 {
         println!(
             "{}{: >4} | {}",

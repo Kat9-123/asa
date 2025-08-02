@@ -14,6 +14,7 @@ pub struct Info {
     pub length: i32,
     pub line_number: i32,
     pub file: String,
+    pub append_to_sourceline: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -34,7 +35,7 @@ impl PartialEq for Token {
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
-    pub origin_info: Vec<(i32, Info)>, // Option<Info>
+    pub origin_info: Vec<Info>, // Option<Info>
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -136,6 +137,7 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
                 length: 0,
                 line_number: 0,
                 file: String::new(),
+                append_to_sourceline: None,
             },
             variant: x.1.clone(),
             origin_info: Default::default(),
@@ -143,7 +145,7 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
         .collect()
 }
 impl Token {
-    pub fn size(&self) -> i32 {
+    pub fn size(&self) -> usize {
         match self.variant {
             TokenVariant::DecLiteral { .. }
             | TokenVariant::Relative { .. }

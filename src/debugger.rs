@@ -177,12 +177,12 @@ pub fn debug<T: FnMut() -> KeyCode>(
                 &tokens[pc].info
             } else {
                 //&origin_info[origin_info.len() - 1].1 };
-                let file_name = &origin_info[0].1.file; // Suboptimal
+                let file_name = &origin_info[0].file; // Suboptimal
 
                 let mut deepest_in_file_depth = 999_999;
                 if stay_in_file {
                     for (i, x) in origin_info.iter().enumerate() {
-                        if x.1.file == *file_name {
+                        if x.file == *file_name {
                             deepest_in_file_depth = i;
                         }
                     }
@@ -191,7 +191,7 @@ pub fn debug<T: FnMut() -> KeyCode>(
                 current_depth = current_depth
                     .min(origin_info.len() - 1)
                     .min(deepest_in_file_depth);
-                &origin_info[current_depth].1
+                &origin_info[current_depth]
             };
 
             /*

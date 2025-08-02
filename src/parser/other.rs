@@ -3,28 +3,6 @@ use crate::{
     tokens::{self, Info, LabelOffset, Token, TokenVariant},
 };
 
-/// a &2 => a 3
-pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
-    let mut address: i32 = 0;
-    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
-
-    for token in tokens {
-        match token.variant {
-            TokenVariant::Relative { offset } => {
-                new_tokens.push(Token::with_info(
-                    TokenVariant::DecLiteral {
-                        value: address + offset,
-                    },
-                    &token,
-                ));
-            }
-            _ => new_tokens.push(token.clone()),
-        }
-        address += token.size();
-    }
-    new_tokens
-}
-
 /// LABEL * 3 => LABEL LABEL LABEL
 pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
@@ -37,7 +15,7 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
                 for _ in 0..*count {
                     new_tokens.push(tokens[i].clone());
                 }
-                i += 3;
+                i += 3; // Remember that this is the index of the ORIGINAL tokens, so plus three
                 continue;
             }
             // its the deref operator
@@ -51,7 +29,7 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
 fn token_variants_to_tokens(
     token_variants: Vec<TokenVariant>,
     info: &Info,
-    origin_info: &Vec<(i32, Info)>,
+    origin_info: &Vec<Info>,
 ) -> Vec<Token> {
     token_variants
         .iter()
@@ -63,6 +41,7 @@ fn token_variants_to_tokens(
         .collect()
 }
 
+/// TODO
 pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -105,19 +84,24 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
     new_tokens
 }
 
+/// This routine does two different things
+/// It fixes instructions to be in the subleq format i.e: b -= a => a b &1
+/// and it converts label definitions into a single token instead of the two
+/// *label* and ->. At this point linebreaks are also removed, since they don't carry
+/// any meaning anymore.
 pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
 
-    let mut idx = 0;
+    let mut i = 0;
 
-    while idx < tokens.len() {
-        if let TokenVariant::Linebreak = tokens[idx].variant {
-            idx += 1;
+    while i < tokens.len() {
+        if let TokenVariant::Linebreak = tokens[i].variant {
+            i += 1;
             continue;
         }
 
-        if idx + 2 < tokens.len()
-            && let TokenVariant::LabelArrow { offset } = &tokens[idx + 1].variant
+        if i + 1 < tokens.len()
+            && let TokenVariant::LabelArrow { offset } = &tokens[i + 1].variant
         {
             let label_offset = match offset {
                 LabelOffset::Char(x) => match x {
@@ -129,80 +113,79 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                 LabelOffset::Int(x) => *x,
             };
 
-            let name = match &tokens[idx].variant {
+            let name = match &tokens[i].variant {
                 TokenVariant::Label { name } => name,
-                _ => asm_error!(&tokens[idx].info, "Only a label may precede a label arrow"),
+                _ => asm_error!(&tokens[i].info, "Only a label may precede a label arrow"),
             };
             new_tokens.push(Token::with_info(
                 TokenVariant::LabelDefinition {
                     name: name.clone(),
                     offset: label_offset,
                 },
-                &tokens[idx + 1],
+                &tokens[i + 1],
             ));
 
-            idx += 2;
+            i += 2;
             continue;
         }
 
-        if idx + 1 < tokens.len()
-            && let TokenVariant::Subleq = &tokens[idx + 1].variant
+        if i + 1 < tokens.len()
+            && let TokenVariant::Subleq = &tokens[i + 1].variant
         {
             /*  doesnt work, shouldnt trigger for ZERO -= ZERO...
-            if let TokenVariant::Label {name} = &tokens[idx].variant {
+            if let TokenVariant::Label {name} = &tokens[i].variant {
                 if name.len() > 1 {
                     if name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
-                        asm_info!(&tokens[idx].info, "Attempting to write to a label notated as being constant");
+                        asm_info!(&tokens[i].info, "Attempting to write to a label notated as being constant");
                     }
                 }
             }
              */
-            if idx + 3 < tokens.len()
-                && let TokenVariant::Linebreak = &tokens[idx + 3].variant
+            if i + 3 < tokens.len()
+                && let TokenVariant::Linebreak = &tokens[i + 3].variant
             {
-                // Maybe something else as tokens[idx + 3]
                 // Subleq has a and b flipped
-
-                let mut updated_info = tokens[idx + 3].info.clone();
-                updated_info.start_char += updated_info.length + 3; // Clones linebreak info
+                let mut updated_info = tokens[i + 2].info.clone();
+                updated_info.start_char += updated_info.length + 2;
                 updated_info.length = 2;
+                updated_info.append_to_sourceline = Some("&1".to_string());
 
-                new_tokens.push(tokens[idx + 2].clone());
-                new_tokens.push(tokens[idx].clone());
+                // Flip b and a
+                new_tokens.push(tokens[i + 2].clone());
+                new_tokens.push(tokens[i].clone());
                 new_tokens.push(Token {
                     info: updated_info,
                     variant: TokenVariant::Relative { offset: 1 },
-                    origin_info: tokens[idx + 3].origin_info.clone(),
-                    //   macro_trace: tokens[idx + 3].macro_trace.clone(),
+                    origin_info: tokens[i + 3].origin_info.clone(), // Linebreak info
                 });
 
-                idx += 4;
+                i += 4;
                 continue;
             }
-            if idx + 4 < tokens.len() {
+            if i + 4 < tokens.len() {
                 // Subleq has a and b flipped
-                new_tokens.push(tokens[idx + 2].clone());
-                new_tokens.push(tokens[idx].clone());
-                new_tokens.push(tokens[idx + 3].clone());
-                if let TokenVariant::Label { name } = &tokens[idx + 3].variant {
+                new_tokens.push(tokens[i + 2].clone());
+                new_tokens.push(tokens[i].clone());
+                new_tokens.push(tokens[i + 3].clone());
+                if let TokenVariant::Label { name } = &tokens[i + 3].variant {
                     // This is a little hack, because macros add their own name to the label, in the format: '?MACRO?label',
                     // here we only care about the 'label' part
                     let mut split_name = name.split('?');
                     if !split_name.next_back().unwrap().starts_with('.') {
                         asm_info!(
-                            &tokens[idx + 3].info,
+                            &tokens[i + 3].info,
                             "Labels which are jump targets should be prefixed with a '.'"
                         );
                     }
                 }
-                idx += 5;
+                i += 5;
                 continue;
             }
         }
 
-        new_tokens.push(tokens[idx].clone());
+        new_tokens.push(tokens[i].clone());
 
-        idx += 1;
+        i += 1;
     }
     new_tokens
 }
@@ -214,25 +197,6 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_relatives() {
-        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
-            (0, TokenVariant::Relative { offset: 4 }),
-            (1, TokenVariant::Relative { offset: -4 }),
-            (2, TokenVariant::Relative { offset: 123 }),
-            (3, TokenVariant::Relative { offset: 0 }),
-            (4, TokenVariant::Relative { offset: 1 }),
-        ]);
-        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
-            (0, TokenVariant::DecLiteral { value: 4 }),
-            (1, TokenVariant::DecLiteral { value: -3 }),
-            (2, TokenVariant::DecLiteral { value: 125 }),
-            (3, TokenVariant::DecLiteral { value: 3 }),
-            (4, TokenVariant::DecLiteral { value: 5 }),
-        ]);
-        let output = resolve_relatives(&mut input);
-        assert_eq!(output, expected);
-    }
     #[test]
     fn test_assignment() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
@@ -380,7 +344,7 @@ mod tests {
                     name: "a".to_owned(),
                 },
             ),
-            (5 + 3, TokenVariant::Relative { offset: 1 }),
+            (6, TokenVariant::Relative { offset: 1 }),
             (
                 6,
                 TokenVariant::Label {

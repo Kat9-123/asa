@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::default;
+use std::thread::current;
 
 use crate::asm_details;
 use crate::asm_hint;
@@ -8,6 +10,8 @@ use crate::tokens;
 use crate::tokens::*;
 use colored::Colorize;
 
+/// Labels may be defined inside of instructions using the following syntax:
+/// (label -> 0). This routine converts these defenitions into single tokens
 pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -18,12 +22,15 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
         {
             let name = match &tokens[i + 1].variant {
                 TokenVariant::Label { name } => name,
-                _ => todo!(),
+                _ => asm_error!(&tokens[i + 1].info, "Unexpected token, expected a LABEL"),
             };
             let data: IntOrString = match &tokens[i + 3].variant {
                 TokenVariant::DecLiteral { value } => IntOrString::Int(*value),
                 TokenVariant::Label { name } => IntOrString::Str(name.clone()),
-                _ => todo!(),
+                _ => asm_error!(
+                    &tokens[i + 3].info,
+                    "Unexpected token, expected a LABEL or LITERAL"
+                ),
             };
 
             updated_tokens.push(Token::with_info(
@@ -44,9 +51,31 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     updated_tokens
 }
 
-pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i32, Info)>> {
-    let mut scopes: Vec<HashMap<String, (i32, Info)>> = vec![HashMap::new()];
-    let mut address: i32 = 0;
+/// Find every label definition, and store the address that it should point to
+/// Returns a vector with a hashmap for each scope, containing key value pairs of the name
+/// of the label and its value and info
+pub fn assign_addresses_to_labels(tokens: &[Token]) -> Vec<HashMap<String, (usize, Info)>> {
+    fn new_label(
+        current_scope: &mut HashMap<String, (usize, Info)>,
+        name: &String,
+        address: usize,
+        info: &Info,
+    ) {
+        if let Some(x) = current_scope.get(name) {
+            asm_warn!(
+                info,
+                "The label called '{name}' has already been defined in this scope"
+            );
+            asm_details!(&x.1, "Here");
+        }
+
+        current_scope.insert(name.clone(), (address, info.clone()));
+    }
+
+    let mut scopes: Vec<HashMap<String, (usize, Info)>> = vec![HashMap::new()];
+    let mut address: usize = 0;
+    // Stack maintaining the indices for the scopes. Top is the current one. They
+    // index the scope vec.
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
 
@@ -56,7 +85,6 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
                 scopes.push(HashMap::new());
                 let current_scope_idx = seen_scopes_count + 1;
                 current_scope_indexes.push(current_scope_idx);
-                println_debug!("SCOPE {:?}", current_scope_indexes);
                 seen_scopes_count += 1;
             }
             TokenVariant::Unscope => {
@@ -64,33 +92,21 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
             }
 
             TokenVariant::BracedLabelDefinition { name, .. } => {
-                if let Some(x) =
-                    scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name)
-                {
-                    asm_warn!(
-                        &token.info,
-                        "The label called '{name}' has already been defined in this scope"
-                    );
-                    asm_details!(&x.1, "Here");
-                }
-
-                scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                    .insert(name.clone(), (address, token.info.clone()));
+                let current_scope =
+                    &mut scopes[current_scope_indexes[current_scope_indexes.len() - 1]];
+                new_label(current_scope, name, address, &token.info);
             }
 
             TokenVariant::LabelDefinition { name, offset } => {
-                if let Some(x) =
-                    scopes[current_scope_indexes[current_scope_indexes.len() - 1]].get(name)
-                {
-                    asm_warn!(
-                        &token.info,
-                        "The label called '{name}' has already been defined in this scope"
-                    );
-                    asm_details!(&x.1, "Here");
-                }
+                let current_scope =
+                    &mut scopes[current_scope_indexes[current_scope_indexes.len() - 1]];
 
-                scopes[current_scope_indexes[current_scope_indexes.len() - 1]]
-                    .insert(name.clone(), (address + offset, token.info.clone()));
+                new_label(
+                    current_scope,
+                    name,
+                    address + (*offset) as usize,
+                    &token.info,
+                );
             }
 
             _ => {}
@@ -98,20 +114,47 @@ pub fn assign_addresses_to_labels(tokens: &Vec<Token>) -> Vec<HashMap<String, (i
         address += token.size();
     }
 
-    println_debug!("{:?}", scopes);
     scopes
 }
 
-pub fn resolve_labels(
-    tokens: &Vec<Token>,
-    scoped_label_table: &Vec<HashMap<String, (i32, Info)>>,
-) -> Vec<Token> {
-    let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
+/// All labels get resolved, i.e. converted into the address they label.
+/// This routine also resolves relatives.
+pub fn resolve_labels_and_relatives(
+    tokens: &mut Vec<Token>,
+    scoped_label_table: &Vec<HashMap<String, (usize, Info)>>,
+) {
+    fn find_label(
+        name: &String,
+        scoped_label_table: &[HashMap<String, (usize, Info)>],
+        current_scope_indexes: &[usize],
+        info: &Info,
+    ) -> (usize, Info) {
+        for scope in current_scope_indexes.iter().rev() {
+            if let Some(x) = scoped_label_table[*scope].get(name) {
+                return x.clone();
+            }
+        }
+        if name == "_ASM" {
+            asm_error!(
+                info,
+                "No definition for label '{name}' found {}{}",
+                asm_hint!(
+                    "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
+                ),
+                asm_hint!(
+                    "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
+                )
+            );
+        }
+        asm_error!(info, "No definition for label '{name}' found");
+    }
 
+    let mut address: usize = 0;
+    // Scope index stack
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
 
-    for token in tokens {
+    for token in tokens.iter_mut() {
         match &token.variant {
             TokenVariant::Scope => {
                 let current_scope_idx = seen_scopes_count + 1;
@@ -122,69 +165,41 @@ pub fn resolve_labels(
                 current_scope_indexes.pop();
             }
             TokenVariant::Label { name } => {
-                let (val, ..) = find_label(
+                let (val, _) = find_label(
                     name,
                     scoped_label_table,
                     &current_scope_indexes,
                     &token.info,
                 );
-                updated_tokens.push(Token {
-                    info: token.info.clone(),
-                    variant: TokenVariant::DecLiteral { value: val },
-                    origin_info: token.origin_info.clone(),
-                });
+                token.variant = TokenVariant::DecLiteral { value: val as i32 };
             }
-            TokenVariant::BracedLabelDefinition { name, data } => match data {
-                IntOrString::Int(x) => updated_tokens.push(Token {
-                    info: token.info.clone(),
-                    variant: TokenVariant::DecLiteral { value: *x },
-                    origin_info: token.origin_info.clone(),
-                }),
-                IntOrString::Str(..) => {
-                    let (val, ..) = find_label(
-                        name,
-                        scoped_label_table,
-                        &current_scope_indexes,
-                        &token.info,
-                    );
-                    updated_tokens.push(Token {
-                        info: token.info.clone(),
+            TokenVariant::BracedLabelDefinition { name, data } => {
+                let value = match data {
+                    IntOrString::Int(val) => *val,
+                    IntOrString::Str(..) => {
+                        let (val, _) = find_label(
+                            name,
+                            scoped_label_table,
+                            &current_scope_indexes,
+                            &token.info,
+                        );
+                        val as i32
+                    }
+                };
 
-                        variant: TokenVariant::DecLiteral { value: val },
-                        origin_info: token.origin_info.clone(),
-                    });
-                }
-            },
-            _ => updated_tokens.push(token.clone()),
-        }
-    }
-    updated_tokens
-}
+                token.variant = TokenVariant::DecLiteral { value };
+            }
+            // a &2 => a 3
+            TokenVariant::Relative { offset } => {
+                token.variant = TokenVariant::DecLiteral {
+                    value: address as i32 + offset,
+                };
+            }
 
-fn find_label(
-    name: &String,
-    scoped_label_table: &[HashMap<String, (i32, Info)>],
-    current_scope_indexes: &[usize],
-    info: &Info,
-) -> (i32, Info) {
-    for scope in current_scope_indexes.iter().rev() {
-        if let Some(x) = scoped_label_table[*scope].get(name) {
-            return x.clone();
+            _ => {}
         }
+        address += token.size();
     }
-    if name == "_ASM" {
-        asm_error!(
-            info,
-            "No definition for label '{name}' found {}{}",
-            asm_hint!(
-                "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
-            ),
-            asm_hint!(
-                "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
-            )
-        );
-    }
-    asm_error!(info, "No definition for label '{name}' found");
 }
 
 /*
@@ -196,7 +211,7 @@ fn find_label(
 */
 fn make_deref_instructions(
     info: &Info,
-    origin_info: &[(i32, Info)],
+    origin_info: &[Info],
     label_with_id: &str,
     label_without_id: &String,
 ) -> Vec<Token> {

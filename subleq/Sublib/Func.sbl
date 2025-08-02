@@ -116,9 +116,9 @@ function_stack -> !Stack::Create 128
 
 }
 
-b -> &"Test" 0
-a -> &"string" 0
-d -> &"APPOL" 0
+b -> &"Test"
+a -> &"string"
+d -> &"APPOL"
 .main ->
 
     !Func::Call FUNtest { a TRUE }

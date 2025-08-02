@@ -14,8 +14,6 @@ use crate::tokens::{Token, TokenVariant};
 use crate::{print_debug, println_debug};
 use std::time::Instant;
 
-pub fn simple_perf(f: &dyn Fn(&Vec<Token>) -> Vec<Token>) {}
-
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
 
@@ -31,7 +29,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     println_debug!();
     //println!("{}", tokens.len());
 
-    tokens = insert_macros(tokens, &macros, 0, vec![]);
+    tokens = insert_macros(tokens, &macros, vec![]);
     //println!("{}", tokens.len());
     //let  tokens = loop_insert_macros(tokens, &macros);
 
@@ -59,7 +57,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     }
     println_debug!();
 
-    let tokens = fix_instructions_and_collapse_label_definitions(&tokens);
+    let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
 
     log::debug!("Fixed");
     for statement in &tokens {
@@ -74,14 +72,9 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     println_debug!("{:?}", scoped_label_table);
     println_debug!();
 
-    let tokens = resolve_labels(&tokens, &scoped_label_table);
+    resolve_labels_and_relatives(&mut tokens, &scoped_label_table);
     log::debug!("Resolved Labels");
 
-    for statement in &tokens {
-        println_debug!("{:?}", statement);
-    }
-
-    let tokens = resolve_relatives(&tokens);
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }
