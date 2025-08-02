@@ -3,7 +3,7 @@ use std::{fs, process::exit};
 use log::{LevelFilter, info};
 use simple_logger::SimpleLogger;
 
-use asa::{debugger::user_input, *};
+use asa::{debugger::user_input, feedback::asm_runtime_error, *};
 fn main() {
     SimpleLogger::new().init().unwrap();
     log::set_max_level(LevelFilter::Info);
@@ -22,9 +22,13 @@ fn main() {
     };
 
     let (mut mem, tokens) = assembler::assemble(&contents, file_path);
+    info!("Running...");
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-    // debugger::debug(&mut mem, &tokens, true, user_input);
-    interpreter::interpret(&mut mem, false).unwrap();
+    //debugger::debug(&mut mem, &tokens, false, user_input);
+    let result = interpreter::interpret(&mut mem, false);
+    if let Err(e) = result {
+        asm_runtime_error(e, &tokens);
+    }
     //  interpreter::interpret_fast(&mut mem);
 }

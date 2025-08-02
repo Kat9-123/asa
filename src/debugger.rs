@@ -6,6 +6,8 @@ use crate::{
     tokens::{Info, Token},
 };
 use colored::Colorize;
+use core::panic;
+use crossterm::terminal::disable_raw_mode;
 use crossterm::{
     ExecutableCommand,
     event::{Event, KeyCode, KeyEventKind, read},
@@ -35,32 +37,6 @@ pub fn revert_historic_instruction(
     // return inst.pc + 3;
 }
 
-pub fn error(e: RuntimeError, pc: usize, tokens: &Vec<Token>) {
-    match e {
-        RuntimeError::InstructionOutOfRange => {
-            asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");
-            asm_details!(&tokens[pc].info, "'A' part");
-            asm_details!(&tokens[pc + 1].info, "'B' part");
-        }
-        RuntimeError::AOutOfRange => {
-            asm_error_no_terminate!(
-                &tokens[pc].info,
-                "Address at 'A' is outside of memory bounds"
-            );
-            asm_details!(&tokens[pc + 1].info, "'B' part");
-            asm_details!(&tokens[pc + 2].info, "'C' part");
-        }
-        RuntimeError::BOutOfRange => {
-            asm_error_no_terminate!(
-                &tokens[pc + 1].info,
-                "Address at 'B' is outside of memory bounds"
-            );
-            asm_details!(&tokens[pc].info, "'A' part");
-            asm_details!(&tokens[pc + 2].info, "'C' part");
-        }
-    }
-}
-
 enum DataType {
     Char,
     UInt,
@@ -87,7 +63,7 @@ fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
 fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
 }
-pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
+pub fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<RuntimeError>) {
     if info.file == "" {
         return;
     }
@@ -116,11 +92,16 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>) {
                 lines[i as usize]
             );
         } else {
+            let line = if current_error.is_none() {
+                format!("{}", lines[i as usize]).blue()
+            } else {
+                format!("{}", lines[i as usize]).red()
+            };
             println!(
                 "{: >4} {} {: <100}",
                 format!("{}", i + 1).bright_cyan(),
                 ">".blue(),
-                format!("{}", lines[i as usize]).blue()
+                line
             );
         }
     }
@@ -180,17 +161,17 @@ pub fn debug<T: FnMut() -> KeyCode>(
     let mut current_depth: usize = 0;
     let mut prev_info: Option<Info> = None;
     let mut stdout = io::stdout();
-
+    // enable_raw_mode();
     stdout.execute(terminal::Clear(terminal::ClearType::All));
     let stay_in_file = false;
     let mut mem_mode: bool = false;
-    let mut skip_exec: bool = false;
-    let mut apply_instruction: bool = false;
+    let mut current_error: Option<RuntimeError> = None;
     loop {
         let mut skip_interaction = false;
 
         if in_debugging_mode {
             stdout.execute(crossterm::cursor::MoveTo(0, 0));
+
             let origin_info = &tokens[pc].origin_info;
             let info = if origin_info.len() == 0 {
                 &tokens[pc].info
@@ -198,7 +179,7 @@ pub fn debug<T: FnMut() -> KeyCode>(
                 //&origin_info[origin_info.len() - 1].1 };
                 let file_name = &origin_info[0].1.file; // Suboptimal
 
-                let mut deepest_in_file_depth = 999999;
+                let mut deepest_in_file_depth = 999_999;
                 if stay_in_file {
                     for (i, x) in origin_info.iter().enumerate() {
                         if x.1.file == *file_name {
@@ -227,7 +208,8 @@ pub fn debug<T: FnMut() -> KeyCode>(
 
                 // asm_instruction!(info, "depth Instruction");
                 if !mem_mode {
-                    display(info, pc, &mem);
+                    display(info, pc, &mem, &current_error);
+                    if let Some(e) = &current_error {}
                 } else {
                     mem_view::draw_mem(mem, pc);
                 }
@@ -242,33 +224,34 @@ pub fn debug<T: FnMut() -> KeyCode>(
                         'm' => {
                             stdout.execute(terminal::Clear(terminal::ClearType::All));
                             mem_mode = !mem_mode;
-                            skip_exec = true;
+                            continue;
                         }
                         'h' => return,
                         ' ' => {}
                         _ => {}
                     },
+                    KeyCode::Enter => continue,
                     KeyCode::Right => {}
                     KeyCode::Left => {
-                        skip_exec = true;
-
+                        current_error = None;
                         let instr = instruction_history.pop();
                         match instr {
                             Some(x) => {
                                 pc = revert_historic_instruction(mem, &x, &mut io_buffer);
                             }
-                            None => break,
+                            None => continue,
                         }
+                        continue;
                     }
                     KeyCode::Down => {
                         current_depth += 1;
-                        skip_exec = true;
+                        continue;
                     }
                     KeyCode::Up => {
                         if current_depth > 0 {
                             current_depth -= 1;
                         }
-                        skip_exec = true;
+                        continue;
                     }
                     KeyCode::Esc => {
                         in_debugging_mode = false;
@@ -278,16 +261,14 @@ pub fn debug<T: FnMut() -> KeyCode>(
             }
         }
 
-        if !skip_exec {
+        if current_error.is_none() {
             let result = interpreter::interpret_single(mem, pc);
             let result = match result {
                 Ok(e) => e,
                 Err(e) => {
-                    error(e, pc, tokens);
-                    let mut inp: String = String::new();
-                    io::stdin().read_line(&mut inp);
-                    //continue;
-                    panic!();
+                    current_error = Some(e);
+                    in_debugging_mode = true;
+                    continue;
                 }
             };
             let (new_pc, io_operation, instruction_history_item) = result;
@@ -317,7 +298,6 @@ pub fn debug<T: FnMut() -> KeyCode>(
             }
             instruction_history.push(hist_item.unwrap());
         }
-        skip_exec = false;
     }
 }
 
@@ -344,6 +324,12 @@ mod tests {
                 KeyCode::Right,
                 KeyCode::Right,
                 KeyCode::Right,
+                KeyCode::Char('m'),
+                KeyCode::Left,
+                KeyCode::Right,
+                KeyCode::Left,
+                KeyCode::Right,
+                KeyCode::Char('m'),
                 KeyCode::Left,
                 KeyCode::Left,
                 KeyCode::Left,
@@ -364,21 +350,21 @@ mod tests {
         let mut mem: Vec<u16> = vec![14, 12, 3, 14, 13, 6, 13, 14, 9, 12, 12, 0, 0, 1, 0];
         let expected: Vec<u16> = vec![14, 12, 3, 14, 13, 6, 13, 14, 9, 12, 12, 0, 0, 1, 0xFFFF];
         let tokens = &tokens_from_token_variant_vec(vec![
-            TokenVariant::DecLiteral { value: 14 },
-            TokenVariant::DecLiteral { value: 12 },
-            TokenVariant::DecLiteral { value: 3 },
-            TokenVariant::DecLiteral { value: 14 },
-            TokenVariant::DecLiteral { value: 13 },
-            TokenVariant::DecLiteral { value: 6 },
-            TokenVariant::DecLiteral { value: 13 },
-            TokenVariant::DecLiteral { value: 14 },
-            TokenVariant::DecLiteral { value: 9 },
-            TokenVariant::DecLiteral { value: 12 },
-            TokenVariant::DecLiteral { value: 12 },
-            TokenVariant::DecLiteral { value: 0 },
-            TokenVariant::DecLiteral { value: 0 },
-            TokenVariant::DecLiteral { value: 1 },
-            TokenVariant::DecLiteral { value: 0 },
+            (0, TokenVariant::DecLiteral { value: 14 }),
+            (0, TokenVariant::DecLiteral { value: 12 }),
+            (0, TokenVariant::DecLiteral { value: 3 }),
+            (0, TokenVariant::DecLiteral { value: 14 }),
+            (0, TokenVariant::DecLiteral { value: 13 }),
+            (0, TokenVariant::DecLiteral { value: 6 }),
+            (0, TokenVariant::DecLiteral { value: 13 }),
+            (0, TokenVariant::DecLiteral { value: 14 }),
+            (0, TokenVariant::DecLiteral { value: 9 }),
+            (0, TokenVariant::DecLiteral { value: 12 }),
+            (0, TokenVariant::DecLiteral { value: 12 }),
+            (0, TokenVariant::DecLiteral { value: 0 }),
+            (0, TokenVariant::DecLiteral { value: 0 }),
+            (0, TokenVariant::DecLiteral { value: 1 }),
+            (0, TokenVariant::DecLiteral { value: 0 }),
         ]);
 
         debug(&mut mem, tokens, true, simulate_input());

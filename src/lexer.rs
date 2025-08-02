@@ -60,6 +60,7 @@ fn updated_context(
             '[' => (Context::None, None, Some(TokenVariant::MacroBodyStart)),
             ']' => (Context::None, None, Some(TokenVariant::MacroBodyEnd)),
             '\\' => (Context::None, None, Some(TokenVariant::Linebreak)),
+            '=' => (Context::None, None, Some(TokenVariant::Equals)),
 
             '/' => (Context::None, None, Some(TokenVariant::NamespaceEnd)),
 
@@ -340,8 +341,18 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                     variant: var.clone(),
                     origin_info: vec![], //macro_trace: None,
                 };
-                //   println!("{:?} {:?}", token, token.info);
-                result_tokens.push(token);
+                //   println!("{:?} {:?}", token, token.info);\
+
+                // Consecutive newlines do not carry any information
+                if let Some(x) = result_tokens.last() {
+                    if token.variant != TokenVariant::Linebreak
+                        || x.variant != TokenVariant::Linebreak
+                    {
+                        result_tokens.push(token);
+                    }
+                } else {
+                    result_tokens.push(token);
+                }
 
                 buffer.clear();
                 if let TokenVariant::Linebreak = var {

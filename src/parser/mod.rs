@@ -12,23 +12,27 @@ use crate::parser::other::*;
 use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 use crate::{print_debug, println_debug};
+use std::time::Instant;
+
+pub fn simple_perf(f: &dyn Fn(&Vec<Token>) -> Vec<Token>) {}
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
 
     char_and_hex_to_dec(&mut tokens);
+    let tokens = handle_assignments(&tokens);
 
     let tokens = grab_braced_label_definitions(tokens);
-
     let (mut tokens, macros) = read_macros(tokens);
     log::debug!("Found macros:");
     for i in &macros {
         println_debug!("{}", i.1);
     }
     println_debug!();
+    //println!("{}", tokens.len());
 
     tokens = insert_macros(tokens, &macros, 0, vec![]);
-
+    //println!("{}", tokens.len());
     //let  tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");
@@ -81,7 +85,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     for statement in &tokens {
         println_debug!("{:?}", statement);
     }
-    println!("AAA");
 
     tokens
 }

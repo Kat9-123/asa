@@ -9,12 +9,13 @@
     .fin ->
 }
 @AddLit val? LIT? {
+    n_val = 0
+
     n_val       -= LITERAL_LBL
     val?        -= n_val
     n_val       -= n_val             _fin
 
     LITERAL_LBL -> LIT?
-    n_val -> 0
 
     .fin ->
 

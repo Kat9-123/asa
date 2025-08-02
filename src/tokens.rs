@@ -22,12 +22,11 @@ pub enum IntOrString {
     Str(String),
     Int(i32),
 }
-
 use std::cmp::PartialEq;
 
 impl PartialEq for Token {
     fn eq(&self, other: &Self) -> bool {
-        self.variant == other.variant
+        self.variant == other.variant && self.info.start_char == other.info.start_char
     }
 }
 
@@ -51,6 +50,7 @@ pub enum TokenVariant {
     Unscope,
     CharLiteral { value: char },
     StrLiteral { value: String },
+    Equals,
 
     MacroDeclaration { name: String },
     MacroBodyStart,
@@ -96,6 +96,7 @@ impl ToString for Token {
             TokenVariant::BracedLabelDefinition { name, data } => format!("({} -> ..)", name),
             TokenVariant::Asterisk => "*".to_string(),
             TokenVariant::NamespaceEnd => "\\".to_string(),
+            TokenVariant::Equals => "=".to_string(),
         }
     }
 }
@@ -126,13 +127,21 @@ pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn tokens_from_token_variant_vec(token_variants: Vec<TokenVariant>) -> Vec<Token> {
+pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -> Vec<Token> {
     token_variants
         .iter()
-        .map(|x| Token::new(x.clone()))
+        .map(|x| Token {
+            info: Info {
+                start_char: x.0,
+                length: 0,
+                line_number: 0,
+                file: String::new(),
+            },
+            variant: x.1.clone(),
+            origin_info: Default::default(),
+        })
         .collect()
 }
-
 impl Token {
     pub fn size(&self) -> i32 {
         match self.variant {
@@ -155,10 +164,19 @@ impl Token {
             variant: token_variant,
         }
     }
+    /// Create a new token with the given tokenvariant, but with the info
+    /// of the given token
+    pub fn with_info(token_variant: TokenVariant, token: &Token) -> Self {
+        Token {
+            info: token.info.clone(),
+            origin_info: token.origin_info.clone(),
+            variant: token_variant,
+        }
+    }
 }
 
 impl fmt::Debug for Token {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{:?}", self.variant)
+        write!(fmt, "{:?}, {}", self.variant, self.info.start_char)
     }
 }

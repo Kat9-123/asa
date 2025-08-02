@@ -1,8 +1,9 @@
 use crate::{
     asm_error, asm_info,
-    tokens::{LabelOffset, Token, TokenVariant},
+    tokens::{self, Info, LabelOffset, Token, TokenVariant},
 };
 
+/// a &2 => a 3
 pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     let mut address: i32 = 0;
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
@@ -10,14 +11,12 @@ pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     for token in tokens {
         match token.variant {
             TokenVariant::Relative { offset } => {
-                new_tokens.push(Token {
-                    info: token.info.clone(),
-                    variant: TokenVariant::DecLiteral {
+                new_tokens.push(Token::with_info(
+                    TokenVariant::DecLiteral {
                         value: address + offset,
                     },
-                    origin_info: token.origin_info.clone(),
-                    //macro_trace: token.macro_trace.clone()
-                });
+                    &token,
+                ));
             }
             _ => new_tokens.push(token.clone()),
         }
@@ -26,6 +25,7 @@ pub fn resolve_relatives(tokens: &Vec<Token>) -> Vec<Token> {
     new_tokens
 }
 
+/// LABEL * 3 => LABEL LABEL LABEL
 pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -45,6 +45,63 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
         new_tokens.push(tokens[i].clone());
         i += 1;
     }
+    new_tokens
+}
+
+fn token_variants_to_tokens(
+    token_variants: Vec<TokenVariant>,
+    info: &Info,
+    origin_info: &Vec<(i32, Info)>,
+) -> Vec<Token> {
+    token_variants
+        .iter()
+        .map(|x| Token {
+            variant: x.clone(),
+            info: info.clone(),
+            origin_info: origin_info.clone(),
+        })
+        .collect()
+}
+
+pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
+    let mut i = 0;
+    while i < tokens.len() {
+        if i + 1 < tokens.len()
+            && let TokenVariant::Equals = &tokens[i + 1].variant
+        {
+            let label_tok = if let TokenVariant::Label { name } = &tokens[i].variant {
+                &tokens[i]
+            } else {
+                asm_error!(&tokens[i].info, "Can only assign to a label");
+            };
+            match &tokens[i + 2].variant {
+                TokenVariant::DecLiteral { value } if *value == 0 => {}
+                _ => todo!(),
+            }
+            new_tokens.append(&mut token_variants_to_tokens(
+                vec![
+                    label_tok.variant.clone(),
+                    label_tok.variant.clone(),
+                    TokenVariant::Relative { offset: 2 },
+                    TokenVariant::Linebreak,
+                    label_tok.variant.clone(),
+                    TokenVariant::LabelArrow {
+                        offset: tokens::LabelOffset::Int(0),
+                    },
+                    TokenVariant::DecLiteral { value: 0 },
+                    TokenVariant::Linebreak,
+                ],
+                &tokens[i + 1].info,
+                &tokens[i + 1].origin_info,
+            ));
+            i += 3;
+            continue;
+        }
+        new_tokens.push(tokens[i].clone());
+        i += 1;
+    }
+
     new_tokens
 }
 
@@ -76,16 +133,13 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                 TokenVariant::Label { name } => name,
                 _ => asm_error!(&tokens[idx].info, "Only a label may precede a label arrow"),
             };
-
-            new_tokens.push(Token {
-                info: tokens[idx + 1].info.clone(),
-                variant: TokenVariant::LabelDefinition {
+            new_tokens.push(Token::with_info(
+                TokenVariant::LabelDefinition {
                     name: name.clone(),
                     offset: label_offset,
                 },
-                origin_info: tokens[idx + 1].origin_info.clone(),
-                // macro_trace: tokens[idx + 1].macro_trace.clone(),
-            });
+                &tokens[idx + 1],
+            ));
 
             idx += 2;
             continue;
@@ -163,44 +217,95 @@ mod tests {
     #[test]
     fn test_relatives() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::Relative { offset: 4 },
-            TokenVariant::Relative { offset: -4 },
-            TokenVariant::Relative { offset: 123 },
-            TokenVariant::Relative { offset: 0 },
-            TokenVariant::Relative { offset: 1 },
+            (0, TokenVariant::Relative { offset: 4 }),
+            (1, TokenVariant::Relative { offset: -4 }),
+            (2, TokenVariant::Relative { offset: 123 }),
+            (3, TokenVariant::Relative { offset: 0 }),
+            (4, TokenVariant::Relative { offset: 1 }),
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::DecLiteral { value: 4 },
-            TokenVariant::DecLiteral { value: -3 },
-            TokenVariant::DecLiteral { value: 125 },
-            TokenVariant::DecLiteral { value: 3 },
-            TokenVariant::DecLiteral { value: 5 },
+            (0, TokenVariant::DecLiteral { value: 4 }),
+            (1, TokenVariant::DecLiteral { value: -3 }),
+            (2, TokenVariant::DecLiteral { value: 125 }),
+            (3, TokenVariant::DecLiteral { value: 3 }),
+            (4, TokenVariant::DecLiteral { value: 5 }),
         ]);
         let output = resolve_relatives(&mut input);
+        assert_eq!(output, expected);
+    }
+    #[test]
+    fn test_assignment() {
+        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label".to_string(),
+                },
+            ),
+            (0, TokenVariant::Equals),
+            (0, TokenVariant::DecLiteral { value: 0 }),
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label".to_string(),
+                },
+            ),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label".to_string(),
+                },
+            ),
+            (0, TokenVariant::Relative { offset: 2 }),
+            (0, TokenVariant::Linebreak),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label".to_string(),
+                },
+            ),
+            (
+                0,
+                TokenVariant::LabelArrow {
+                    offset: tokens::LabelOffset::Int(0),
+                },
+            ),
+            (0, TokenVariant::DecLiteral { value: 0 }),
+            (0, TokenVariant::Linebreak),
+        ]);
+        let output = handle_assignments(&input);
         assert_eq!(output, expected);
     }
 
     #[test]
     fn test_mult() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::Asterisk,
-            TokenVariant::Label {
-                name: "label".to_owned(),
-            },
-            TokenVariant::DecLiteral { value: 10 },
-            TokenVariant::Asterisk,
-            TokenVariant::DecLiteral { value: 5 },
+            (0, TokenVariant::Asterisk),
+            (
+                1,
+                TokenVariant::Label {
+                    name: "label".to_owned(),
+                },
+            ),
+            (2, TokenVariant::DecLiteral { value: 10 }),
+            (3, TokenVariant::Asterisk),
+            (4, TokenVariant::DecLiteral { value: 5 }),
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::Asterisk,
-            TokenVariant::Label {
-                name: "label".to_owned(),
-            },
-            TokenVariant::DecLiteral { value: 10 },
-            TokenVariant::DecLiteral { value: 10 },
-            TokenVariant::DecLiteral { value: 10 },
-            TokenVariant::DecLiteral { value: 10 },
-            TokenVariant::DecLiteral { value: 10 },
+            (0, TokenVariant::Asterisk),
+            (
+                1,
+                TokenVariant::Label {
+                    name: "label".to_owned(),
+                },
+            ),
+            (2, TokenVariant::DecLiteral { value: 10 }),
+            (2, TokenVariant::DecLiteral { value: 10 }),
+            (2, TokenVariant::DecLiteral { value: 10 }),
+            (2, TokenVariant::DecLiteral { value: 10 }),
+            (2, TokenVariant::DecLiteral { value: 10 }),
         ]);
         let output = expand_mults(&mut input);
         assert_eq!(output, expected);
@@ -209,52 +314,91 @@ mod tests {
     #[test]
     fn test_fix_instructions_and_collapse_label_definitions() {
         let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::Label {
-                name: "label".to_owned(),
-            },
-            TokenVariant::LabelArrow {
-                offset: tokens::LabelOffset::Int(0),
-            },
-            TokenVariant::Label {
-                name: "a".to_owned(),
-            },
-            TokenVariant::Subleq,
-            TokenVariant::Label {
-                name: "b".to_owned(),
-            },
-            TokenVariant::Linebreak,
-            TokenVariant::Label {
-                name: "b".to_owned(),
-            },
-            TokenVariant::Label {
-                name: "a".to_owned(),
-            },
-            TokenVariant::Label {
-                name: "c".to_owned(),
-            },
-            TokenVariant::Linebreak,
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label".to_owned(),
+                },
+            ),
+            (
+                1,
+                TokenVariant::LabelArrow {
+                    offset: tokens::LabelOffset::Int(0),
+                },
+            ),
+            (
+                2,
+                TokenVariant::Label {
+                    name: "a".to_owned(),
+                },
+            ),
+            (3, TokenVariant::Subleq),
+            (
+                4,
+                TokenVariant::Label {
+                    name: "b".to_owned(),
+                },
+            ),
+            (5, TokenVariant::Linebreak),
+            (
+                6,
+                TokenVariant::Label {
+                    name: "b".to_owned(),
+                },
+            ),
+            (
+                7,
+                TokenVariant::Label {
+                    name: "a".to_owned(),
+                },
+            ),
+            (
+                8,
+                TokenVariant::Label {
+                    name: "c".to_owned(),
+                },
+            ),
+            (9, TokenVariant::Linebreak),
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
-            TokenVariant::LabelDefinition {
-                name: "label".to_owned(),
-                offset: 0,
-            },
-            TokenVariant::Label {
-                name: "b".to_owned(),
-            },
-            TokenVariant::Label {
-                name: "a".to_owned(),
-            },
-            TokenVariant::Relative { offset: 1 },
-            TokenVariant::Label {
-                name: "b".to_owned(),
-            },
-            TokenVariant::Label {
-                name: "a".to_owned(),
-            },
-            TokenVariant::Label {
-                name: "c".to_owned(),
-            },
+            (
+                1,
+                TokenVariant::LabelDefinition {
+                    name: "label".to_owned(),
+                    offset: 0,
+                },
+            ),
+            (
+                4,
+                TokenVariant::Label {
+                    name: "b".to_owned(),
+                },
+            ),
+            (
+                2,
+                TokenVariant::Label {
+                    name: "a".to_owned(),
+                },
+            ),
+            (5 + 3, TokenVariant::Relative { offset: 1 }),
+            (
+                6,
+                TokenVariant::Label {
+                    name: "b".to_owned(),
+                },
+            ),
+            (
+                7,
+                TokenVariant::Label {
+                    name: "a".to_owned(),
+                },
+            ),
+            (
+                8,
+                TokenVariant::Label {
+                    name: "c".to_owned(),
+                },
+            ),
         ]);
         let output = fix_instructions_and_collapse_label_definitions(&mut input);
         assert_eq!(output, expected);

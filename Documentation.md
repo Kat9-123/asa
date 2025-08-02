@@ -37,7 +37,7 @@ c -> 9
 ```
 
 ### Scopes
-Scoping works like in most other languages. Note: Only labels can be scoped. Macros can't.
+Scoping works like in most other languages. Note: Only labels can be scoped. Macro definitions can't.
 ```clojure
 Z -> 123
 X -> 456
@@ -63,7 +63,7 @@ The assembler has a simple type-checker, which can be disabled.
 * `l_value` literal value
 * `s_value` scoped value
 * `a_value` anything, no type checking
-* `m_value` (advanced) a macro call passed as argument, must be scoped.
+* `m_value` (advanced) a macro call passed as argument, must be braced.
 
 These naming conventions are, were possible, checked by the assembler.
 

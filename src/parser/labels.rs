@@ -26,14 +26,14 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
                 _ => todo!(),
             };
 
-            updated_tokens.push(Token {
-                info: tokens[i + 3].info.clone(), // take the info of the value pointed at
-                variant: TokenVariant::BracedLabelDefinition {
+            updated_tokens.push(Token::with_info(
+                // take the info of the value pointed at
+                TokenVariant::BracedLabelDefinition {
                     name: name.clone(),
                     data,
                 },
-                origin_info: tokens[i + 3].origin_info.clone(),
-            });
+                &tokens[i + 3],
+            ));
             i += 5;
             continue;
         }

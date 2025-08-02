@@ -96,6 +96,8 @@ use std::{fs, process::exit};
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
 
+use crate::interpreter::RuntimeError;
+use crate::tokens::Token;
 use crate::{args, tokens::Info};
 
 fn get_file_contents(path: &String) -> String {
@@ -273,6 +275,32 @@ pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
         info.start_char
     );
     asm_msg(msg, info, Type::Info, false);
+}
+
+pub fn asm_runtime_error(e: RuntimeError, tokens: &Vec<Token>) {
+    match e {
+        RuntimeError::InstructionOutOfRange(pc) => {
+            asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");
+            asm_details!(&tokens[pc].info, "'A' part");
+            asm_details!(&tokens[pc + 1].info, "'B' part");
+        }
+        RuntimeError::AOutOfRange(pc) => {
+            asm_error_no_terminate!(
+                &tokens[pc].info,
+                "Address at 'A' is outside of memory bounds"
+            );
+            asm_details!(&tokens[pc + 1].info, "'B' part");
+            asm_details!(&tokens[pc + 2].info, "'C' part");
+        }
+        RuntimeError::BOutOfRange(pc) => {
+            asm_error_no_terminate!(
+                &tokens[pc + 1].info,
+                "Address at 'B' is outside of memory bounds"
+            );
+            asm_details!(&tokens[pc].info, "'A' part");
+            asm_details!(&tokens[pc + 2].info, "'C' part");
+        }
+    }
 }
 
 pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {

@@ -30,7 +30,6 @@ pub fn assemble(text: &String, path: String) -> (Vec<u16>, Vec<Token>) {
     }
 
     let tokens = parser::parse(tokens);
-    println!("AAA");
 
     let result = codegen::generate(tokens);
     info!("Assembled in: {:.3?}", timer.elapsed());

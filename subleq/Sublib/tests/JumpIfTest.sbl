@@ -31,6 +31,8 @@ d -> 1233
 }
 
 .main ->
+    ; It is essential that this routine works properly, since all other conditionals
+    ; are based on it
     !TestJumpIfLe -15965 16423
     !TestJumpIfLe 20112 25597
     !TestJumpIfLe -3417 16335
