@@ -1,12 +1,10 @@
 use crate::interpreter::RuntimeError;
-use crate::{asm_details, asm_error_no_terminate};
 use crate::{
     interpreter::{self, IOOperation, InstructionHistoryItem},
     mem_view,
     tokens::{Info, Token},
 };
 use colored::Colorize;
-use core::panic;
 use crossterm::terminal::disable_raw_mode;
 use crossterm::{
     ExecutableCommand,
@@ -39,8 +37,7 @@ pub fn revert_historic_instruction(
 
 enum DataType {
     Char,
-    UInt,
-    SInt,
+    Int,
     Hex,
 }
 
@@ -53,8 +50,7 @@ fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
 
         _ => match data_type {
             DataType::Char => format!("{}", mem[addr as usize] as u16 as u8 as char),
-            DataType::UInt => format!("{}", mem[addr as usize] as u16),
-            DataType::SInt => format!("{}", mem[addr as usize] as i16),
+            DataType::Int => format!("{}", mem[addr as usize] as i16),
             DataType::Hex => format!("{:X}", mem[addr as usize] as u16),
         },
     }
@@ -63,7 +59,7 @@ fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
 fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
 }
-pub fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<RuntimeError>) {
+fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<RuntimeError>) {
     if info.file == "" {
         return;
     }
@@ -110,7 +106,7 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Ru
         println!(
             " a: {: >4X}   mem[a]: {: >7}  {: >4}  {: >4 }  ",
             mem[pc],
-            address_to_string(mem[pc], mem, DataType::SInt),
+            address_to_string(mem[pc], mem, DataType::Int),
             address_to_string(mem[pc], mem, DataType::Hex),
             address_to_string(mem[pc], mem, DataType::Char),
         );
@@ -122,7 +118,7 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Ru
         println!(
             " b: {: >4X}   mem[b]: {: >7}  {: >4}  {: >4 }  ",
             mem[pc + 1],
-            address_to_string(mem[pc + 1], mem, DataType::SInt),
+            address_to_string(mem[pc + 1], mem, DataType::Int),
             address_to_string(mem[pc + 1], mem, DataType::Hex),
             address_to_string(mem[pc + 1], mem, DataType::Char),
         );
@@ -136,7 +132,7 @@ pub fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Ru
     );
 }
 
-pub fn user_input() -> KeyCode {
+fn user_input() -> KeyCode {
     loop {
         match read().unwrap() {
             Event::Key(event) => {
@@ -149,7 +145,11 @@ pub fn user_input() -> KeyCode {
     }
 }
 
-pub fn debug<T: FnMut() -> KeyCode>(
+pub fn run_with_debugger(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool) {
+    debug(mem, tokens, in_debugging_mode, user_input);
+}
+
+fn debug<T: FnMut() -> KeyCode>(
     mem: &mut Vec<u16>,
     tokens: &Vec<Token>,
     mut in_debugging_mode: bool,

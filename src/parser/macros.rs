@@ -212,45 +212,41 @@ fn generate_macro_body(
     for base_body_token in &current_macro.body {
         match &base_body_token.variant {
             TokenVariant::Label { name } => {
-                let mut n = name.clone();
-                if current_macro.labels_defined_in_macro.contains(name) {
-                    n = format!("?{}?{}", current_macro.name, name); // MACRO HYGIENE HACK
-                    // Try to just set name maybe?
-                }
+                let name = if current_macro.labels_defined_in_macro.contains(&name) {
+                    format!("?{}?{}", current_macro.name, name) // MACRO HYGIENE HACK
+                } else {
+                    name.clone()
+                };
 
-                let new_token = label_map.get(&n);
+                let new_token = label_map.get(&name);
                 match new_token {
-                    Some(t) => {
-                        match t {
-                            TokenOrTokenVec::Tok(x) => {
-                                let mut copy = x.clone();
+                    Some(t) => match t {
+                        TokenOrTokenVec::Tok(x) => {
+                            let mut copy = x.clone();
+                            copy.origin_info = context.clone();
+                            copy.origin_info.push(base_body_token.info.clone());
+
+                            body.push(copy);
+                        }
+                        TokenOrTokenVec::TokVec(v) => {
+                            for i in v {
+                                let mut copy = i.clone();
                                 copy.origin_info = context.clone();
                                 copy.origin_info.push(base_body_token.info.clone());
 
                                 body.push(copy);
                             }
-                            TokenOrTokenVec::TokVec(v) => {
-                                for i in v {
-                                    let mut copy = i.clone();
-                                    copy.origin_info = context.clone();
-                                    copy.origin_info.push(base_body_token.info.clone());
-
-                                    body.push(copy);
-                                }
-                            }
                         }
-                        continue;
-                    }
+                    },
                     None => {
                         let mut origin_info = context.clone();
                         origin_info.push(base_body_token.info.clone());
 
                         body.push(Token {
                             info: base_body_token.info.clone(),
-                            variant: TokenVariant::Label { name: n },
+                            variant: TokenVariant::Label { name },
                             origin_info, // macro_trace: macro_trace
                         });
-                        continue;
                     }
                 }
             }
@@ -264,14 +260,7 @@ fn generate_macro_body(
         }
     }
 
-    //body.push(Token {info: Info {start_char: 0, length: 0, line_number: 0, file: "".to_owned(), }, variant: TokenVariant::Linebreak, origin_info: vec![]});
-    // dbg!(&body);
-
-    //dbg!(&macros);
-    body = insert_macros(body, macros, context);
-    //dbg!(&body);
-
-    body
+    insert_macros(body, macros, context)
 }
 
 #[derive(Debug)]

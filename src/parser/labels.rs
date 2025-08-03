@@ -39,7 +39,7 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
                     name: name.clone(),
                     data,
                 },
-                &tokens[i + 3],
+                &tokens[i + 2],
             ));
             i += 5;
             continue;
@@ -311,4 +311,71 @@ pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
         }
     }
     new_tokens
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::tokens::{self, tokens_from_token_variant_vec};
+
+    use super::*;
+
+    #[test]
+    fn braced_labels() {
+        let input: Vec<Token> = tokens_from_token_variant_vec(vec![
+            (0, TokenVariant::BraceOpen),
+            (
+                1,
+                TokenVariant::Label {
+                    name: "label1".to_string(),
+                },
+            ),
+            (
+                2,
+                TokenVariant::LabelArrow {
+                    offset: LabelOffset::Int(0),
+                },
+            ),
+            (3, TokenVariant::DecLiteral { value: 1234 }),
+            (4, TokenVariant::BraceClose),
+            (5, TokenVariant::BraceOpen),
+            (
+                6,
+                TokenVariant::Label {
+                    name: "label2".to_string(),
+                },
+            ),
+            (
+                7,
+                TokenVariant::LabelArrow {
+                    offset: LabelOffset::Int(0),
+                },
+            ),
+            (
+                8,
+                TokenVariant::Label {
+                    name: "TEXT".to_string(),
+                },
+            ),
+            (9, TokenVariant::BraceClose),
+        ]);
+        let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
+            (
+                2,
+                TokenVariant::BracedLabelDefinition {
+                    name: "label1".to_string(),
+                    data: IntOrString::Int(1234),
+                },
+            ),
+            (
+                7,
+                TokenVariant::BracedLabelDefinition {
+                    name: "label2".to_string(),
+                    data: IntOrString::Str("TEXT".to_string()),
+                },
+            ),
+        ]);
+        let output = grab_braced_label_definitions(input);
+        assert_eq!(output, expected);
+    }
 }

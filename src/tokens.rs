@@ -18,7 +18,6 @@ pub struct Info {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-
 pub enum IntOrString {
     Str(String),
     Int(i32),
@@ -27,6 +26,7 @@ use std::cmp::PartialEq;
 
 impl PartialEq for Token {
     fn eq(&self, other: &Self) -> bool {
+        // HACK
         self.variant == other.variant && self.info.start_char == other.info.start_char
     }
 }

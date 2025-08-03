@@ -1,10 +1,9 @@
-use colored::Colorize;
+use colored::{Color, Colorize};
 
 use std::cell::RefCell;
 thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
 
 #[derive(PartialEq, Clone)]
-
 enum Type {
     Info,
     Warn,
@@ -13,6 +12,20 @@ enum Type {
     Instruction,
     SubInstruction,
 }
+impl Type {
+    pub fn colour(&self) -> Color {
+        match self {
+            Type::Info => Color::Blue,
+            Type::Warn => Color::Yellow,
+            Type::Error => Color::Red,
+            Type::Details => Color::Blue,
+            Type::Instruction => Color::Blue,
+            Type::SubInstruction => Color::BrightBlue,
+            _ => Color::White,
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! asm_sub_instruction {
     ($info:expr, $($arg:tt)*) => {
@@ -135,67 +148,24 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     let prefix = if !sub_msg { "" } else { "     |" };
 
     //  println!("{:?}",info);
-    if msg_type != Type::SubInstruction && info.line_number - 3 >= 0 {
-        println!(
-            "{}{: >4} | {}",
-            prefix,
-            format!("{}", info.line_number - 2).bright_cyan(),
-            lines[(info.line_number - 3) as usize]
-        );
-    }
-    if msg_type != Type::SubInstruction && info.line_number - 2 >= 0 {
-        println!(
-            "{}{: >4} | {}",
-            prefix,
-            format!("{}", info.line_number - 1).bright_cyan(),
-            lines[(info.line_number - 2) as usize]
-        );
+    for i in (2..4).rev() {
+        if msg_type != Type::SubInstruction && info.line_number - i >= 0 {
+            println!(
+                "{}{: >4} | {}",
+                prefix,
+                format!("{}", info.line_number - (i - 1)).bright_cyan(),
+                lines[(info.line_number - i) as usize]
+            );
+        }
     }
 
-    let fmt = match msg_type {
-        Type::Error => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).red(),
-            " > ".red(),
-            lines[(info.line_number - 1) as usize]
-        ),
-        Type::Warn => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).yellow(),
-            " > ".yellow(),
-            lines[(info.line_number - 1) as usize]
-        ),
-        Type::Info => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).blue(),
-            " > ".blue(),
-            lines[(info.line_number - 1) as usize]
-        ),
-        Type::Instruction => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).blue(),
-            " > ".blue(),
-            lines[(info.line_number - 1) as usize]
-        ),
-        Type::Details => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).blue(),
-            " > ".blue(),
-            lines[(info.line_number - 1) as usize]
-        ),
-        Type::SubInstruction => format!(
-            "{}{: >4}{}{}",
-            prefix,
-            format!("{}", info.line_number).blue(),
-            " > ".bright_cyan(),
-            lines[(info.line_number - 1) as usize]
-        ),
-    };
+    let fmt = format!(
+        "{}{: >4}{}{}",
+        prefix,
+        format!("{}", info.line_number).color(msg_type.colour()),
+        " > ".color(msg_type.colour()),
+        lines[(info.line_number - 1) as usize]
+    );
     if let Some(x) = &info.append_to_sourceline {
         println!("{} {}", fmt, x.purple());
     } else {
@@ -224,14 +194,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
             print!(" ");
         }
         for _ in 0..length {
-            match msg_type {
-                Type::Error => print!("{}", "~".red()),
-                Type::Warn => print!("{}", "~".yellow()),
-                Type::Info => print!("{}", "~".blue()),
-                Type::Instruction => {}
-                Type::Details => print!("{}", "~".blue()),
-                Type::SubInstruction => print!("{}", "~".bright_cyan()),
-            }
+            print!("{}", "~".color(msg_type.colour()));
         }
         println!();
     }
