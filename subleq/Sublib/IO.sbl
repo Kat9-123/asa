@@ -7,14 +7,12 @@
 
 @IO::Print p_string? {
     !Cpy p_string? ptr
-    !J .loop
-
 
     .loop ->
-        !AssignZero char
-        !AssignZero n_char
+        char = 0
+        n_char = 0
 
-        n_char    -= (ptr -> 0) ; 0 -= 0
+        n_char      -= (ptr -> 0) ; 0 -= 0
         char        -= n_char
         char        -= ZERO            .fin  ; Null so we fin
 

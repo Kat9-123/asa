@@ -27,7 +27,7 @@ p -> 0
     }
 }
 
-.main ->
+.main -> {
     !If::Eq SNEG SNEG {
 
         !Mac (!CopyLit 3)
@@ -39,3 +39,4 @@ p -> 0
     }
 
     !Halt
+}

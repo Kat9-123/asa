@@ -22,15 +22,11 @@
 }
 
 @Mul a? B? {
-    !J .start
-    n_a -> 0
-    acc -> 0
-    c_b -> 0
 
-.start ->
-    !Clr acc
-    !Clr n_a
-    !Cpy B? c_b
+    !AssignZero acc
+    !AssignZero n_a
+    !AssignLabel c_b B?
+
     n_a -= a?
 
 

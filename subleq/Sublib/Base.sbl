@@ -112,13 +112,16 @@
     name? -> 0
 ]
 
-**
-@AssignToLabel name? label? [
-    !Cpy label? name?
 
+@AssignLabel name? label? [
+    Z -= Z &2
     name? -> 0
+    !Clr name?
+
+    Z -= label?
+    name? -= Z
 ]
-**
+
 
 **
 @AssignNLit name? l_lit?[

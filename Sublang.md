@@ -3,14 +3,17 @@
 ### Basics
 
 ```clojure
-1 2 3 ; Standard subleq, eq to mem[2] -= mem[1] jump to 3 if leq otherwise next instruction
-; memory adresses may be labeled
+1 2 3 ; Standard subleq: mem[2] -= mem[1] jump to 3 if leq otherwise next instruction.
+; This syntax is valid, but pointless.
+
+; memory adresses and instructions may be labeled
 a -> 1
 b -> 2
-a -= b ; Subtract b from a
-a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
+c ->
+    a -= b ; Subtract b from a
+    a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
 
-; If no `c` is given, the next instruction will always be executed, even if the result is leq
+; If no `c` argument is given, the next instruction will always be executed, even if the result is leq
 
 ; These two are equivalent
 a -= b
@@ -19,7 +22,7 @@ a -= b &1 ; `&1` gives a relative address with offset one
 a -= b ; is equivalent to
 b a &1 ; This syntax works but is not recommended, since it makes it harder for the assembler to give hints
 
-; Other examples
+; Other examples, literals and labels may freely be combined
 a -= b 0x0000
 0x0000 -= 0x0000 c
 
@@ -37,7 +40,7 @@ c -> 9
 ```
 
 ### Scopes
-Scoping works like in most other languages. Note: Only labels can be scoped. Macro definitions can't.
+Scoping works like in most other languages. Note: Only labels can be scoped, macro definitions can't.
 ```clojure
 Z -> 123
 X -> 456
@@ -57,21 +60,22 @@ Y -= Z ; 0 - 123
 The assembler has a simple type-checker, which can be disabled.
 
 * `value` normal label
-* `p_value` pointer (not type-checked)
-* `p_p_value` pointer to pointer (not type-checked)
-* `n_value` negated value (not type-checked)
 * `l_value` literal value
 * `s_value` scoped value
 * `a_value` anything, no type checking
-* `m_value` (advanced) a macro call passed as argument, must be braced.
+* `m_value` a macro call passed as argument, must be braced.
 
-These naming conventions are, were possible, checked by the assembler.
+These naming conventions are checked by the assembler, currently they are only
+checked for macro parameters.
 
 ### Naming conventions
 * `@MyMacro` macros in CamelCase
 * `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
 * `MyModule.sbl` modules (files) are in CamelCase
 #### Labels
+* `p_value` pointer (not type-checked)
+* `p_p_value` pointer to pointer (not type-checked)
+* `n_value` negated value (not type-checked)
 * `value?`  macro argument in definition
 * `.value` label to jump to
 * `CONST_VALUE`constant, can be applied to all of the above, and should be applied to macro arguments*
@@ -98,7 +102,7 @@ These naming conventions are, were possible, checked by the assembler.
 
 
 ```
-#### Calling
+#### Expanding
 ```clojure
 !Name
 !Name a b c
@@ -176,7 +180,7 @@ P -= Z
 ...
 ; But of course beware of the contents of the included file
 ```
-If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'Sublib'). And in that folder create a .sbl file with the module name (like 'Sublib.sbl'). Whenever someone imports the 'Sublib' folder, this is automatically resolved to 'Sublib/Sublib.sbl'. In this .sbl folder you may include any other files you might need.
+If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'Sublib'). And in that folder create a .sbl file with the module name (like 'Sublib.sbl'). Whenever the 'Sublib' folder is imported, this is automatically resolved to 'Sublib/Sublib.sbl'. In this .sbl folder you may include any other files you might need.
 
 See subleq/Sublib for an example.
 
@@ -187,14 +191,15 @@ When the '*' is placed before a literal ?? The previous token is repeated n time
 label * 3 ; =>
 label label label
 
-0x123 * 0x2 ; =>
-0x123 0x123
+0x123 * 0x4 ; =>
+0x123 0x123 0x123 0x123
 
 ```
-
-### Sublib
-Sublib is the standard library. It has a range of very basic features (Base.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.
 
 ### Advanced
 #### Macro 'currying'
 It is possible to 'curry' (using that term loosely) macros
+
+
+### Sublib
+Sublib is the standard library. It has a range of very basic features (Base.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.

@@ -8,7 +8,7 @@
     .fin ->
 }
 
-@Assert::EqToLit A? LIT? {
+@Assert::EqToLit A? L_LIT? {
     !JumpIf::Eq A? LIT_LBL .fin
 
     
@@ -20,6 +20,6 @@
 
     W W -2
 
-    LIT_LBL -> LIT?
+    LIT_LBL -> L_LIT?
     .fin ->
 }

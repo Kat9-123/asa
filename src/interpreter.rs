@@ -194,7 +194,6 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
         };
 
         let mut result: u16 = 0;
-
         if b == 0xFFFF {
             result = mem[a];
             let ch = result as u8 as char;

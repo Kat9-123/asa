@@ -16,7 +16,7 @@ use std::thread::scope;
 pub struct Macro {
     name: String,
     info: Info,
-    args: Vec<(String, Info)>,
+    params: Vec<(String, Info)>,
     body: Vec<Token>,
     labels_defined_in_macro: Vec<String>,
 }
@@ -24,7 +24,7 @@ pub struct Macro {
 impl fmt::Display for Macro {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "{}:    ", self.name.yellow())?;
-        for i in &self.args {
+        for i in &self.params {
             write!(fmt, "{} ", i.0)?;
         }
         write!(fmt, "\n{: >4?}\n", self.body)?;
@@ -38,7 +38,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
     enum Mode {
         Normal,
-        Args,
+        Parameters,
         Body { bounded_by_scopes: bool },
     }
     let mut mode: Mode = Mode::Normal;
@@ -53,7 +53,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     cur_macro = Some(Macro {
                         name: name.clone(),
                         info: token.info.clone(),
-                        args: Vec::new(),
+                        params: Vec::new(),
                         body: Vec::new(),
                         labels_defined_in_macro: Vec::new(),
                     });
@@ -66,7 +66,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         );
                         asm_details!(&x.info, "Here");
                     }
-                    mode = Mode::Args;
+                    mode = Mode::Parameters;
                 }
                 TokenVariant::MacroBodyStart | TokenVariant::MacroBodyEnd => {
                     asm_error!(&token.info, "Unexpected token");
@@ -75,19 +75,19 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     new_tokens.push(token.clone());
                 }
             },
-            Mode::Args => match &token.variant {
+            Mode::Parameters => match &token.variant {
                 TokenVariant::Linebreak => { /* Linebreaks are allowed between arguments */ }
 
                 TokenVariant::Label { name } => {
                     cur_macro
                         .as_mut()
                         .unwrap()
-                        .args
+                        .params
                         .push((name.clone(), token.info.clone()));
                     if !name.ends_with('?') {
                         asm_info!(
                             &token.info,
-                            "Notate macro arguments with a trailing question mark {}",
+                            "Notate macro parameters with a trailing question mark {}",
                             asm_hint!("'{name}' -> '{name}?'")
                         );
                     }
@@ -108,7 +108,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                 _ => {
                     asm_error!(
                         &token.info,
-                        "Only labels may be used as arguments for '{}'",
+                        "Only labels may be used as parameters for '{}'",
                         cur_macro.unwrap().name
                     );
                 }
@@ -203,7 +203,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 fn generate_macro_body(
     current_macro: &Macro,
     macros: &HashMap<String, Macro>,
-    label_map: &HashMap<String, TokenOrTokenVec>,
+    param_to_arg_map: &HashMap<String, TokenOrTokenVec>,
     context: Vec<Info>,
 ) -> Vec<Token> {
     let mut body: Vec<Token> = Vec::new();
@@ -218,7 +218,7 @@ fn generate_macro_body(
                     name.clone()
                 };
 
-                let new_token = label_map.get(&name);
+                let new_token = param_to_arg_map.get(&name);
                 match new_token {
                     Some(t) => match t {
                         TokenOrTokenVec::Tok(x) => {
@@ -351,10 +351,10 @@ pub fn insert_macros(
 
     let mut mode = Mode::Normal;
     let mut current_macro: Option<&Macro> = None;
-    let mut label_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
+    let mut param_to_arg_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
     let mut caller_info: Option<Info> = None;
     let mut suffix: Vec<Token> = Vec::new();
-    let mut cur_arg_name: String = String::new();
+    let mut cur_param_name: String = String::new();
     for token in &tokens {
         match &mode {
             Mode::Normal => match &token.variant {
@@ -379,36 +379,37 @@ pub fn insert_macros(
             Mode::Args => {
                 let current_macro_safe = current_macro.unwrap();
                 // It has read all arguments
-                if label_map.len() >= current_macro_safe.args.len() {
+                if param_to_arg_map.len() >= current_macro_safe.params.len() {
                     let mut c = context.clone();
                     c.push(caller_info.unwrap());
-                    let mut body = generate_macro_body(current_macro_safe, macros, &label_map, c);
+                    let mut body =
+                        generate_macro_body(current_macro_safe, macros, &param_to_arg_map, c);
                     new_tokens.append(&mut body);
                     new_tokens.append(&mut suffix);
                     caller_info = None;
                     suffix = Vec::new();
                     mode = Mode::Normal;
                     current_macro = None;
-                    label_map = HashMap::new();
+                    param_to_arg_map = HashMap::new();
                     new_tokens.push(token.clone());
 
                     scope_tracker = 0;
 
                     continue;
                 }
-                let label_to_replace = &current_macro_safe.args[label_map.len()];
-                let name_to_replace = &label_to_replace.0;
-                let label_to_replace_info = &label_to_replace.1;
+                let parameter_data = &current_macro_safe.params[param_to_arg_map.len()];
+                let parameter_name = &parameter_data.0;
+                let parameter_info = &parameter_data.1;
                 if let TokenVariant::Linebreak = token.variant {
                     continue;
                 }
-                macro_argument_type_check(label_to_replace_info, token, name_to_replace);
+                macro_argument_type_check(parameter_info, token, parameter_name);
 
                 if let TokenVariant::Scope = token.variant {
                     mode = Mode::CompoundArg(CompoundArgType::Scoped);
                     let toks: Vec<Token> = vec![token.clone()];
-                    label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
-                    cur_arg_name = name_to_replace.clone();
+                    param_to_arg_map.insert(parameter_name.clone(), TokenOrTokenVec::TokVec(toks));
+                    cur_param_name = parameter_name.clone();
                     scope_tracker = 1;
                     continue;
                 }
@@ -425,18 +426,19 @@ pub fn insert_macros(
                 if let TokenVariant::BraceOpen = token.variant {
                     mode = Mode::CompoundArg(CompoundArgType::Braced);
                     let toks: Vec<Token> = vec![];
-                    label_map.insert(name_to_replace.clone(), TokenOrTokenVec::TokVec(toks));
-                    cur_arg_name = name_to_replace.clone();
+                    param_to_arg_map.insert(parameter_name.clone(), TokenOrTokenVec::TokVec(toks));
+                    cur_param_name = parameter_name.clone();
                     scope_tracker = 1;
                     continue;
                 }
-                label_map.insert(name_to_replace.clone(), TokenOrTokenVec::Tok(token.clone()));
+                param_to_arg_map
+                    .insert(parameter_name.clone(), TokenOrTokenVec::Tok(token.clone()));
             }
 
             Mode::CompoundArg(arg_type) => match token.variant {
                 TokenVariant::Scope if *arg_type == CompoundArgType::Scoped => {
                     scope_tracker += 1;
-                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -447,7 +449,7 @@ pub fn insert_macros(
                 TokenVariant::Unscope if *arg_type == CompoundArgType::Scoped => {
                     scope_tracker -= 1;
 
-                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -457,12 +459,12 @@ pub fn insert_macros(
                     if scope_tracker > 0 {
                         continue;
                     }
-                    cur_arg_name.clear();
+                    cur_param_name.clear();
                     mode = Mode::Args;
                 }
                 TokenVariant::BraceOpen if *arg_type == CompoundArgType::Braced => {
                     scope_tracker += 1;
-                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -473,12 +475,12 @@ pub fn insert_macros(
                 TokenVariant::BraceClose if *arg_type == CompoundArgType::Braced => {
                     scope_tracker -= 1;
                     if scope_tracker <= 0 {
-                        cur_arg_name.clear();
+                        cur_param_name.clear();
                         mode = Mode::Args;
                         continue;
                     }
 
-                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -487,7 +489,7 @@ pub fn insert_macros(
                     }
                 }
                 _ => {
-                    let tok_vec = label_map.get_mut(&cur_arg_name).unwrap();
+                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
                     match tok_vec {
                         TokenOrTokenVec::Tok(x) => todo!(),
                         TokenOrTokenVec::TokVec(v) => {
@@ -502,7 +504,7 @@ pub fn insert_macros(
     // HACK
     if mode == Mode::Args {
         let current_macro_safe = current_macro.unwrap();
-        if current_macro_safe.args.len() != label_map.len() {
+        if current_macro_safe.params.len() != param_to_arg_map.len() {
             asm_error!(
                 &caller_info.unwrap(),
                 "Not enough arguments have been supplied"
@@ -511,7 +513,7 @@ pub fn insert_macros(
         // It has read all arguments
         let mut c = context.clone();
         c.push(caller_info.unwrap());
-        let mut body = generate_macro_body(current_macro_safe, macros, &label_map, c);
+        let mut body = generate_macro_body(current_macro_safe, macros, &param_to_arg_map, c);
         new_tokens.append(&mut body);
         new_tokens.append(&mut suffix);
     }
