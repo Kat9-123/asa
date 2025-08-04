@@ -5,7 +5,8 @@ use crate::{
     tokens::{Info, Token},
 };
 use colored::Colorize;
-use crossterm::terminal::disable_raw_mode;
+use crossterm::execute;
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode};
 use crossterm::{
     ExecutableCommand,
     event::{Event, KeyCode, KeyEventKind, read},
@@ -155,13 +156,14 @@ fn debug<T: FnMut() -> KeyCode>(
     mut in_debugging_mode: bool,
     mut input: T,
 ) {
+    //execute!(io::stdout(), EnterAlternateScreen);
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
     let mut io_buffer: String = String::new();
     let mut current_depth: usize = 0;
     let mut prev_info: Option<Info> = None;
     let mut stdout = io::stdout();
-    // enable_raw_mode();
+    //enable_raw_mode();
     stdout.execute(terminal::Clear(terminal::ClearType::All));
     let stay_in_file = false;
     let mut mem_mode: bool = false;
@@ -286,7 +288,7 @@ fn debug<T: FnMut() -> KeyCode>(
                     io::stdout().flush();
                 }
                 IOOperation::Halt => {
-                    return;
+                    break;
                 }
                 IOOperation::BreakPoint => {
                     in_debugging_mode = true;
@@ -299,6 +301,7 @@ fn debug<T: FnMut() -> KeyCode>(
             instruction_history.push(hist_item.unwrap());
         }
     }
+    //execute!(io::stdout(), LeaveAlternateScreen);
 }
 
 #[cfg(test)]

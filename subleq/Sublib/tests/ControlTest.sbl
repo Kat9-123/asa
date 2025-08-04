@@ -6,7 +6,7 @@ THREE -> 3
 
 TWO -> 2
 a -> 'Y'
-LINEBREAK -> "\n"
+LINEBREAK -> '\n'
 
 i -> 0
 p -> 0

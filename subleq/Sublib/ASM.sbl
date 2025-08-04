@@ -1,0 +1,47 @@
+**
+    name? = 0
+**
+@ASM::AssignZero name? [
+    name? -= name? &2
+    name? -> 0
+]
+**
+    name? = L_LIT?
+**
+@ASM::AssignLit name? L_LIT? [
+    _ASM -= _ASM
+    name? -= name? &3
+    name? -> 0
+    {
+        n_lit -> L_LIT?
+        _ASM -= n_lit
+        name? -= _ASM
+
+    }
+]
+
+**
+    name? = -L_N_LIT?
+**
+@ASM::AssignNLit name? L_N_LIT? [
+    name? -= name? &3
+    name? -> 0
+    {
+        n_lit -> L_N_LIT?
+        name? -= n_lit
+
+    }
+]
+
+**
+    name? = target?
+**
+@ASM::AssignLabel name? target? [
+    _ASM -= _ASM &2
+    name? -> 0
+    name? -= name?
+ 
+    _ASM -= target?
+    name? -= _ASM
+
+]

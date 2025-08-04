@@ -6,7 +6,7 @@ use simple_logger::SimpleLogger;
 use asa::{feedback::asm_runtime_error, *};
 fn main() {
     SimpleLogger::new().init().unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
     args::read();
     //disable_raw_mode();
     let file_path = format!("./subleq/{}", args::get().target);
@@ -25,10 +25,10 @@ fn main() {
     info!("Running...");
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-    debugger::run_with_debugger(&mut mem, &tokens, true);
-    //let result = interpreter::interpret(&mut mem, false);
+    //debugger::run_with_debugger(&mut mem, &tokens, true);
+    let result = interpreter::interpret(&mut mem, false);
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
     //}
-    //  interpreter::interpret_fast(&mut mem);
+    //interpreter::interpret_fast(&mut mem);
 }

@@ -10,7 +10,7 @@ ZERO -> 0
 FALSE -> 0
 TRUE -> 1
 
-LINEBREAK -> 0xA
+LINEBREAK -> '\n'
 
 
 SNEG -> 0x8000

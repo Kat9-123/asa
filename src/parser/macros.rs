@@ -116,11 +116,15 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::Body { bounded_by_scopes } => match &token.variant {
                 TokenVariant::LabelArrow { .. } if !bounded_by_scopes => {
                     cur_macro.as_mut().unwrap().body.push(token.clone());
-                    asm_warn!(
-                        &token.info,
-                        "Label definitions in non-scoped macros are very dangerous {}",
-                        asm_hint!("Use '{{' and '}}' instead of '[' and ']'")
-                    );
+                    if let TokenVariant::Label { name } = &tokens[i - 1].variant {
+                        if !name.ends_with('?') {
+                            asm_warn!(
+                                &token.info,
+                                "Label definitions in non-scoped macros are very dangerous, though it is acceptable if the label being defined is a macro parameter {}",
+                                asm_hint!("Use '{{' and '}}' instead of '[' and ']'")
+                            );
+                        }
+                    }
                 }
                 // Special case for labels defined in macros, because of macro
                 // hygiene

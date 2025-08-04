@@ -150,14 +150,14 @@ pub fn interpret(mem: &mut Vec<u16>, return_output: bool) -> Result<Option<Strin
         match io_operation {
             IOOperation::Char(ch) => {
                 buf.push(ch);
-                //print!("{ch}");
-                //  io::stdout().flush();
+                print!("{ch}");
+                io::stdout().flush();
             }
             IOOperation::Debug(ch) => {
                 let ch = ch.to_string();
                 buf.push_str(&ch);
-                //  println!("{ch}");
-                //io::stdout().flush();
+                println!("{ch}");
+                io::stdout().flush();
             }
             IOOperation::Halt => {
                 if return_output {

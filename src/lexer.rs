@@ -1,6 +1,7 @@
 //! Converts a string into a vector of tokens.
 
 use colored::Colorize;
+use unescape::unescape;
 
 use crate::{
     asm_error, asm_hint, preprocessor,
@@ -13,7 +14,7 @@ enum Context {
     LineComment,
     String,
     Char,
-
+    EscapedChar,
     BlockComment,
 
     SubleqOrNegativeOrLabelArrow,
@@ -243,6 +244,7 @@ fn updated_context(
         },
         Context::Char => match cur_char {
             // Not great
+            '\\' => (Context::EscapedChar, None, None),
             '\'' => (
                 Context::None,
                 None,
@@ -251,6 +253,20 @@ fn updated_context(
                 }),
             ),
             _ => (Context::Char, Some(cur_char), None),
+        },
+        Context::EscapedChar => match cur_char {
+            '\'' => (
+                Context::None,
+                None,
+                Some(TokenVariant::CharLiteral {
+                    value: unescape(&format!("\\{}", buffer.chars().next().unwrap()))
+                        .unwrap_or_else(|| asm_error!(&info, "Invalid escape sequence"))
+                        .chars()
+                        .next()
+                        .unwrap(),
+                }),
+            ),
+            _ => (Context::EscapedChar, Some(cur_char), None),
         },
         Context::String => match cur_char {
             '"' => (

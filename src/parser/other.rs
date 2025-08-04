@@ -41,12 +41,26 @@ fn token_variants_to_tokens(
         .collect()
 }
 
+pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token>) -> Vec<Token> {
+    let mut toks: Vec<Token> = Vec::new();
+    toks.push(Token::with_info(
+        TokenVariant::MacroCall { name: macro_name },
+        origin_tok,
+    ));
+
+    for arg in args {
+        toks.push(arg.clone());
+    }
+
+    toks
+}
+
 /// TODO
 pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
     while i < tokens.len() {
-        if i + 1 < tokens.len()
+        if i + 2 < tokens.len()
             && let TokenVariant::Equals = &tokens[i + 1].variant
         {
             let label_tok = if let TokenVariant::Label { name } = &tokens[i].variant {
@@ -54,26 +68,35 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
             } else {
                 asm_error!(&tokens[i].info, "Can only assign to a label");
             };
-            match &tokens[i + 2].variant {
-                TokenVariant::DecLiteral { value } if *value == 0 => {}
+
+            let target_tok = &tokens[i + 2];
+            match &target_tok.variant {
+                TokenVariant::DecLiteral { value } if *value == 0 => {
+                    let mut toks = insert_asm_macro(
+                        "ASM::AssignZero".to_string(),
+                        &tokens[i + 1],
+                        vec![label_tok],
+                    );
+                    new_tokens.append(&mut toks);
+                }
+                TokenVariant::DecLiteral { value } => {
+                    let mut toks = insert_asm_macro(
+                        "ASM::AssignLit".to_string(),
+                        &tokens[i + 1],
+                        vec![label_tok, target_tok],
+                    );
+                    new_tokens.append(&mut toks);
+                }
+                TokenVariant::Label { name } => {
+                    let mut toks = insert_asm_macro(
+                        "ASM::AssignLabel".to_string(),
+                        &tokens[i + 1],
+                        vec![label_tok, target_tok],
+                    );
+                    new_tokens.append(&mut toks);
+                }
                 _ => todo!(),
             }
-            new_tokens.append(&mut token_variants_to_tokens(
-                vec![
-                    label_tok.variant.clone(),
-                    label_tok.variant.clone(),
-                    TokenVariant::Relative { offset: 2 },
-                    TokenVariant::Linebreak,
-                    label_tok.variant.clone(),
-                    TokenVariant::LabelArrow {
-                        offset: tokens::LabelOffset::Int(0),
-                    },
-                    TokenVariant::DecLiteral { value: 0 },
-                    TokenVariant::Linebreak,
-                ],
-                &tokens[i + 1].info,
-                &tokens[i + 1].origin_info,
-            ));
             i += 3;
             continue;
         }
@@ -199,7 +222,7 @@ mod tests {
 
     #[test]
     fn test_assignment() {
-        let mut input: Vec<Token> = tokens_from_token_variant_vec(vec![
+        let input: Vec<Token> = tokens_from_token_variant_vec(vec![
             (
                 0,
                 TokenVariant::Label {
@@ -208,12 +231,34 @@ mod tests {
             ),
             (0, TokenVariant::Equals),
             (0, TokenVariant::DecLiteral { value: 0 }),
+            (0, TokenVariant::Linebreak),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label2".to_string(),
+                },
+            ),
+            (0, TokenVariant::Equals),
+            (0, TokenVariant::DecLiteral { value: 120 }),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label_a".to_string(),
+                },
+            ),
+            (0, TokenVariant::Equals),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label_b".to_string(),
+                },
+            ),
         ]);
         let expected: Vec<Token> = tokens_from_token_variant_vec(vec![
             (
                 0,
-                TokenVariant::Label {
-                    name: "label".to_string(),
+                TokenVariant::MacroCall {
+                    name: "ASM::AssignZero".to_string(),
                 },
             ),
             (
@@ -222,22 +267,38 @@ mod tests {
                     name: "label".to_string(),
                 },
             ),
-            (0, TokenVariant::Relative { offset: 2 }),
             (0, TokenVariant::Linebreak),
             (
                 0,
-                TokenVariant::Label {
-                    name: "label".to_string(),
+                TokenVariant::MacroCall {
+                    name: "ASM::AssignLit".to_string(),
                 },
             ),
             (
                 0,
-                TokenVariant::LabelArrow {
-                    offset: tokens::LabelOffset::Int(0),
+                TokenVariant::Label {
+                    name: "label2".to_string(),
                 },
             ),
-            (0, TokenVariant::DecLiteral { value: 0 }),
-            (0, TokenVariant::Linebreak),
+            (0, TokenVariant::DecLiteral { value: 120 }),
+            (
+                0,
+                TokenVariant::MacroCall {
+                    name: "ASM::AssignLabel".to_string(),
+                },
+            ),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label_a".to_string(),
+                },
+            ),
+            (
+                0,
+                TokenVariant::Label {
+                    name: "label_b".to_string(),
+                },
+            ),
         ]);
         let output = handle_assignments(&input);
         assert_eq!(output, expected);

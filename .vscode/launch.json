@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["Sublib/tests/ControlTest.sbl"],
+            "args": ["tests/Assignments.sbl"],
             "cwd": "${workspaceFolder}"
         },
         {
