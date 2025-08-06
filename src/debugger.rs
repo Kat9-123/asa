@@ -21,7 +21,6 @@ pub fn revert_historic_instruction(
     io_buffer: &mut String,
 ) -> usize {
     let b = mem[inst.pc + 1] as usize;
-    // let c = mem[inst.pc + 2] as usize;
     if b < mem.len() {
         mem[b] = inst.original_value_at_b;
     }
@@ -30,10 +29,6 @@ pub fn revert_historic_instruction(
         io_buffer.pop();
     }
     return inst.pc;
-    // if inst.jumped {
-    //     return mem[c] as usize;
-    // }
-    // return inst.pc + 3;
 }
 
 enum DataType {

@@ -2,6 +2,10 @@ use colored::{Color, Colorize};
 
 use std::cell::RefCell;
 thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
+use crate::interpreter::RuntimeError;
+use crate::tokens::Token;
+use crate::{args, tokens::Info};
+use std::{fs, process::exit};
 
 #[derive(PartialEq, Clone)]
 enum Type {
@@ -10,7 +14,6 @@ enum Type {
     Error,
     Details,
     Instruction,
-    SubInstruction,
 }
 impl Type {
     pub fn colour(&self) -> Color {
@@ -20,17 +23,7 @@ impl Type {
             Type::Error => Color::Red,
             Type::Details => Color::Blue,
             Type::Instruction => Color::Blue,
-            Type::SubInstruction => Color::BrightBlue,
             _ => Color::White,
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! asm_sub_instruction {
-    ($info:expr, $($arg:tt)*) => {
-        {
-            $crate::feedback::_asm_sub_instruction(format!($($arg)*), $info, file!(), line!());
         }
     }
 }
@@ -114,15 +107,26 @@ macro_rules! asm_hint {
         format!("\n     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white())
     };
 }
+#[macro_export]
+macro_rules! println_debug {
+    ($($arg:tt)*) => {
+        if log::max_level() == log::LevelFilter::Debug {
+            println!($($arg)*);
+        }
+    };
+}
 
-use std::{fs, process::exit};
+#[macro_export]
+macro_rules! print_debug {
+    ($($arg:tt)*) => {
+        if log::max_level() == log::LevelFilter::Debug {
+            print!($($arg)*);
+        }
+    };
+}
 
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
-
-use crate::interpreter::RuntimeError;
-use crate::tokens::Token;
-use crate::{args, tokens::Info};
 
 fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
@@ -149,7 +153,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
 
     //  println!("{:?}",info);
     for i in (2..4).rev() {
-        if msg_type != Type::SubInstruction && info.line_number - i >= 0 {
+        if info.line_number - i >= 0 {
             println!(
                 "{}{: >4} | {}",
                 prefix,
@@ -207,7 +211,6 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         Type::Info => println!("{}{}", prefix, msg.bold()),
         Type::Details => println!("{}{}", prefix, msg.bold()),
         Type::Instruction => println!("{}{}", prefix, msg.bold()),
-        Type::SubInstruction => {}
     }
 }
 
@@ -225,18 +228,6 @@ pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
         info.start_char
     );
     asm_msg(msg, info, Type::Warn, false);
-}
-
-pub fn _asm_sub_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
-    println!("     |");
-    println!(
-        "     + {} ({file_name}:{line}) {}:{}:{}",
-        msg.to_string().bright_cyan(),
-        info.file,
-        info.line_number,
-        info.start_char
-    );
-    asm_msg(msg, info, Type::SubInstruction, true);
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
@@ -313,22 +304,4 @@ pub fn _asm_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
         info.start_char
     );
     asm_msg(msg, info, Type::Instruction, false);
-}
-
-#[macro_export]
-macro_rules! println_debug {
-    ($($arg:tt)*) => {
-        if log::max_level() == log::LevelFilter::Debug {
-            println!($($arg)*);
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! print_debug {
-    ($($arg:tt)*) => {
-        if log::max_level() == log::LevelFilter::Debug {
-            print!($($arg)*);
-        }
-    };
 }

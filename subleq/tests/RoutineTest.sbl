@@ -11,17 +11,15 @@ test2 -> 1003
 
 STR -> &"AA" 0
 
-!Routine test_routine {
+!Routine::Def test_routine {
     !IO::Print STR
 
-    !Routine::Return
 }
 
-!Routine test2_routine {
+!Routine::Def test2_routine {
     !IO::PrintLnLit "BB"
     !Routine::Call test_routine
 
-    !Routine::Return
 }
 
 

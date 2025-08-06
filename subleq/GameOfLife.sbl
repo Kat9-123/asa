@@ -1,0 +1,22 @@
+!J .main
+#Sublib
+#Sublib/Routines.sbl
+
+
+grid -> 0 * 50
+
+GRID_WIDTH -> 5
+GRID_HEIGHT -> 5
+
+
+!Routine::Def rout {
+    !IO::PrintLnLit "Test"
+}
+
+.main -> {
+    !Routine::Call rout 
+    !Routine::Call rout 
+    !Routine::Call rout 
+    !Routine::Call rout 
+    !Halt
+}

@@ -401,9 +401,9 @@ pub fn insert_macros(
 
                     continue;
                 }
-                let parameter_data = &current_macro_safe.params[param_to_arg_map.len()];
-                let parameter_name = &parameter_data.0;
-                let parameter_info = &parameter_data.1;
+                let (parameter_name, parameter_info) =
+                    &current_macro_safe.params[param_to_arg_map.len()];
+
                 if let TokenVariant::Linebreak = token.variant {
                     continue;
                 }
@@ -442,23 +442,20 @@ pub fn insert_macros(
             Mode::CompoundArg(arg_type) => match token.variant {
                 TokenVariant::Scope if *arg_type == CompoundArgType::Scoped => {
                     scope_tracker += 1;
-                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
-                    match tok_vec {
-                        TokenOrTokenVec::Tok(x) => todo!(),
-                        TokenOrTokenVec::TokVec(v) => {
-                            v.push(token.clone());
-                        }
+
+                    if let TokenOrTokenVec::TokVec(compound_arg) =
+                        param_to_arg_map.get_mut(&cur_param_name).unwrap()
+                    {
+                        compound_arg.push(token.clone());
                     }
                 }
                 TokenVariant::Unscope if *arg_type == CompoundArgType::Scoped => {
                     scope_tracker -= 1;
 
-                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
-                    match tok_vec {
-                        TokenOrTokenVec::Tok(x) => todo!(),
-                        TokenOrTokenVec::TokVec(v) => {
-                            v.push(token.clone());
-                        }
+                    if let TokenOrTokenVec::TokVec(compound_arg) =
+                        param_to_arg_map.get_mut(&cur_param_name).unwrap()
+                    {
+                        compound_arg.push(token.clone());
                     }
                     if scope_tracker > 0 {
                         continue;
@@ -468,12 +465,10 @@ pub fn insert_macros(
                 }
                 TokenVariant::BraceOpen if *arg_type == CompoundArgType::Braced => {
                     scope_tracker += 1;
-                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
-                    match tok_vec {
-                        TokenOrTokenVec::Tok(x) => todo!(),
-                        TokenOrTokenVec::TokVec(v) => {
-                            v.push(token.clone());
-                        }
+                    if let TokenOrTokenVec::TokVec(compound_arg) =
+                        param_to_arg_map.get_mut(&cur_param_name).unwrap()
+                    {
+                        compound_arg.push(token.clone());
                     }
                 }
                 TokenVariant::BraceClose if *arg_type == CompoundArgType::Braced => {
@@ -484,21 +479,17 @@ pub fn insert_macros(
                         continue;
                     }
 
-                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
-                    match tok_vec {
-                        TokenOrTokenVec::Tok(x) => todo!(),
-                        TokenOrTokenVec::TokVec(v) => {
-                            v.push(token.clone());
-                        }
+                    if let TokenOrTokenVec::TokVec(compound_arg) =
+                        param_to_arg_map.get_mut(&cur_param_name).unwrap()
+                    {
+                        compound_arg.push(token.clone());
                     }
                 }
                 _ => {
-                    let tok_vec = param_to_arg_map.get_mut(&cur_param_name).unwrap();
-                    match tok_vec {
-                        TokenOrTokenVec::Tok(x) => todo!(),
-                        TokenOrTokenVec::TokVec(v) => {
-                            v.push(token.clone());
-                        }
+                    if let TokenOrTokenVec::TokVec(compound_arg) =
+                        param_to_arg_map.get_mut(&cur_param_name).unwrap()
+                    {
+                        compound_arg.push(token.clone());
                     }
                 }
             },

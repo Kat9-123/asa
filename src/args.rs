@@ -16,6 +16,7 @@ pub struct Args {
     /// Debug mode
     #[arg(long, default_value_t = true)]
     assembler_debug_mode: bool,
+
     // Run with debugger
     #[arg(long, default_value_t = false)]
     pub debugger: bool,

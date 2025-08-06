@@ -4,8 +4,9 @@
 
 return_stack -> !Stack::Create 32
 
-@Routine name? [
-    name? ->
+@Routine::Def name? s_body? [
+    name? -> s_body?
+    !Routine::Return
 ]
 
 

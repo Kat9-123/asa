@@ -154,7 +154,9 @@ impl Token {
 
             TokenVariant::HexLiteral { .. }
             | TokenVariant::CharLiteral { .. }
-            | TokenVariant::StrLiteral { .. } => todo!(),
+            | TokenVariant::StrLiteral { .. } => {
+                unreachable!("These variants should already have been processed")
+            }
 
             _ => 0,
         }

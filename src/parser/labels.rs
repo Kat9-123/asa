@@ -263,6 +263,7 @@ fn make_deref_instructions(
     deref
 }
 
+/// Messy
 pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 
