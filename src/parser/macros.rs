@@ -1,6 +1,5 @@
 use crate::args;
 use crate::asm_details;
-use crate::asm_error_no_terminate;
 use crate::asm_hint;
 use crate::asm_info;
 use crate::feedback::*;
@@ -10,7 +9,6 @@ use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
-use std::thread::scope;
 
 #[derive(Debug, Clone, Default)]
 pub struct Macro {
@@ -116,6 +114,9 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::Body { bounded_by_scopes } => match &token.variant {
                 TokenVariant::LabelArrow { .. } if !bounded_by_scopes => {
                     cur_macro.as_mut().unwrap().body.push(token.clone());
+                    if scope_tracker > 0 {
+                        continue;
+                    }
                     if let TokenVariant::Label { name } = &tokens[i - 1].variant {
                         if !name.ends_with('?') {
                             asm_warn!(
@@ -143,7 +144,7 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                         }
                     }
                 }
-                TokenVariant::Scope if bounded_by_scopes => {
+                TokenVariant::Scope => {
                     cur_macro.as_mut().unwrap().body.push(token.clone());
                     scope_tracker += 1;
                 }
@@ -175,10 +176,13 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
                     mode = Mode::Normal;
                 }
 
-                TokenVariant::Unscope if bounded_by_scopes => {
+                TokenVariant::Unscope => {
                     let mac = cur_macro.as_mut().unwrap();
                     mac.body.push(token.clone());
                     scope_tracker -= 1;
+                    if !bounded_by_scopes {
+                        continue;
+                    }
                     if scope_tracker != 0 {
                         continue;
                     }
@@ -216,7 +220,7 @@ fn generate_macro_body(
     for base_body_token in &current_macro.body {
         match &base_body_token.variant {
             TokenVariant::Label { name } => {
-                let name = if current_macro.labels_defined_in_macro.contains(&name) {
+                let name = if current_macro.labels_defined_in_macro.contains(name) {
                     format!("?{}?{}", current_macro.name, name) // MACRO HYGIENE HACK
                 } else {
                     name.clone()

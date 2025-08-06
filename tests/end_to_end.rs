@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use log::{LevelFilter, debug, info};
+use log::{LevelFilter, info};
 use simple_logger::SimpleLogger;
 
 use asa::*;
@@ -19,7 +19,7 @@ fn test_at_path(path: &str) {
         info!("Name: {}", p);
 
         let contents = fs::read_to_string(&p).unwrap();
-        let (mut mem, tokens) = assembler::assemble(&contents, p.to_string());
+        let (mut mem, _tokens) = assembler::assemble(&contents, p.to_string());
         let result = codegen::to_text(&mem);
 
         let mut sblx_path = p[..p.len() - 4].to_string();

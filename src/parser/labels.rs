@@ -1,17 +1,14 @@
 use std::collections::HashMap;
-use std::default;
-use std::thread::current;
 
 use crate::asm_details;
 use crate::asm_hint;
 use crate::feedback::*;
-use crate::println_debug;
 use crate::tokens;
 use crate::tokens::*;
 use colored::Colorize;
 
 /// Labels may be defined inside of instructions using the following syntax:
-/// (label -> 0). This routine converts these defenitions into single tokens
+/// (label -> 0). This routine converts these definitions into single tokens
 pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -75,7 +72,7 @@ pub fn assign_addresses_to_labels(tokens: &[Token]) -> Vec<HashMap<String, (usiz
     let mut scopes: Vec<HashMap<String, (usize, Info)>> = vec![HashMap::new()];
     let mut address: usize = 0;
     // Stack maintaining the indices for the scopes. Top is the current one. They
-    // index the scope vec.
+    // index the scope vec
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
 
@@ -120,14 +117,14 @@ pub fn assign_addresses_to_labels(tokens: &[Token]) -> Vec<HashMap<String, (usiz
 /// All labels get resolved, i.e. converted into the address they label.
 /// This routine also resolves relatives.
 pub fn resolve_labels_and_relatives(
-    tokens: &mut Vec<Token>,
-    scoped_label_table: &Vec<HashMap<String, (usize, Info)>>,
+    tokens: &mut [Token],
+    scoped_label_table: &[HashMap<String, (usize, Info)>],
 ) {
     fn find_label(
         name: &String,
         scoped_label_table: &[HashMap<String, (usize, Info)>],
         current_scope_indexes: &[usize],
-        info: &Info,
+        #[allow(unused_variables)] info: &Info, // Maybe I'm missing something, but this variable is most definitely used.
     ) -> (usize, Info) {
         for scope in current_scope_indexes.iter().rev() {
             if let Some(x) = scoped_label_table[*scope].get(name) {
@@ -317,7 +314,7 @@ pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
 #[cfg(test)]
 mod tests {
 
-    use crate::tokens::{self, tokens_from_token_variant_vec};
+    use crate::tokens::tokens_from_token_variant_vec;
 
     use super::*;
 

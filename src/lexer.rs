@@ -24,7 +24,7 @@ enum Context {
     Dec,
 
     Label,
-    DontMoveToNextChar,
+    DontConsume,
 
     MacroDeclaration,
     MacroCall,
@@ -38,12 +38,12 @@ enum Context {
 
 fn updated_context(
     context: &Context,
-    buffer: &String,
+    buffer: &str,
     cur_char: char,
-    info: &Info,
+    #[allow(unused_variables)] info: &Info, // Maybe I'm missing something, but this variable is most definitely used.
 ) -> (Context, Option<char>, Option<TokenVariant>) {
     match context {
-        Context::DontMoveToNextChar => unreachable!(),
+        Context::DontConsume => unreachable!(),
 
         Context::None => match cur_char {
             '\n' => (Context::None, None, Some(TokenVariant::Linebreak)),
@@ -86,11 +86,7 @@ fn updated_context(
 
         Context::AsteriskOrBlockComment => match cur_char {
             '*' => (Context::BlockComment, None, None),
-            _ => (
-                Context::DontMoveToNextChar,
-                None,
-                Some(TokenVariant::Asterisk),
-            ),
+            _ => (Context::DontConsume, None, Some(TokenVariant::Asterisk)),
         },
 
         Context::BlockComment => match cur_char {
@@ -104,15 +100,15 @@ fn updated_context(
         },
 
         Context::LineComment => match cur_char {
-            '\n' => (Context::DontMoveToNextChar, None, None),
+            '\n' => (Context::DontConsume, None, None),
             _ => (Context::LineComment, None, None),
         },
         Context::Namespace => match cur_char {
             '\n' => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::Namespace {
-                    name: buffer.clone(),
+                    name: buffer.to_owned(),
                 }),
             ),
             _ => (Context::Namespace, Some(cur_char), None),
@@ -164,7 +160,7 @@ fn updated_context(
                 asm_hint!("Labels may not start with a number")
             ),
             _ => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::DecLiteral {
                     value: buffer.parse::<i32>().unwrap(),
@@ -178,10 +174,10 @@ fn updated_context(
                 asm_error!(info, "Unexpected character when defining Hex literal")
             }
             _ => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::HexLiteral {
-                    value: buffer.clone(),
+                    value: buffer.to_owned(),
                 }),
             ), // may cause issues
         },
@@ -192,7 +188,7 @@ fn updated_context(
                 asm_error!(info, "Unexpected character when defining Dec literal")
             }
             _ => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::DecLiteral {
                     value: buffer.parse::<i32>().unwrap(),
@@ -201,20 +197,20 @@ fn updated_context(
         },
         Context::Label => match cur_char {
             '\n' => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::Label {
-                    name: buffer.clone(),
+                    name: buffer.to_owned(),
                 }),
             ),
             c if c.is_alphanumeric() || c == '?' || c == '_' || c == ':' || c == '.' => {
                 (Context::Label, Some(cur_char), None)
             }
             _ => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::Label {
-                    name: buffer.clone(),
+                    name: buffer.to_owned(),
                 }),
             ),
         },
@@ -225,19 +221,19 @@ fn updated_context(
             }
 
             _ => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::MacroDeclaration {
-                    name: buffer.clone(),
+                    name: buffer.to_owned(),
                 }),
             ),
         },
         Context::MacroCall => match cur_char {
             ' ' | '\n' => (
-                Context::DontMoveToNextChar,
+                Context::DontConsume,
                 None,
                 Some(TokenVariant::MacroCall {
-                    name: buffer.clone(),
+                    name: buffer.to_owned(),
                 }),
             ),
             _ => (Context::MacroCall, Some(cur_char), None),
@@ -273,7 +269,7 @@ fn updated_context(
                 Context::None,
                 None,
                 Some(TokenVariant::StrLiteral {
-                    value: buffer.clone(),
+                    value: buffer.to_owned(),
                 }),
             ),
             _ => (Context::String, Some(cur_char), None),
@@ -297,7 +293,7 @@ fn updated_context(
                 }
 
                 (
-                    Context::DontMoveToNextChar,
+                    Context::DontConsume,
                     None,
                     Some(TokenVariant::Relative { offset }),
                 )
@@ -348,7 +344,10 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                     }
                     TokenVariant::NamespaceEnd => {
                         name_space_stack.pop();
-                        info.file = name_space_stack.last().unwrap().clone();
+                        info.file = name_space_stack
+                            .last()
+                            .expect("Unmatched namespace symbol")
+                            .clone();
                         info.line_number = line_number_stack.pop().unwrap();
                     }
                     _ => {}
@@ -381,7 +380,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
                 }
             }
 
-            if let Context::DontMoveToNextChar = context {
+            if let Context::DontConsume = context {
                 context = Context::None;
                 continue;
             }

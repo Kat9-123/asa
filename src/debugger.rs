@@ -5,18 +5,16 @@ use crate::{
     tokens::{Info, Token},
 };
 use colored::Colorize;
-use crossterm::execute;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode};
 use crossterm::{
     ExecutableCommand,
     event::{Event, KeyCode, KeyEventKind, read},
-    terminal::{self, enable_raw_mode},
+    terminal::{self},
 };
 use std::fs;
 use std::io::{self, *};
 
 pub fn revert_historic_instruction(
-    mem: &mut Vec<u16>,
+    mem: &mut [u16],
     inst: &InstructionHistoryItem,
     io_buffer: &mut String,
 ) -> usize {
@@ -25,10 +23,10 @@ pub fn revert_historic_instruction(
         mem[b] = inst.original_value_at_b;
     }
 
-    if let IOOperation::Char(c) = inst.io_operation {
+    if let IOOperation::Char(..) = inst.io_operation {
         io_buffer.pop();
     }
-    return inst.pc;
+    inst.pc
 }
 
 enum DataType {
@@ -37,7 +35,7 @@ enum DataType {
     Hex,
 }
 
-fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
+fn address_to_string(addr: u16, mem: &[u16], data_type: DataType) -> String {
     match addr {
         0xFFFF => "IO".to_string(),
         0xFFFE => "Debug".to_string(),
@@ -45,9 +43,9 @@ fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
         x if (x as usize) >= mem.len() => "OOB".to_string(),
 
         _ => match data_type {
-            DataType::Char => format!("{}", mem[addr as usize] as u16 as u8 as char),
+            DataType::Char => format!("{}", mem[addr as usize] as u8 as char),
             DataType::Int => format!("{}", mem[addr as usize] as i16),
-            DataType::Hex => format!("{:X}", mem[addr as usize] as u16),
+            DataType::Hex => format!("{:X}", mem[addr as usize]),
         },
     }
 }
@@ -55,8 +53,8 @@ fn address_to_string(addr: u16, mem: &Vec<u16>, data_type: DataType) -> String {
 fn get_file_contents(path: &String) -> String {
     fs::read_to_string(path).expect("Should have been able to read the file")
 }
-fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<RuntimeError>) {
-    if info.file == "" {
+fn display(info: &Info, pc: usize, mem: &[u16], current_error: &Option<RuntimeError>) {
+    if info.file.is_empty() {
         return;
     }
     let contents = get_file_contents(&info.file);
@@ -85,9 +83,9 @@ fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Runtim
             );
         } else {
             let line = if current_error.is_none() {
-                format!("{}", lines[i as usize]).blue()
+                lines[i as usize].to_string().blue()
             } else {
-                format!("{}", lines[i as usize]).red()
+                lines[i as usize].to_string().red()
             };
             println!(
                 "{: >4} {} {: <100}",
@@ -97,7 +95,7 @@ fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Runtim
             );
         }
     }
-    println!("PC: {: <100X} ", pc);
+    println!("PC: {pc: <100X} ");
     if pc < mem.len() {
         println!(
             " a: {: >4X}   mem[a]: {: >7}  {: >4}  {: >4 }  ",
@@ -130,24 +128,21 @@ fn display(info: &Info, pc: usize, mem: &Vec<u16>, current_error: &Option<Runtim
 
 fn user_input() -> KeyCode {
     loop {
-        match read().unwrap() {
-            Event::Key(event) => {
-                if event.kind == KeyEventKind::Press {
-                    return event.code;
-                }
+        if let Event::Key(event) = read().unwrap() {
+            if event.kind == KeyEventKind::Press {
+                return event.code;
             }
-            _ => {}
         }
     }
 }
 
-pub fn run_with_debugger(mem: &mut Vec<u16>, tokens: &Vec<Token>, mut in_debugging_mode: bool) {
+pub fn run_with_debugger(mem: &mut [u16], tokens: &[Token], in_debugging_mode: bool) {
     debug(mem, tokens, in_debugging_mode, user_input);
 }
 
 fn debug<T: FnMut() -> KeyCode>(
-    mem: &mut Vec<u16>,
-    tokens: &Vec<Token>,
+    mem: &mut [u16],
+    tokens: &[Token],
     mut in_debugging_mode: bool,
     mut input: T,
 ) {
@@ -156,21 +151,20 @@ fn debug<T: FnMut() -> KeyCode>(
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
     let mut io_buffer: String = String::new();
     let mut current_depth: usize = 0;
-    let mut prev_info: Option<Info> = None;
     let mut stdout = io::stdout();
     //enable_raw_mode();
-    stdout.execute(terminal::Clear(terminal::ClearType::All));
+    stdout
+        .execute(terminal::Clear(terminal::ClearType::All))
+        .unwrap();
     let stay_in_file = false;
     let mut mem_mode: bool = false;
     let mut current_error: Option<RuntimeError> = None;
     loop {
-        let mut skip_interaction = false;
-
         if in_debugging_mode {
-            stdout.execute(crossterm::cursor::MoveTo(0, 0));
+            stdout.execute(crossterm::cursor::MoveTo(0, 0)).unwrap();
 
             let origin_info = &tokens[pc].origin_info;
-            let info = if origin_info.len() == 0 {
+            let info = if origin_info.is_empty() {
                 &tokens[pc].info
             } else {
                 //&origin_info[origin_info.len() - 1].1 };
@@ -198,63 +192,61 @@ fn debug<T: FnMut() -> KeyCode>(
                 }
             } */
 
-            prev_info = Some(info.clone());
+            println!("{}", instruction_history.len());
 
-            if !skip_interaction {
-                println!("{}", instruction_history.len());
+            // asm_instruction!(info, "depth Instruction");
+            if !mem_mode {
+                display(info, pc, mem, &current_error);
+            //                if let Some(..) = &current_error {}
+            } else {
+                mem_view::draw_mem(mem, pc);
+            }
+            //mem_view::draw_mem(mem, pc);
+            stdout
+                .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+                .unwrap();
 
-                // asm_instruction!(info, "depth Instruction");
-                if !mem_mode {
-                    display(info, pc, &mem, &current_error);
-                    if let Some(e) = &current_error {}
-                } else {
-                    mem_view::draw_mem(mem, pc);
-                }
-                //mem_view::draw_mem(mem, pc);
-                stdout.execute(terminal::Clear(terminal::ClearType::FromCursorDown));
-
-                println!("{: <100}", io_buffer);
-                // dbg!(&instruction_history);
-                // Only works on windows??
-                match input() {
-                    KeyCode::Char(c) => match c {
-                        'm' => {
-                            stdout.execute(terminal::Clear(terminal::ClearType::All));
-                            mem_mode = !mem_mode;
-                            continue;
-                        }
-                        'h' => return,
-                        ' ' => {}
-                        _ => {}
-                    },
-                    KeyCode::Enter => continue,
-                    KeyCode::Right => {}
-                    KeyCode::Left => {
-                        current_error = None;
-                        let instr = instruction_history.pop();
-                        match instr {
-                            Some(x) => {
-                                pc = revert_historic_instruction(mem, &x, &mut io_buffer);
-                            }
-                            None => continue,
-                        }
+            println!("{io_buffer: <100}");
+            // dbg!(&instruction_history);
+            // Only works on windows??
+            match input() {
+                KeyCode::Char(c) => match c {
+                    'm' => {
+                        stdout
+                            .execute(terminal::Clear(terminal::ClearType::All))
+                            .unwrap();
+                        mem_mode = !mem_mode;
                         continue;
                     }
-                    KeyCode::Down => {
-                        current_depth += 1;
-                        continue;
-                    }
-                    KeyCode::Up => {
-                        if current_depth > 0 {
-                            current_depth -= 1;
-                        }
-                        continue;
-                    }
-                    KeyCode::Esc => {
-                        in_debugging_mode = false;
-                    }
+                    'h' => return,
+                    ' ' => {}
                     _ => {}
+                },
+                KeyCode::Enter => continue,
+                KeyCode::Right => {}
+                KeyCode::Left => {
+                    current_error = None;
+                    let instr = instruction_history.pop();
+                    match instr {
+                        Some(x) => {
+                            pc = revert_historic_instruction(mem, &x, &mut io_buffer);
+                        }
+                        None => continue,
+                    }
+                    continue;
                 }
+                KeyCode::Down => {
+                    current_depth += 1;
+                    continue;
+                }
+                KeyCode::Up => {
+                    current_depth = current_depth.saturating_sub(1);
+                    continue;
+                }
+                KeyCode::Esc => {
+                    in_debugging_mode = false;
+                }
+                _ => {}
             }
         }
 
@@ -270,17 +262,17 @@ fn debug<T: FnMut() -> KeyCode>(
             };
             let (new_pc, io_operation, instruction_history_item) = result;
             pc = new_pc;
-            let hist_item = Some(instruction_history_item.clone());
+            let hist_item = instruction_history_item.clone();
             match io_operation {
                 IOOperation::Char(c) => {
                     io_buffer.push(c);
                     //   print!("{c}");
-                    //      io::stdout().flush();
+                    let _ = io::stdout().flush();
                 }
                 IOOperation::Debug(i) => {
                     let i = i as i16;
                     println!("{i}");
-                    io::stdout().flush();
+                    let _ = io::stdout().flush();
                 }
                 IOOperation::Halt => {
                     break;
@@ -293,7 +285,7 @@ fn debug<T: FnMut() -> KeyCode>(
                 }
                 IOOperation::None => {}
             }
-            instruction_history.push(hist_item.unwrap());
+            instruction_history.push(hist_item);
         }
     }
     //execute!(io::stdout(), LeaveAlternateScreen);
@@ -302,7 +294,7 @@ fn debug<T: FnMut() -> KeyCode>(
 #[cfg(test)]
 mod tests {
 
-    use crate::tokens::{self, TokenVariant, tokens_from_token_variant_vec};
+    use crate::tokens::{TokenVariant, tokens_from_token_variant_vec};
 
     use super::*;
 

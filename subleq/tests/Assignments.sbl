@@ -6,7 +6,7 @@ Z -> 0
 
 
 .main -> {
-    a = 1230
+    a = 1230 
     b = a
     c = 0
     !Assert::EqToLit a 1230

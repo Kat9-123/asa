@@ -1,16 +1,7 @@
 use colored::Colorize;
 
 /// Prints a pretty overview of the memory. The instruction, A, B and C are highlighted
-pub fn draw_mem(mem: &Vec<u16>, pc: usize) {
-    /*
-       println!("LEGEND");
-       println!("{}", "Instruction".cyan());
-       println!("{}", "a".yellow());
-       println!("{}", "b".purple());
-       println!("{}", "c".red());
-    */
-    //  stdout.execute(cursor::MoveTo(0,0));
-
+pub fn draw_mem(mem: &[u16], pc: usize) {
     print!("----  ");
     for i in 0..16 {
         print!("{}", format!("{i:04X}  ").bright_black())

@@ -12,7 +12,6 @@ enum Type {
     Info,
     Warn,
     Error,
-    Details,
     Instruction,
 }
 impl Type {
@@ -21,9 +20,7 @@ impl Type {
             Type::Info => Color::Blue,
             Type::Warn => Color::Yellow,
             Type::Error => Color::Red,
-            Type::Details => Color::Blue,
             Type::Instruction => Color::Blue,
-            _ => Color::White,
         }
     }
 }
@@ -173,7 +170,7 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
     if let Some(x) = &info.append_to_sourceline {
         println!("{} {}", fmt, x.purple());
     } else {
-        println!("{}", fmt);
+        println!("{fmt}");
     }
 
     if msg_type == Type::Instruction && info.line_number + 1 < lines.len() as i32 {
@@ -209,7 +206,6 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         Type::Error => println!("{}{}", prefix, msg.red()),
         Type::Warn => println!("{}{}", prefix, msg.bold().yellow()),
         Type::Info => println!("{}{}", prefix, msg.bold()),
-        Type::Details => println!("{}{}", prefix, msg.bold()),
         Type::Instruction => println!("{}{}", prefix, msg.bold()),
     }
 }
@@ -233,7 +229,7 @@ pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
     FEEDBACK_TYPE.set(log::Level::Info);
 
-    if (args::exist() && args::get().disable_notes) || log::max_level() < log::Level::Info {
+    if log::max_level() < log::Level::Info {
         return;
     }
     println!();
@@ -248,7 +244,7 @@ pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
     asm_msg(msg, info, Type::Info, false);
 }
 
-pub fn asm_runtime_error(e: RuntimeError, tokens: &Vec<Token>) {
+pub fn asm_runtime_error(e: RuntimeError, tokens: &[Token]) {
     match e {
         RuntimeError::InstructionOutOfRange(pc) => {
             asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");

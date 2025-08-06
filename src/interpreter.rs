@@ -43,7 +43,7 @@ pub enum IOOperation {
 }
 
 pub fn interpret_single(
-    mem: &mut Vec<u16>,
+    mem: &mut [u16],
     pc: usize,
 ) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
     let a = if pc < mem.len() {
@@ -130,7 +130,7 @@ pub fn interpret_single(
             }
         }
     }
-    return Ok((
+    Ok((
         pc + 3,
         io.clone(),
         InstructionHistoryItem {
@@ -138,10 +138,10 @@ pub fn interpret_single(
             original_value_at_b,
             io_operation: io,
         },
-    ));
+    ))
 }
 
-pub fn interpret(mem: &mut Vec<u16>, return_output: bool) -> Result<Option<String>, RuntimeError> {
+pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>, RuntimeError> {
     let mut pc: usize = 0;
     let mut buf = String::new();
     loop {
@@ -151,13 +151,13 @@ pub fn interpret(mem: &mut Vec<u16>, return_output: bool) -> Result<Option<Strin
             IOOperation::Char(ch) => {
                 buf.push(ch);
                 print!("{ch}");
-                io::stdout().flush();
+                let _ = io::stdout().flush();
             }
             IOOperation::Debug(ch) => {
                 let ch = ch.to_string();
                 buf.push_str(&ch);
                 println!("{ch}");
-                io::stdout().flush();
+                let _ = io::stdout().flush();
             }
             IOOperation::Halt => {
                 if return_output {

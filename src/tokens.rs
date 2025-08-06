@@ -76,25 +76,25 @@ impl ToString for Token {
     fn to_string(&self) -> String {
         match &self.variant {
             TokenVariant::DecLiteral { value } => value.to_string(),
-            TokenVariant::HexLiteral { value } => format!("0x{}", value),
-            TokenVariant::LabelArrow { offset } => "->".to_string(),
+            TokenVariant::HexLiteral { value } => format!("0x{value}"),
+            TokenVariant::LabelArrow { .. } => "->".to_string(),
             TokenVariant::Subleq => "-=".to_string(),
             TokenVariant::Label { name } => name.clone(),
-            TokenVariant::LabelDefinition { name, offset } => format!("[{} -{}>]", name, offset),
-            TokenVariant::Relative { offset } => format!("&{}", offset),
+            TokenVariant::LabelDefinition { name, offset } => format!("[{name} -{offset}>]"),
+            TokenVariant::Relative { offset } => format!("&{offset}"),
             TokenVariant::Scope => "{".to_string(),
             TokenVariant::Unscope => "}".to_string(),
             TokenVariant::CharLiteral { value } => value.to_string(),
             TokenVariant::StrLiteral { value } => value.clone(),
-            TokenVariant::MacroDeclaration { name } => format!("@{}", name),
+            TokenVariant::MacroDeclaration { name } => format!("@{name}"),
             TokenVariant::MacroBodyStart => "[".to_string(),
             TokenVariant::MacroBodyEnd => "]".to_string(),
-            TokenVariant::MacroCall { name } => format!("!{}", name),
-            TokenVariant::Namespace { name } => format!("#{}", name),
+            TokenVariant::MacroCall { name } => format!("!{name}"),
+            TokenVariant::Namespace { name } => format!("#{name}"),
             TokenVariant::BraceOpen => "(".to_string(),
             TokenVariant::BraceClose => ")".to_string(),
             TokenVariant::Linebreak => "\n".to_string(),
-            TokenVariant::BracedLabelDefinition { name, data } => format!("({} -> ..)", name),
+            TokenVariant::BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
             TokenVariant::Asterisk => "*".to_string(),
             TokenVariant::NamespaceEnd => "\\".to_string(),
             TokenVariant::Equals => "=".to_string(),
@@ -168,7 +168,7 @@ impl Token {
             variant: token_variant,
         }
     }
-    /// Create a new token with the given tokenvariant, but with the info
+    /// Create a new token with the given token variant, but with the info
     /// of the given token
     pub fn with_info(token_variant: TokenVariant, token: &Token) -> Self {
         Token {

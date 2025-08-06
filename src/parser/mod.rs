@@ -3,16 +3,12 @@ mod literals;
 mod macros;
 pub mod other;
 
-use std::fs::File;
-
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
-use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 use crate::{print_debug, println_debug};
-use std::time::Instant;
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;

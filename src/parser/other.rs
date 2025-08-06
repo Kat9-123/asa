@@ -1,6 +1,6 @@
 use crate::{
     asm_error, asm_info,
-    tokens::{self, Info, LabelOffset, Token, TokenVariant},
+    tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 
 /// LABEL * 3 => LABEL LABEL LABEL
@@ -29,14 +29,14 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
 fn token_variants_to_tokens(
     token_variants: Vec<TokenVariant>,
     info: &Info,
-    origin_info: &Vec<Info>,
+    origin_info: &[Info],
 ) -> Vec<Token> {
     token_variants
         .iter()
         .map(|x| Token {
             variant: x.clone(),
             info: info.clone(),
-            origin_info: origin_info.clone(),
+            origin_info: origin_info.to_owned(),
         })
         .collect()
 }
@@ -63,10 +63,13 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
         if i + 2 < tokens.len()
             && let TokenVariant::Equals = &tokens[i + 1].variant
         {
-            let label_tok = if let TokenVariant::Label { name } = &tokens[i].variant {
+            let label_tok = if let TokenVariant::Label { .. } = &tokens[i].variant {
                 &tokens[i]
             } else {
-                asm_error!(&tokens[i].info, "Can only assign to a label");
+                asm_error!(
+                    &tokens[i].info,
+                    "The left hand side of an assignment may only be a label"
+                );
             };
 
             let target_tok = &tokens[i + 2];
@@ -79,7 +82,7 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
                     );
                     new_tokens.append(&mut toks);
                 }
-                TokenVariant::DecLiteral { value } => {
+                TokenVariant::DecLiteral { .. } => {
                     let mut toks = insert_asm_macro(
                         "ASM::AssignLit".to_string(),
                         &tokens[i + 1],
@@ -87,7 +90,7 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
                     );
                     new_tokens.append(&mut toks);
                 }
-                TokenVariant::Label { name } => {
+                TokenVariant::Label { .. } => {
                     let mut toks = insert_asm_macro(
                         "ASM::AssignLabel".to_string(),
                         &tokens[i + 1],
@@ -95,7 +98,10 @@ pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
                     );
                     new_tokens.append(&mut toks);
                 }
-                _ => todo!(),
+                _ => asm_error!(
+                    &tokens[i + 2].info,
+                    "The right hand side of an assignment may only be a label or a literal"
+                ),
             }
             i += 3;
             continue;
@@ -155,7 +161,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
         if i + 1 < tokens.len()
             && let TokenVariant::Subleq = &tokens[i + 1].variant
         {
-            /*  doesnt work, shouldnt trigger for ZERO -= ZERO...
+            /*  doesn't work, shouldn't trigger for ZERO -= ZERO...
             if let TokenVariant::Label {name} = &tokens[i].variant {
                 if name.len() > 1 {
                     if name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {

@@ -2,7 +2,7 @@ use crate::{feedback::*, tokens::*};
 use unescape::unescape;
 
 /// Convert character and hex literals into dec literals inplace
-pub fn char_and_hex_to_dec(tokens: &mut Vec<Token>) {
+pub fn char_and_hex_to_dec(tokens: &mut [Token]) {
     for token in tokens.iter_mut() {
         match &token.variant {
             TokenVariant::HexLiteral { value } => {
@@ -28,7 +28,7 @@ pub fn convert_strings(tokens: Vec<Token>) -> Vec<Token> {
     for token in tokens {
         match &token.variant {
             TokenVariant::StrLiteral { value } => {
-                let string = unescape(&value)
+                let string = unescape(value)
                     .unwrap_or_else(|| asm_error!(&token.info, "Invalid escape sequence"));
 
                 for c in string.chars() {
