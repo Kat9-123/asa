@@ -7,7 +7,7 @@
     !J &2
     result -> 0
 
-    !Repeat 16 {
+    !RepeatLit 16 {
         !LShift1 result
 
         !JumpIf::LeZero a? .msb_is_1
@@ -30,7 +30,7 @@
     !J .
     result -> 0
     . ->
-    !Repeat 16 {
+    !RepeatLit 16 {
 
         !LShift1 result
         !JumpIf::LeZero a? .msb_a_is_1

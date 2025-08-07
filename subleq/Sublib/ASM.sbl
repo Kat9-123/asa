@@ -1,10 +1,16 @@
 **
+    Macros used by the assembler for specific syntax sugar, like assignments and dereferencing.
+**
+
+
+**
     name? = 0
 **
 @ASM::AssignZero name? [
     name? -= name? &2
     name? -> 0
 ]
+
 **
     name? = L_LIT?
 **
@@ -16,7 +22,6 @@
         n_lit -> L_LIT?
         _ASM -= n_lit
         name? -= _ASM
-
     }
 ]
 

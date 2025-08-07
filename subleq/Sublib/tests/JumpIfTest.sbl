@@ -18,6 +18,15 @@ c -> 0
 d -> 1233
 
 
+@TestJumpIfLeItself L_X? {
+    !JumpIf::Le X X .err
+
+    !J .fin
+
+    X -> L_X?
+    .fin -> 
+}
+
 @TestJumpIfLe L_A? L_B? {
     !JumpIf::Le a b .contd
     !J .err
@@ -33,6 +42,8 @@ d -> 1233
 .main ->
     ; It is essential that this routine works properly, since all other conditionals
     ; are based on it
+
+
     !TestJumpIfLe -15965 16423
     !TestJumpIfLe 20112 25597
     !TestJumpIfLe -3417 16335
@@ -84,12 +95,24 @@ d -> 1233
     !TestJumpIfLe 5128 9909
     !TestJumpIfLe -27647 29155
 
+    !TestJumpIfLe -2 -1
+    !TestJumpIfLe -2 0
+    !TestJumpIfLe 1 2
+
+
     !TestJumpIfLe 0x8000 -1
     !TestJumpIfLe 0x8000 0
     !TestJumpIfLe -1 0
     !TestJumpIfLe 0 1
-
-
+    !JumpIf::Le ZERO ZERO .err
+    !JumpIf::Le SNEG SNEG .err
+    !JumpIf::Le ONE ONE .err
+    !JumpIf::Le N_ONE N_ONE .err
+    !TestJumpIfLeItself 0
+    !TestJumpIfLeItself 1
+    !TestJumpIfLeItself 2
+    !TestJumpIfLeItself -1
+    !TestJumpIfLeItself -2
 
     !JumpIf::Le a b .err
     !JumpIf::Le b a .T1

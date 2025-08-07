@@ -6,7 +6,7 @@ static ARGS: OnceCell<Args> = OnceCell::new();
 pub enum FeedbackLevel {
     Debug,
     #[default]
-    Notes,
+    Note,
     Warn,
     Error,
 }
@@ -15,7 +15,7 @@ impl ToString for FeedbackLevel {
     fn to_string(&self) -> String {
         match &self {
             FeedbackLevel::Debug => "debug".to_owned(),
-            FeedbackLevel::Notes => "notes".to_owned(),
+            FeedbackLevel::Note => "note".to_owned(),
             FeedbackLevel::Warn => "warn".to_owned(),
             FeedbackLevel::Error => "error".to_owned(),
         }
@@ -27,7 +27,7 @@ impl ToString for FeedbackLevel {
 pub struct Args {
     /// File to assemble
     pub target: String,
-    #[arg(short,long, default_value_t = FeedbackLevel::Notes)]
+    #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
     /// Debug mode
     #[arg(long, default_value_t = true)]

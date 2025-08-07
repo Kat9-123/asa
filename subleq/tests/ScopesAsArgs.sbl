@@ -44,11 +44,9 @@ LINE_BREAK -> 0xA
 .main -> {
     !Repeat 2 {
         !Repeat 3 {
-            !Flip
-            {
+            !Flip {
                 0xFFFF -= A
-            }
-            {
+            } {
                 0xFFFF -= B
                 W W !Skip
                 0xDEAD

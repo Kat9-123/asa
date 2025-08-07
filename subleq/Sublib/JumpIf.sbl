@@ -75,13 +75,7 @@ l -> 0
     !JumpIf::Le b? a? .address?
 }
 
-@JumpIf::Eq a? b? .address? {
-    !JumpIf::Le a? b? .fin
-    !JumpIf::Ge a? b? .fin
-    !J .address?
 
-    .fin ->
-}
 
 @JumpIf::Geq a? b? .address? {
     !Flip (!JumpIf::Le a? b? ) .address?
@@ -91,8 +85,16 @@ l -> 0
     !JumpIf::Geq B? A? .address?
 }
 
+
 @JumpIf::Neq A? B? .address?{
     !JumpIf::Eq A? B? .fin
+    !J .address?
+
+    .fin ->
+}
+@JumpIf::Eq a? b? .address? {
+    !JumpIf::Le a? b? .fin
+    !JumpIf::Ge a? b? .fin
     !J .address?
 
     .fin ->

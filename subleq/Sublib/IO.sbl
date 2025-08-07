@@ -38,7 +38,12 @@
     !IO::PutChar LINEBREAK
 }
 
-
+@IO::PutCharLit L_CHAR? {
+    !J .
+    CHAR -> L_CHAR?
+    . ->
+    !IO::PutChar CHAR
+}
 @IO::PrintLnLit l_string? {
     !IO::PrintLit l_string?
     !IO::PutChar LINEBREAK

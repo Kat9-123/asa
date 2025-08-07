@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["tests/Assignments.sbl", "-f", "warn"],
+            "args": ["Sublib/tests/JumpIfTest.sbl", "-f", "note"],
             "cwd": "${workspaceFolder}"
         },
         {

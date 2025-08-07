@@ -1,0 +1,16 @@
+@empty []
+
+!empty 
+
+@Mac
+
+[
+
+
+    3
+
+
+]!empty
+10 *   !empty !Mac
+5 *!Mac
+ !empty

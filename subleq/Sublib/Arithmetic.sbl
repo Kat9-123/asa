@@ -13,7 +13,7 @@
 
     n_val       -= LITERAL_LBL
     val?        -= n_val
-    n_val       -= n_val             _fin
+    n_val       -= n_val             .fin
 
     LITERAL_LBL -> LIT?
 
@@ -23,9 +23,9 @@
 
 @Mul a? B? {
 
-    !AssignZero acc
-    !AssignZero n_a
-    !AssignLabel c_b B?
+    acc = 0
+    n_a = 0
+    c_b = B?
 
     n_a -= a?
 

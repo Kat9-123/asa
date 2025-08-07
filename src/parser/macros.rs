@@ -9,6 +9,38 @@ use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
+use std::thread::panicking;
+
+struct IterVec<'a, T> {
+    vec: &'a Vec<T>,
+    index: usize,
+}
+
+impl<'a, T> IterVec<'a, T> {
+    fn new(vec: &'a Vec<T>) -> Self {
+        Self { vec, index: 0 }
+    }
+
+    fn current(&self) -> &T {
+        &self.vec[self.index]
+    }
+    fn consume(&mut self) -> &T {
+        self.index += 1;
+        &self.vec[self.index - 1]
+    }
+    fn get(&self, offset: i32) -> &T {
+        &self.vec[(self.index as i32 + offset) as usize]
+    }
+    fn finished(&self) -> bool {
+        self.index >= self.vec.len()
+    }
+    fn len(&self) -> usize {
+        self.vec.len()
+    }
+    fn current_index(&self) -> usize {
+        self.index
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct Macro {
@@ -30,7 +62,7 @@ impl fmt::Display for Macro {
     }
 }
 
-pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
+pub fn read_macros(tokens: &Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut macros: HashMap<String, Macro> = HashMap::new();
 
@@ -164,11 +196,13 @@ pub fn read_macros(tokens: Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
 
                 TokenVariant::MacroBodyEnd if !bounded_by_scopes => {
                     let mac = cur_macro.as_mut().unwrap();
-                    if let TokenVariant::Linebreak = mac.body[0].variant {
-                        mac.body.remove(0);
-                    }
-                    if let TokenVariant::Linebreak = mac.body[mac.body.len() - 1].variant {
-                        mac.body.remove(mac.body.len() - 1);
+                    if !mac.body.is_empty() {
+                        if let TokenVariant::Linebreak = mac.body[0].variant {
+                            mac.body.remove(0);
+                        }
+                        if let TokenVariant::Linebreak = mac.body[mac.body.len() - 1].variant {
+                            mac.body.remove(mac.body.len() - 1);
+                        }
                     }
 
                     macros.insert(mac.name.clone(), cur_macro.unwrap());
@@ -336,7 +370,10 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
         asm_details!(label_to_replace_info, "Argument in macro definition");
     }
 }
-
+/*
+    There is an edge case if the macro is the final token, it won't be processed. This really doesn't matter
+    because the lexer always inserts a linebreak at the end of the file.
+*/
 pub fn insert_macros(
     tokens: Vec<Token>,
     macros: &HashMap<String, Macro>,
@@ -355,7 +392,7 @@ pub fn insert_macros(
         Args,
         CompoundArg(CompoundArgType),
     }
-    let mut scope_tracker = 1;
+    let mut scope_tracker = 0;
 
     let mut mode = Mode::Normal;
     let mut current_macro: Option<&Macro> = None;
@@ -363,7 +400,9 @@ pub fn insert_macros(
     let mut caller_info: Option<Info> = None;
     let mut suffix: Vec<Token> = Vec::new();
     let mut cur_param_name: String = String::new();
-    for token in &tokens {
+    let mut tokens = IterVec::new(&tokens);
+    while !tokens.finished() {
+        let token = tokens.current();
         match &mode {
             Mode::Normal => match &token.variant {
                 TokenVariant::MacroCall { name } => {
@@ -375,7 +414,6 @@ pub fn insert_macros(
                         Some(x) => {
                             current_macro = Some(x);
                             caller_info = Some(token.info.clone());
-
                             mode = Mode::Args;
                         }
                     }
@@ -399,7 +437,6 @@ pub fn insert_macros(
                     mode = Mode::Normal;
                     current_macro = None;
                     param_to_arg_map = HashMap::new();
-                    new_tokens.push(token.clone());
 
                     scope_tracker = 0;
 
@@ -409,16 +446,18 @@ pub fn insert_macros(
                     &current_macro_safe.params[param_to_arg_map.len()];
 
                 if let TokenVariant::Linebreak = token.variant {
-                    continue;
+                    asm_error!(
+                        &token.info,
+                        "A newline may not separate macro arguments. Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
+                    );
                 }
                 macro_argument_type_check(parameter_info, token, parameter_name);
 
                 if let TokenVariant::Scope = token.variant {
                     mode = Mode::CompoundArg(CompoundArgType::Scoped);
-                    let toks: Vec<Token> = vec![token.clone()];
-                    param_to_arg_map.insert(parameter_name.clone(), TokenOrTokenVec::TokVec(toks));
+                    param_to_arg_map
+                        .insert(parameter_name.clone(), TokenOrTokenVec::TokVec(Vec::new()));
                     cur_param_name = parameter_name.clone();
-                    scope_tracker = 1;
                     continue;
                 }
                 if TokenVariant::Unscope == token.variant {
@@ -437,6 +476,7 @@ pub fn insert_macros(
                     param_to_arg_map.insert(parameter_name.clone(), TokenOrTokenVec::TokVec(toks));
                     cur_param_name = parameter_name.clone();
                     scope_tracker = 1;
+                    tokens.consume();
                     continue;
                 }
                 param_to_arg_map
@@ -462,6 +502,8 @@ pub fn insert_macros(
                         compound_arg.push(token.clone());
                     }
                     if scope_tracker > 0 {
+                        tokens.consume();
+
                         continue;
                     }
                     cur_param_name.clear();
@@ -480,6 +522,8 @@ pub fn insert_macros(
                     if scope_tracker <= 0 {
                         cur_param_name.clear();
                         mode = Mode::Args;
+                        tokens.consume();
+
                         continue;
                     }
 
@@ -498,8 +542,8 @@ pub fn insert_macros(
                 }
             },
         }
+        tokens.consume();
     }
-
     // HACK
     if mode == Mode::Args {
         let current_macro_safe = current_macro.unwrap();
@@ -516,5 +560,6 @@ pub fn insert_macros(
         new_tokens.append(&mut body);
         new_tokens.append(&mut suffix);
     }
+
     new_tokens
 }

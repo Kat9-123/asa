@@ -11,7 +11,7 @@ fn main() {
 
     log::set_max_level(match args::get().feedback_level {
         FeedbackLevel::Debug => LevelFilter::Debug,
-        FeedbackLevel::Notes => LevelFilter::Info,
+        FeedbackLevel::Note => LevelFilter::Info,
         FeedbackLevel::Warn => LevelFilter::Warn,
         FeedbackLevel::Error => LevelFilter::Error,
     });
@@ -34,8 +34,8 @@ fn main() {
     println!("Running...");
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-    //debugger::run_with_debugger(&mut mem, &tokens, true);
-    let _result = interpreter::interpret(&mut mem, false).unwrap();
+    debugger::run_with_debugger(&mut mem, &tokens, true);
+    //let _result = interpreter::interpret(&mut mem, false).unwrap();
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
     //}

@@ -1,22 +1,88 @@
 !J .main
 #Sublib
 #Sublib/Routines.sbl
+#Sublib/Control.sbl
 
 
-grid -> 0 * 50
-
-GRID_WIDTH -> 5
-GRID_HEIGHT -> 5
 
 
-!Routine::Def rout {
-    !IO::PrintLnLit "Test"
+GRID_PTR_0 -> & 0  0 0 0  0
+                0  0 0 0  0  
+                0  0 1 1  0 
+                0  1 0 0  0
+                0  0 0 0  0
+
+GRID_PTR_1 ->&  0  0 0 0  0
+                0  1 1 0  0  
+                0  0 1 1  0 
+                0  0 1 0  0
+                0  0 0 0  0
+
+buffer_selector -> 0
+p_current_grid -> GRID_PTR_0
+
+
+GRID_WIDTH -> 3
+GRID_HEIGHT -> 3
+
+.test -> {
+    p_cell = 0
+    neighbour_count = 0
+    n_neighbour = 0
+    n_neighbour -= *p_cell
+}
+
+@IterOverGrid p_cell? s_cell? s_line? {
+
+    !Add p_cell? GRID_WIDTH
+    !AddLit p_cell? 3
+    
+    !Repeat GRID_HEIGHT {
+        !Repeat GRID_WIDTH {
+            s_cell?
+            !Inc p_cell?
+        }
+        !AddLit p_cell? 2
+        s_line?
+    }
+}
+
+!Routine::Def .Draw {
+    p_cell = p_current_grid
+    
+    !IterOverGrid p_cell {
+        n_cur = 0
+        cur = 0
+
+        n_cur -= *p_cell
+        cur -= n_cur
+        !IfElse cur {
+            !IO::PutCharLit '%'
+        } {
+
+            !IO::PutCharLit '.'
+        }
+    } {
+        !IO::PutCharLit '\n'
+
+    }
+
 }
 
 .main -> {
-    !Routine::Call rout 
-    !Routine::Call rout 
-    !Routine::Call rout 
-    !Routine::Call rout 
+    !Cpy GRID_PTR_0 p_current_grid
+    !Routine::Call .Draw
+
+    !IO::PutCharLit '\n'
+    !RepeatLit 2 {
+        !Cpy GRID_PTR_1 p_current_grid
+        !Routine::Call .Draw
+
+        !IO::PutCharLit '\n'
+    }
+
+
+   ; !Cpy GRID_PTR_1 p_current_grid
+    ;!Routine::Call .Draw
     !Halt
 }

@@ -60,8 +60,8 @@ fn display(info: &Info, pc: usize, mem: &[u16], current_error: &Option<RuntimeEr
     let contents = get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
 
-    const UPPER_SIZE: i32 = 5;
-    const LOWER_SIZE: i32 = 5;
+    const UPPER_SIZE: i32 = 10;
+    const LOWER_SIZE: i32 = 10;
 
     // There is probably a cleaner way to do this
     let desired_start_line = info.line_number - 1 - UPPER_SIZE;

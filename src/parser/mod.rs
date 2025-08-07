@@ -17,17 +17,14 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let tokens = handle_assignments(&tokens);
 
     let tokens = grab_braced_label_definitions(tokens);
-    let (mut tokens, macros) = read_macros(tokens);
+    let (mut tokens, macros) = read_macros(&tokens);
     log::debug!("Found macros:");
     for i in &macros {
         println_debug!("{}", i.1);
     }
     println_debug!();
-    //println!("{}", tokens.len());
 
     tokens = insert_macros(tokens, &macros, vec![]);
-    //println!("{}", tokens.len());
-    //let  tokens = loop_insert_macros(tokens, &macros);
 
     log::debug!("Inserted macros:");
     for token in &tokens {
@@ -54,7 +51,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     println_debug!();
 
     let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
-
+    // From this point forwards, memory addresses are fixed.
     log::debug!("Fixed");
     for statement in &tokens {
         println_debug!("{:?}", statement);

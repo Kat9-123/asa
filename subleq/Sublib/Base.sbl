@@ -9,10 +9,12 @@
     W -= W  .address?
 ]
 
-@J _address? [!Jump _address?]
+@J .address? [
+    W -= W  .address?
+]
 
 @Clear a? [
-    a?      -= a?
+    a? -= a?
 ]
 @Clr a? [
     a? -= a?
@@ -60,10 +62,6 @@
 }
 
 
-@FFlip target? { .fin
-    !J target?
-    .fin ->
-}
 
 
 
@@ -73,15 +71,6 @@
     Z   -= b?
     a?  -= Z
 ]
-
-;@Assign value? target? [
-;    !Clr Z
-;
- ;   target? -= target?
- ;   Z       -= value?
- ;   target  -= Z
-;]
-
 
 
 
@@ -135,10 +124,19 @@
     name? -> 0
 ]
 **
+@Repeat times? s_body? {
+    i = times?
+    .loop ->
 
+        s_body?
 
+        i -= ONE .fin
+        W -= W .loop
 
-@Repeat l_times? body? {
+    .fin ->
+}
+
+@RepeatLit l_times? body? {
     !Cpy L_TIMES i
 
     .loop ->

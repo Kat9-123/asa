@@ -75,9 +75,7 @@
 }
 
 
-@If::Eq a? b? s_body? {
-    !_IfBase (!JumpIf::Eq a? b?) s_body?
-}
+@If::Eq a? b? s_body? { !_IfBase (!JumpIf::Eq a? b?) s_body? }
 
 @While::Neq a? b? s_body? {
     !_WhileBase (!JumpIf::Neq a? b?) s_body?
