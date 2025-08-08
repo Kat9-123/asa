@@ -32,10 +32,13 @@ fn main() {
     let (mut mem, tokens) = assembler::assemble(&contents, file_path);
     println!("Assembled in: {:.3?}", timer.elapsed());
     println!("Running...");
+
+    let timer = Instant::now();
     //  println!("{:?}", mem);
     //   mem_view::draw_mem(&mem, 0);
-    debugger::run_with_debugger(&mut mem, &tokens, true);
-    //let _result = interpreter::interpret(&mut mem, false).unwrap();
+    // debugger::run_with_debugger(&mut mem, &tokens, true);
+    let _result = interpreter::interpret(&mut mem, false).unwrap();
+    println!("Execution took: {:.3?}", timer.elapsed());
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
     //}

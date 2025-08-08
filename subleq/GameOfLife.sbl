@@ -1,35 +1,99 @@
+
 !J .main
 #Sublib
 #Sublib/Routines.sbl
 #Sublib/Control.sbl
 
+@GRID_SIZE_WITH_SURROUNDING [10404**(25 + 2)^2**]
+;@GRID_SIZE_WITH_SURROUNDING [729**(25 + 2)^2**]
 
+@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING]
 
+GRID_PTR_0 -> !MakeBuffer
 
-GRID_PTR_0 -> & 0  0 0 0  0
-                0  0 0 0  0  
-                0  0 1 1  0 
-                0  1 0 0  0
-                0  0 0 0  0
-
-GRID_PTR_1 ->&  0  0 0 0  0
-                0  1 1 0  0  
-                0  0 1 1  0 
-                0  0 1 0  0
-                0  0 0 0  0
+GRID_PTR_1 -> !MakeBuffer 
 
 buffer_selector -> 0
-p_current_grid -> GRID_PTR_0
+p_front_buffer -> 0;  GRID_PTR_0 is this legal?
+p_back_buffer -> 0; GRID_PTR_1 
+
+GRID_WIDTH -> 100
+GRID_HEIGHT -> 100
+
+TWO -> 2
+THREE -> 3
+**
+    target? += *p_pointer?
+**
+@DerefAndAdd p_pointer? target? {
+    !Clr Z
+    Z -= *p_pointer?
+    target? -= Z
+}
+
+@Set l_x? l_y? {
+    !J .
+    X -> l_x?
+    Y -> l_y?
+    . ->
+    index = GRID_PTR_0
+    !Add index GRID_WIDTH
+    !AddLit index 3
+    !Add index X
+
+    !Repeat Y {
+        !Add index GRID_WIDTH
+        !AddLit index 2
+    }
+
+    *index -= *index
+    *index -= N_ONE 
+
+}
+
+** Fix the notes issue
+@Set l_x? l_y? l_value? {
+    !J .
+    VAL -> l_value?
+    X -> l_x?
+    Y -> l_y?
+    . ->
+    index = GRID_PTR_0
+    !Add index GRID_WIDTH
+    !AddLit index 3
+    !Add index l_x?
+
+    !Repeat l_y? {
+        !Add index GRID_WIDTH
+        !AddLit index 2
+    }
+
+    *index -= *index
+    *index -= N_ONE 
+
+}**
 
 
-GRID_WIDTH -> 3
-GRID_HEIGHT -> 3
+@IterOverDoubleBuffer p_front_cell? p_back_cell? s_cell? s_line? {
+    !Add p_front_cell? GRID_WIDTH
+    !AddLit p_front_cell? 3
 
-.test -> {
-    p_cell = 0
-    neighbour_count = 0
-    n_neighbour = 0
-    n_neighbour -= *p_cell
+    !Add p_back_cell? GRID_WIDTH
+    !AddLit p_back_cell? 3 
+
+    !Repeat GRID_HEIGHT {
+        !Repeat GRID_WIDTH {
+
+            s_cell?
+
+            !Inc p_front_cell?
+            !Inc p_back_cell?
+        }
+        s_line?
+
+        !AddLit p_front_cell? 2
+        !AddLit p_back_cell? 2
+    }
 }
 
 @IterOverGrid p_cell? s_cell? s_line? {
@@ -47,8 +111,108 @@ GRID_HEIGHT -> 3
     }
 }
 
+!Routine::Def .GetNeighbours {
+    neighbour_count = 0
+    p_neighbour = 0
+    current_cell_state = 0
+
+    p_cell = p_front_buffer
+    p_back_cell = p_back_buffer
+
+
+    !IterOverDoubleBuffer p_cell p_back_cell {
+        !Clr neighbour_count
+        
+        !DerefAndCopy p_cell current_cell_state
+
+        ; Top-left
+        !Cpy p_cell p_neighbour
+        p_neighbour -= GRID_WIDTH
+        !SubLit p_neighbour 3
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Top-middle
+        !Cpy p_cell p_neighbour
+        p_neighbour -= GRID_WIDTH
+        !SubLit p_neighbour 2
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Top-right
+        !Cpy p_cell p_neighbour
+        p_neighbour -= GRID_WIDTH
+        !SubLit p_neighbour 1
+        !DerefAndAdd p_neighbour neighbour_count
+
+
+        ; Left
+        !Cpy p_cell p_neighbour
+        !Dec p_neighbour
+
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Right
+        !Cpy p_cell p_neighbour
+        !Inc p_neighbour
+
+
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Bottom-left
+        !Cpy p_cell p_neighbour
+        !Add p_neighbour GRID_WIDTH
+
+        !AddLit p_neighbour 1
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Bottom-middle
+        !Cpy p_cell p_neighbour
+        !Add p_neighbour GRID_WIDTH
+
+        !AddLit p_neighbour 2
+        !DerefAndAdd p_neighbour neighbour_count
+
+        ; Bottom-right
+        !Cpy p_cell p_neighbour
+        !Add p_neighbour GRID_WIDTH
+
+        !AddLit p_neighbour 3
+        !DerefAndAdd p_neighbour neighbour_count
+
+        *p_back_cell -= *p_back_cell
+        !IfElse current_cell_state {
+            ; Alive
+            ;!Debug neighbour_count
+            !If::Geq neighbour_count TWO {
+                !If::Leq neighbour_count THREE {
+                    *p_back_cell -= N_ONE
+                }
+            }
+        } {
+            ; Dead
+            !If::Eq neighbour_count THREE {
+                *p_back_cell -= N_ONE       
+            }
+        }
+
+
+
+    } {}
+}
+!Routine::Def .SwapBuffers {
+    !IfElse buffer_selector {
+        !Cpy GRID_PTR_0 p_front_buffer
+        !Cpy GRID_PTR_1 p_back_buffer
+        !Cpy FALSE buffer_selector
+    } {
+        !Cpy GRID_PTR_1 p_front_buffer
+        !Cpy GRID_PTR_0 p_back_buffer
+        !Cpy TRUE buffer_selector
+
+    }
+}
+
 !Routine::Def .Draw {
-    p_cell = p_current_grid
+    p_cell = p_front_buffer
     
     !IterOverGrid p_cell {
         n_cur = 0
@@ -57,32 +221,44 @@ GRID_HEIGHT -> 3
         n_cur -= *p_cell
         cur -= n_cur
         !IfElse cur {
-            !IO::PutCharLit '%'
+          ;  !IO::PutCharLit '%'
         } {
 
-            !IO::PutCharLit '.'
+          ; !IO::PutCharLit '.'
         }
     } {
-        !IO::PutCharLit '\n'
+       ; !IO::PutCharLit '\n'
 
     }
 
+   ;!IO::PutCharLit '\n'
 }
 
 .main -> {
-    !Cpy GRID_PTR_0 p_current_grid
-    !Routine::Call .Draw
 
-    !IO::PutCharLit '\n'
-    !RepeatLit 2 {
-        !Cpy GRID_PTR_1 p_current_grid
+   ; i = 0
+    !Cpy GRID_PTR_0 p_front_buffer
+    !Cpy GRID_PTR_1 p_back_buffer
+    !Set 54 54
+    !Set 55 54
+    !Set 55 55
+    !Set 56 55
+    !Set 55 56
+    **
+    !Set 0 0
+    !Set 1 1
+    !Set 2 1
+    !Set 0 2
+    !Set 1 2
+    **
+    !RepeatLit 100 {
         !Routine::Call .Draw
-
-        !IO::PutCharLit '\n'
+        !Routine::Call .GetNeighbours
+        !Routine::Call .SwapBuffers
+     ;   !Debug i
+       ; !Inc i
     }
 
-
-   ; !Cpy GRID_PTR_1 p_current_grid
-    ;!Routine::Call .Draw
     !Halt
+
 }

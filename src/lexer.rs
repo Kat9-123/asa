@@ -229,14 +229,16 @@ fn updated_context(
             ),
         },
         Context::MacroCall => match cur_char {
-            ' ' | '\n' => (
+            c if c.is_alphanumeric() || c == '_' || c == ':' => {
+                (Context::MacroCall, Some(cur_char), None)
+            }
+            _ => (
                 Context::DontConsume,
                 None,
                 Some(TokenVariant::MacroCall {
                     name: buffer.to_owned(),
                 }),
             ),
-            _ => (Context::MacroCall, Some(cur_char), None),
         },
         Context::Char => match cur_char {
             // Not great

@@ -1,6 +1,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use log::error;
+
+use crate::asm_error;
+use crate::feedback::terminate;
+
 /// Does some basic and safe sanitisation. It's fine to apply it multiple times.
 pub fn generic_sanitisation(text: &str) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")
@@ -46,7 +51,11 @@ pub fn include_imports(text: &str, currently_imported: &mut Vec<PathBuf>) -> Str
         }
         currently_imported.push(path.clone());
 
-        let contents = fs::read_to_string(&path).expect("Should have been able to read the file");
+        let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
+            error!("Couldn't include the file: '{:?}'", path);
+            terminate();
+            unreachable!()
+        });
         let contents = generic_sanitisation(&contents);
         let contents = include_imports(&contents, currently_imported);
 

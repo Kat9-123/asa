@@ -4,10 +4,9 @@ use std::fs;
 use std::hint::black_box;
 
 fn runtimes(c: &mut Criterion) {
-    let contents = fs::read_to_string("./subleq/Sublib/tests/JumpIfTest.sbl").unwrap();
+    let contents = fs::read_to_string("./subleq/GameOfLife.sbl").unwrap();
 
-    let (mut mem, toks) =
-        assembler::assemble(&contents, "./subleq/Sublib/tests/JumpIfTest.sbl".to_owned());
+    let (mut mem, toks) = assembler::assemble(&contents, "./subleq/GameOfLife.sbl".to_owned());
     c.bench_function("slow", |b| {
         b.iter(|| interpreter::interpret(&mut mem, black_box(false)))
     });

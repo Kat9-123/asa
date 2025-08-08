@@ -76,6 +76,10 @@
 
 
 @If::Eq a? b? s_body? { !_IfBase (!JumpIf::Eq a? b?) s_body? }
+@If::Geq a? b? s_body? { !_IfBase (!JumpIf::Geq a? b?) s_body? }
+@If::Leq a? b? s_body? { !_IfBase (!JumpIf::Leq a? b?) s_body? }
+
+
 
 @While::Neq a? b? s_body? {
     !_WhileBase (!JumpIf::Neq a? b?) s_body?
@@ -96,6 +100,8 @@
 @IfElse::Neq a? b? true? false? {
     !_IfElseBase (!JumpIf::Eq a? b? ) true? false?
 }
+
+
 @If::Ge a? b? s_body? [ !_IfBase (!JumpIf::Ge a? b?) s_body? ]
 
 

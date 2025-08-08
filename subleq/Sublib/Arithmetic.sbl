@@ -2,20 +2,20 @@
 
 
 
-@SubLit val? LIT? {
+@SubLit val? L_LIT? {
     val?      -= LITERAL_LBL
     !J            .fin
-    LITERAL_LBL -> LIT?
+    LITERAL_LBL -> L_LIT?
     .fin ->
 }
-@AddLit val? LIT? {
+@AddLit val? L_LIT? {
     n_val = 0
 
     n_val       -= LITERAL_LBL
     val?        -= n_val
     n_val       -= n_val             .fin
 
-    LITERAL_LBL -> LIT?
+    LITERAL_LBL -> L_LIT?
 
     .fin ->
 

@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["Sublib/tests/JumpIfTest.sbl", "-f", "note"],
+            "args": ["GameOfLife.sbl", "-f", "note"],
             "cwd": "${workspaceFolder}"
         },
         {

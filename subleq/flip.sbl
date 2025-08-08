@@ -1,12 +1,16 @@
+!J .main
+Z -> 0
+@Flip m_mac? .addr? {
+    m_mac? .contd
+    !J .addr?
 
-
-@SUB a? b? {
-    a? -= b?
+    .contd ->
+}
+@J .lbl? {
+    Z -= Z .lbl?
 }
 
 
-!SUB P Z &4
-
-P -> 1
-Z -> 0
-W -> 0
+.main -> 
+    !Flip ( !J ) .main
+    Z -= Z -1

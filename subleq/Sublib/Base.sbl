@@ -125,6 +125,7 @@
 ]
 **
 @Repeat times? s_body? {
+    times? -= ZERO .fin
     i = times?
     .loop ->
 
@@ -136,11 +137,11 @@
     .fin ->
 }
 
-@RepeatLit l_times? body? {
+@RepeatLit l_times? s_body? {
     !Cpy L_TIMES i
 
     .loop ->
-        body?
+        s_body?
 
         i -= ONE .fin
         W -= W .loop

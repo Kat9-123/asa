@@ -144,22 +144,25 @@ pub fn interpret_single(
 pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>, RuntimeError> {
     let mut pc: usize = 0;
     let mut buf = String::new();
+    let mut total_ran: u128 = 0;
     loop {
         let (new_pc, io_operation, _) = interpret_single(mem, pc)?;
         pc = new_pc;
+        total_ran += 1;
         match io_operation {
             IOOperation::Char(ch) => {
                 buf.push(ch);
                 print!("{ch}");
-                let _ = io::stdout().flush();
+                // let _ = io::stdout().flush();
             }
             IOOperation::Debug(ch) => {
                 let ch = ch.to_string();
                 buf.push_str(&ch);
                 println!("{ch}");
-                let _ = io::stdout().flush();
+                //   let _ = io::stdout().flush();
             }
             IOOperation::Halt => {
+                println!("{}", total_ran);
                 if return_output {
                     return Ok(Some(buf));
                 }
@@ -197,11 +200,11 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
         if b == 0xFFFF {
             result = mem[a];
             let ch = result as u8 as char;
-            //   print!("{ch}");
+            print!("{ch}");
         } else if b == 0xFFFE {
             result = mem[a];
-            // let ch = (result as i16).to_string();
-            // println!("{ch}");
+            let ch = (result as i16).to_string();
+            println!("{ch}");
         } else if a == 0xFFFF {
         } else {
             if a >= mem.len() {

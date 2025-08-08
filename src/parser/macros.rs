@@ -311,7 +311,7 @@ enum TokenOrTokenVec {
     TokVec(Vec<Token>),
 }
 
-fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argument_name: &str) {
+fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name: &str) {
     if args::exist() && args::get().disable_type_checking {
         return;
     }
@@ -325,7 +325,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
                         "Expected a SCOPE as argument {}",
                         asm_hint!("See the documentation for information on the typing system")
                     );
-                    asm_details!(label_to_replace_info, "Macro definition");
+                    asm_details!(argument_info, "Macro definition");
                 }
                 return;
             }
@@ -336,7 +336,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
                         "Expected a BRACED as argument {}",
                         asm_hint!("See the documentation for information on the typing system")
                     );
-                    asm_details!(label_to_replace_info, "Macro definition");
+                    asm_details!(argument_info, "Macro definition");
                 }
                 return;
             }
@@ -350,7 +350,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
                         "Expected a LITERAL as argument {}",
                         asm_hint!("See the documentation for information on the typing system")
                     );
-                    asm_details!(label_to_replace_info, "Macro definition");
+                    asm_details!(argument_info, "Macro definition");
                 }
                 return;
             }
@@ -367,7 +367,7 @@ fn macro_argument_type_check(label_to_replace_info: &Info, token: &Token, argume
             &token.variant,
             asm_hint!("See the documentation for information on the typing system")
         );
-        asm_details!(label_to_replace_info, "Argument in macro definition");
+        asm_details!(argument_info, "Argument in macro definition");
     }
 }
 /*
@@ -448,7 +448,14 @@ pub fn insert_macros(
                 if let TokenVariant::Linebreak = token.variant {
                     asm_error!(
                         &token.info,
-                        "A newline may not separate macro arguments. Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
+                        "Expected {} args, found {} {} {}
+                        ",
+                        current_macro_safe.params.len(),
+                        param_to_arg_map.len(),
+                        asm_hint!("A newline may not separate macro arguments."),
+                        asm_hint!(
+                            "Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
+                        )
                     );
                 }
                 macro_argument_type_check(parameter_info, token, parameter_name);

@@ -1,0 +1,6 @@
+@GRID_SIZE_WITH_SURROUNDING [144]
+
+@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING] 
+
+
+f -> !MakeBuffer
