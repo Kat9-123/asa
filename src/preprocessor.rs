@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 use log::error;
 
-use crate::asm_error;
 use crate::feedback::terminate;
 
 /// Does some basic and safe sanitisation. It's fine to apply it multiple times.

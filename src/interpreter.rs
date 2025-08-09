@@ -1,7 +1,4 @@
-use std::{
-    io::{self, Write},
-    num::Wrapping,
-};
+use std::num::Wrapping;
 
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;

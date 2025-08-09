@@ -1,7 +1,7 @@
 mod labels;
 mod literals;
 mod macros;
-pub mod other;
+mod other;
 
 use crate::parser::labels::*;
 use crate::parser::literals::*;

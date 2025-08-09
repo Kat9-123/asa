@@ -91,7 +91,6 @@ fn updated_context(
 
         Context::BlockComment => match cur_char {
             '*' => (Context::PossibleBlockCommentEnd, None, None),
-            '\n' => (Context::BlockComment, None, Some(TokenVariant::Linebreak)),
             _ => (Context::BlockComment, None, None),
         },
         Context::PossibleBlockCommentEnd => match cur_char {
@@ -196,13 +195,6 @@ fn updated_context(
             ),
         },
         Context::Label => match cur_char {
-            '\n' => (
-                Context::DontConsume,
-                None,
-                Some(TokenVariant::Label {
-                    name: buffer.to_owned(),
-                }),
-            ),
             c if c.is_alphanumeric() || c == '?' || c == '_' || c == ':' || c == '.' => {
                 (Context::Label, Some(cur_char), None)
             }

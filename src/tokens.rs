@@ -1,6 +1,4 @@
-use std::fmt;
-use std::fs::File;
-use std::io::prelude::*;
+use std::{fmt, fs::File, io::prelude::*};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LabelOffset {
@@ -74,30 +72,31 @@ pub enum TokenVariant {
 impl ToString for Token {
     // Required method
     fn to_string(&self) -> String {
+        use TokenVariant::*;
         match &self.variant {
-            TokenVariant::DecLiteral { value } => value.to_string(),
+            DecLiteral { value } => value.to_string(),
             TokenVariant::HexLiteral { value } => format!("0x{value}"),
-            TokenVariant::LabelArrow { .. } => "->".to_string(),
-            TokenVariant::Subleq => "-=".to_string(),
-            TokenVariant::Label { name } => name.clone(),
-            TokenVariant::LabelDefinition { name, offset } => format!("[{name} -{offset}>]"),
-            TokenVariant::Relative { offset } => format!("&{offset}"),
-            TokenVariant::Scope => "{".to_string(),
-            TokenVariant::Unscope => "}".to_string(),
-            TokenVariant::CharLiteral { value } => value.to_string(),
-            TokenVariant::StrLiteral { value } => value.clone(),
-            TokenVariant::MacroDeclaration { name } => format!("@{name}"),
-            TokenVariant::MacroBodyStart => "[".to_string(),
-            TokenVariant::MacroBodyEnd => "]".to_string(),
-            TokenVariant::MacroCall { name } => format!("!{name}"),
-            TokenVariant::Namespace { name } => format!("#{name}"),
-            TokenVariant::BraceOpen => "(".to_string(),
-            TokenVariant::BraceClose => ")".to_string(),
-            TokenVariant::Linebreak => "\n".to_string(),
-            TokenVariant::BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
-            TokenVariant::Asterisk => "*".to_string(),
-            TokenVariant::NamespaceEnd => "\\".to_string(),
-            TokenVariant::Equals => "=".to_string(),
+            LabelArrow { .. } => "->".to_string(),
+            Subleq => "-=".to_string(),
+            Label { name } => name.clone(),
+            LabelDefinition { name, offset } => format!("[{name} -{offset}>]"),
+            Relative { offset } => format!("&{offset}"),
+            Scope => "{".to_string(),
+            Unscope => "}".to_string(),
+            CharLiteral { value } => value.to_string(),
+            StrLiteral { value } => value.clone(),
+            MacroDeclaration { name } => format!("@{name}"),
+            MacroBodyStart => "[".to_string(),
+            MacroBodyEnd => "]".to_string(),
+            MacroCall { name } => format!("!{name}"),
+            Namespace { name } => format!("#{name}"),
+            BraceOpen => "(".to_string(),
+            BraceClose => ")".to_string(),
+            Linebreak => "\n".to_string(),
+            BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
+            Asterisk => "*".to_string(),
+            NamespaceEnd => "\\".to_string(),
+            Equals => "=".to_string(),
         }
     }
 }
@@ -146,15 +145,11 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
 }
 impl Token {
     pub fn size(&self) -> usize {
+        use TokenVariant::*;
         match self.variant {
-            TokenVariant::DecLiteral { .. }
-            | TokenVariant::Relative { .. }
-            | TokenVariant::Label { .. }
-            | TokenVariant::BracedLabelDefinition { .. } => 1,
+            DecLiteral { .. } | Relative { .. } | Label { .. } | BracedLabelDefinition { .. } => 1,
 
-            TokenVariant::HexLiteral { .. }
-            | TokenVariant::CharLiteral { .. }
-            | TokenVariant::StrLiteral { .. } => {
+            HexLiteral { .. } | CharLiteral { .. } | StrLiteral { .. } => {
                 unreachable!("These variants should already have been processed")
             }
 

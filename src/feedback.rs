@@ -1,11 +1,11 @@
 use colored::{Color, Colorize};
-
 use std::cell::RefCell;
-thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
-use crate::interpreter::RuntimeError;
-use crate::tokens::Token;
-use crate::{args, tokens::Info};
 use std::{fs, process::exit};
+
+use crate::interpreter::RuntimeError;
+use crate::{tokens::Info, tokens::Token};
+
+thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
 
 #[derive(PartialEq, Clone)]
 enum Type {

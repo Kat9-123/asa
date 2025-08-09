@@ -1,5 +1,6 @@
-use crate::{feedback::*, tokens::*};
 use unescape::unescape;
+
+use crate::{feedback::*, tokens::*};
 
 /// Convert character and hex literals into dec literals inplace
 pub fn char_and_hex_to_dec(tokens: &mut [Token]) {

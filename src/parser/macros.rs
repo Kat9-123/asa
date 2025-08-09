@@ -9,7 +9,6 @@ use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
-use std::thread::panicking;
 
 struct IterVec<'a, T> {
     vec: &'a Vec<T>,

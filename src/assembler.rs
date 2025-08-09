@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::tokens::Token;
 use crate::tokens::TokenVariant;
 use crate::{codegen, lexer, parser, preprocessor, print_debug, println_debug};
-use log::{debug, info};
+use log::debug;
 
 pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
     let mut currently_imported: Vec<PathBuf> = vec![Path::new(&path).to_path_buf()];
@@ -26,6 +26,5 @@ pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
 
     let tokens = parser::parse(tokens);
 
-    let result = codegen::generate(tokens);
-    result
+    codegen::generate(tokens)
 }
