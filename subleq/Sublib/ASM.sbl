@@ -50,3 +50,6 @@
     name? -= _ASM
 
 ]
+@ASM::Copy from? to? [
+
+]

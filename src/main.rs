@@ -41,7 +41,7 @@ fn main() {
     if args::get().debugger {
         debugger::run_with_debugger(&mut mem, &tokens, false);
     } else {
-        let _result = interpreter::interpret(&mut mem, false).unwrap();
+        interpreter::interpret(&mut mem, false).unwrap();
     }
     println!("Execution took: {:.3?}", timer.elapsed());
     //if let Err(e) = result {

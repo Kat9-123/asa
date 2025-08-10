@@ -9,6 +9,7 @@ use crate::tokens::*;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
+use std::thread::current;
 
 struct IterVec<'a, T> {
     vec: &'a Vec<T>,
@@ -199,6 +200,8 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                         if let TokenVariant::Linebreak = mac.body[0].variant {
                             mac.body.remove(0);
                         }
+                    }
+                    if !mac.body.is_empty() {
                         if let TokenVariant::Linebreak = mac.body[mac.body.len() - 1].variant {
                             mac.body.remove(mac.body.len() - 1);
                         }
@@ -397,7 +400,6 @@ pub fn insert_macros(
     let mut current_macro: Option<&Macro> = None;
     let mut param_to_arg_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
     let mut caller_info: Option<Info> = None;
-    let mut suffix: Vec<Token> = Vec::new();
     let mut cur_param_name: String = String::new();
     let mut tokens = IterVec::new(&tokens);
     while !tokens.finished() {
@@ -430,9 +432,7 @@ pub fn insert_macros(
                     let mut body =
                         generate_macro_body(current_macro_safe, macros, &param_to_arg_map, c);
                     new_tokens.append(&mut body);
-                    new_tokens.append(&mut suffix);
                     caller_info = None;
-                    suffix = Vec::new();
                     mode = Mode::Normal;
                     current_macro = None;
                     param_to_arg_map = HashMap::new();
@@ -447,8 +447,7 @@ pub fn insert_macros(
                 if let TokenVariant::Linebreak = token.variant {
                     asm_error!(
                         &token.info,
-                        "Expected {} args, found {} {} {}
-                        ",
+                        "Expected {} args, found {} {} {}",
                         current_macro_safe.params.len(),
                         param_to_arg_map.len(),
                         asm_hint!("A newline may not separate macro arguments."),
@@ -564,7 +563,6 @@ pub fn insert_macros(
         c.push(caller_info.unwrap());
         let mut body = generate_macro_body(current_macro_safe, macros, &param_to_arg_map, c);
         new_tokens.append(&mut body);
-        new_tokens.append(&mut suffix);
     }
 
     new_tokens
