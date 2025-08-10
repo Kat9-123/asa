@@ -24,9 +24,9 @@ impl ToString for OutType {
     // Required method
     fn to_string(&self) -> String {
         match self {
-            OutType::SBLX => ".sblx".to_owned(),
-            OutType::BIN => ".bin".to_owned(),
-            OutType::None => "No outfile".to_owned(),
+            OutType::SBLX => "sblx".to_owned(),
+            OutType::BIN => "bin".to_owned(),
+            OutType::None => "none".to_owned(),
         }
     }
 }
@@ -59,14 +59,12 @@ impl FeedbackLevel {
 pub struct Args {
     /// File to assemble
     pub target: String,
+
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
-    /// Debug mode
-    #[arg(long, default_value_t = true)]
-    assembler_debug_mode: bool,
 
     // Run with debugger
-    #[arg(long, default_value_t = false)]
+    #[arg(short, long, default_value_t = false)]
     pub debugger: bool,
     /// Root path. This is the path includes are resolved from.
     #[arg(long, default_value = "")]
@@ -79,10 +77,6 @@ pub struct Args {
     /// Out file type
     #[arg(long, default_value_t = OutType::None)]
     pub out_file_type: OutType,
-
-    /// Negate Subleq IO
-    #[arg(long, default_value_t = false)]
-    pub negate_io: bool,
 }
 
 pub fn get() -> &'static Args {
@@ -93,6 +87,6 @@ pub fn exist() -> bool {
     ARGS.get().is_some()
 }
 
-pub fn read() {
+pub fn parse() {
     ARGS.set(Args::parse()).expect("Could not read args");
 }

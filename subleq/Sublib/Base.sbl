@@ -88,6 +88,10 @@
     b? -= a? (p_local -> 0)
 }
 
+**
+
+    to? = *p_from?
+**
 @DerefAndCopy p_from? to? {
     !Clr to?
     !Clr Z

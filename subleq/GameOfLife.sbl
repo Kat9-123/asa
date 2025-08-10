@@ -9,19 +9,6 @@
 
 @MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING]
 
-GRID_PTR_0 -> !MakeBuffer
-
-GRID_PTR_1 -> !MakeBuffer 
-
-buffer_selector -> 0
-p_front_buffer -> 0;  GRID_PTR_0 is this legal?
-p_back_buffer -> 0; GRID_PTR_1 
-
-GRID_WIDTH -> 100
-GRID_HEIGHT -> 100
-
-TWO -> 2
-THREE -> 3
 **
     target? += *p_pointer?
 **
@@ -50,28 +37,6 @@ THREE -> 3
     *index -= N_ONE 
 
 }
-
-** Fix the notes issue
-@Set l_x? l_y? l_value? {
-    !J .
-    VAL -> l_value?
-    X -> l_x?
-    Y -> l_y?
-    . ->
-    index = GRID_PTR_0
-    !Add index GRID_WIDTH
-    !AddLit index 3
-    !Add index l_x?
-
-    !Repeat l_y? {
-        !Add index GRID_WIDTH
-        !AddLit index 2
-    }
-
-    *index -= *index
-    *index -= N_ONE 
-
-}**
 
 
 @IterOverDoubleBuffer p_front_cell? p_back_cell? s_cell? s_line? {
@@ -110,6 +75,46 @@ THREE -> 3
         s_line?
     }
 }
+
+
+GRID_PTR_0 -> !MakeBuffer
+
+GRID_PTR_1 -> !MakeBuffer 
+
+buffer_selector -> 0
+p_front_buffer -> 0;  GRID_PTR_0 is this legal?
+p_back_buffer -> 0; GRID_PTR_1 
+
+GRID_WIDTH -> 100
+GRID_HEIGHT -> 100
+
+TWO -> 2
+THREE -> 3
+
+
+** Fix the notes issue
+@Set l_x? l_y? l_value? {
+    !J .
+    VAL -> l_value?
+    X -> l_x?
+    Y -> l_y?
+    . ->
+    index = GRID_PTR_0
+    !Add index GRID_WIDTH
+    !AddLit index 3
+    !Add index l_x?
+
+    !Repeat l_y? {
+        !Add index GRID_WIDTH
+        !AddLit index 2
+    }
+
+    *index -= *index
+    *index -= N_ONE 
+
+}**
+
+
 
 !Routine::Def .GetNeighbours {
     neighbour_count = 0
@@ -213,7 +218,6 @@ THREE -> 3
 
 !Routine::Def .Draw {
     p_cell = p_front_buffer
-    
     !IterOverGrid p_cell {
         n_cur = 0
         cur = 0

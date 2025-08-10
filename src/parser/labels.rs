@@ -204,7 +204,6 @@ pub fn resolve_labels_and_relatives(
     *ID*ptr *ID*ptr &1
     ptr     _ASM    &1
     _ASM    *ID*ptr &1
-    a -= (*ID*ptr -> 0)
 */
 fn make_deref_instructions(
     info: &Info,

@@ -54,8 +54,8 @@ pub enum TokenVariant {
     MacroDeclaration { name: String },
     MacroBodyStart,
     MacroBodyEnd,
-
     MacroCall { name: String },
+
     Namespace { name: String },
 
     BraceOpen,
@@ -70,7 +70,7 @@ pub enum TokenVariant {
 }
 
 impl ToString for Token {
-    // Required method
+    /// Only really used for debugging
     fn to_string(&self) -> String {
         use TokenVariant::*;
         match &self.variant {
@@ -100,7 +100,7 @@ impl ToString for Token {
         }
     }
 }
-
+/// Used for debugging
 pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
     let mut buf: String = String::new();
     let mut tabs: String = String::new();

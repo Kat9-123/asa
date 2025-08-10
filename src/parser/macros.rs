@@ -61,7 +61,7 @@ impl fmt::Display for Macro {
     }
 }
 
-pub fn read_macros(tokens: &Vec<Token>) -> (Vec<Token>, HashMap<String, Macro>) {
+pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut macros: HashMap<String, Macro> = HashMap::new();
 

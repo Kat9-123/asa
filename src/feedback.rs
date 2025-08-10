@@ -5,7 +5,7 @@ use std::{fs, process::exit};
 use crate::interpreter::RuntimeError;
 use crate::{tokens::Info, tokens::Token};
 
-thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = RefCell::new(log::Level::Debug));
+thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = const { RefCell::new(log::Level::Debug) });
 
 #[derive(PartialEq, Clone)]
 enum Type {

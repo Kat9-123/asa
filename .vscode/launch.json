@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["GameOfLife.sbl", "-f", "debug"],
+            "args": ["GameOfLife.sbl", "-f", "note"],
             "cwd": "${workspaceFolder}"
         },
         {

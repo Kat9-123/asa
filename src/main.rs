@@ -9,12 +9,12 @@ use std::{
 use asa::{
     args, assembler,
     codegen::{from_bin, to_bin},
-    interpreter,
+    debugger, interpreter,
 };
 
 fn main() {
     SimpleLogger::new().init().unwrap();
-    args::read();
+    args::parse();
 
     log::set_max_level(args::get().feedback_level.to_log_level());
     //disable_raw_mode();
@@ -34,14 +34,15 @@ fn main() {
     println!("Assembled in: {:.3?}", timer.elapsed());
     println!("Running...");
 
-    //  println!("{:?}", mem);
-    //   mem_view::draw_mem(&mem, 0);
-    // debugger::run_with_debugger(&mut mem, &tokens, true);
     let mut file = File::create("test.bin").unwrap();
     let timer = Instant::now();
 
     file.write_all(&to_bin(&mem));
-    let _result = interpreter::interpret(&mut mem, false).unwrap();
+    if args::get().debugger {
+        debugger::run_with_debugger(&mut mem, &tokens, false);
+    } else {
+        let _result = interpreter::interpret(&mut mem, false).unwrap();
+    }
     println!("Execution took: {:.3?}", timer.elapsed());
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
