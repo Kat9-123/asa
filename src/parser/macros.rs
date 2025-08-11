@@ -289,7 +289,7 @@ fn generate_macro_body(
                         body.push(Token {
                             info: base_body_token.info.clone(),
                             variant: TokenVariant::Label { name },
-                            origin_info, // macro_trace: macro_trace
+                            origin_info,
                         });
                     }
                 }

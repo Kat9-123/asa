@@ -28,5 +28,5 @@ fn assembler(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, assembler, runtimes);
+criterion_group!(benches, assembler,);
 criterion_main!(benches);

@@ -119,9 +119,60 @@ a -> 0
 }
 !MyMacro a
 ; Is completely fine, and will become the following:
-?MyMacro?a -= a
-?MyMacro?a -> 123
+{
+    ?MyMacro?a -= a
+    ?MyMacro?a -> 123
+}
 ```
+
+#### Macro arguments
+You may pass scopes as macro arguments
+
+```clojure
+!Mac s_my_scope? {
+    s_my_scope?
+}
+
+
+!Mac { a -= b } ; =>
+{
+    { a -= b }
+}
+```
+If you don't want the argument to be surrounded by scopes, you can use braces
+
+```clojure
+@Mac b_my_braced? {
+    b_my_braced?
+}
+;
+
+!Mac ( a -= b ) ; =>
+{
+    a -= b
+}
+```
+This means that you can 'curry' macros (using that term loosely)
+```clojure
+@Mac b_some_macro? {
+    b_some_macro? 10
+    b_some_macro? 3
+}
+
+@CurriedMacro l_a? l_b? {
+    l_a? -= l_b?
+}
+;
+!Mac ( !CurriedMacro 5 ) ; =>
+{
+    {
+        5 -= 10
+        5 -= 3
+    }
+}
+
+```
+
 ### Pointers
 #### Referencing
 To create a pointer to a value
@@ -193,12 +244,13 @@ label label label
 
 0x123 * 0x4 ; =>
 0x123 0x123 0x123 0x123
-
 ```
 
+
+#### Assignment
+The '=' can be used to declare a label, and assign it a value.
+
 ### Advanced
-#### Macro 'currying'
-It is possible to 'curry' (using that term loosely) macros
 
 
 ### Sublib
