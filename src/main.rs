@@ -8,10 +8,10 @@ use std::{
 
 use asa::{
     args, assembler,
-    codegen::{from_bin, to_bin},
+    codegen::to_bin,
     debugger,
     feedback::asm_runtime_error,
-    interpreter::{self, RuntimeError},
+    interpreter::{self},
 };
 
 fn main() {

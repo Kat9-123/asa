@@ -1,6 +1,6 @@
 use colored::{Color, Colorize};
 use std::cell::RefCell;
-use std::{fs, process::exit};
+use std::fs;
 
 use crate::interpreter::RuntimeError;
 use crate::{tokens::Info, tokens::Token};

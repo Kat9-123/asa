@@ -43,6 +43,16 @@ pub enum IOOperation {
     None,
 }
 
+fn with_thousands(s: String) -> String {
+    s.as_bytes()
+        .rchunks(3)
+        .rev()
+        .map(std::str::from_utf8)
+        .collect::<Result<Vec<&str>, _>>()
+        .unwrap()
+        .join(",")
+}
+
 pub fn interpret_single(
     mem: &mut [u16],
     pc: usize,
@@ -79,7 +89,6 @@ pub fn interpret_single(
             KeyCode::Char(x) => x,
             _ => '\0',
         };
-        result = c as u16;
         mem[b] = c as u16;
     } else {
         if a >= mem.len() {
@@ -172,7 +181,7 @@ pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>,
                 //   let _ = io::stdout().flush();
             }
             IOOperation::Halt => {
-                println!("{}", total_ran);
+                // println!("\n{}", with_thousands(total_ran.to_string())); // separator);
                 if return_output {
                     return Ok(Some(buf));
                 }
@@ -186,25 +195,16 @@ pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>,
 }
 
 pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
+    let mut prev_pc: usize = 0xFFFF;
     let mut pc = 0;
     loop {
         // mem_view::draw_mem(&mem, pc);
-
-        let a = if pc < mem.len() {
-            mem[pc] as usize
-        } else {
-            return Err(RuntimeError::InstructionOutOfRange(pc));
-        };
-        let b = if pc + 1 < mem.len() {
-            mem[pc + 1] as usize
-        } else {
-            return Err(RuntimeError::InstructionOutOfRange(pc));
-        };
-        let c = if pc + 2 < mem.len() {
-            mem[pc + 2] as usize
-        } else {
-            return Err(RuntimeError::InstructionOutOfRange(pc));
-        };
+        if pc + 2 >= mem.len() {
+            return Err(RuntimeError::InstructionOutOfRange(prev_pc));
+        }
+        let a = mem[pc] as usize;
+        let b = mem[pc + 1] as usize;
+        let c = mem[pc + 2] as usize;
 
         let mut result: u16 = 0;
         if b == 0xFFFF {
@@ -226,7 +226,7 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;
         }
-
+        prev_pc = pc;
         if result as i16 <= 0 {
             //  println!("JUMP!");
             if c as i16 == IO_ADDR {

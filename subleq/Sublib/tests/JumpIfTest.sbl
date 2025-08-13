@@ -151,7 +151,6 @@ d -> 1233
 
     !JumpIf::Le SNEG SNEG .err
     
-    !IO::PrintLnLit "LE (basis) success"
 
     !JumpIf::Eq SNEG ZERO .err
 
@@ -171,7 +170,6 @@ d -> 1233
 
     .T7 ->
 
-    !IO::PrintLit "Success"
 
     !Halt
 **
