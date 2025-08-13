@@ -4,7 +4,7 @@
 ]
 
 @Not a? {
-    !J &2
+    !J $2
     result -> 0
 
     !RepeatLit 16 {

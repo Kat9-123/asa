@@ -1,12 +1,12 @@
 //! Converts a string into a vector of tokens.
 
-use colored::Colorize;
-use unescape::unescape;
-
+use crate::terminate;
 use crate::{
-    asm_error, asm_hint, preprocessor,
+    asm_error, asm_error_no_terminate, asm_hint, preprocessor,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
+use colored::Colorize;
+use unescape::unescape;
 
 #[derive(Debug, PartialEq, Eq)]
 enum Context {
@@ -67,8 +67,12 @@ fn updated_context(
 
             '(' => (Context::None, None, Some(TokenVariant::BraceOpen)),
             ')' => (Context::None, None, Some(TokenVariant::BraceClose)),
-            '&' => (Context::Relative, None, None),
-
+            '$' => (Context::Relative, None, None),
+            '&' => (
+                Context::None,
+                None,
+                Some(TokenVariant::Relative { offset: 1 }),
+            ),
             '\'' => (Context::Char, None, None),
             '"' => (Context::String, None, None),
 
@@ -76,11 +80,11 @@ fn updated_context(
             '!' => (Context::MacroCall, None, None),
             '#' => (Context::Namespace, None, None),
 
-            '?' => asm_error!(
-                info,
-                "Unexpected character {}",
-                asm_hint!("Labels may not start with a '?'")
-            ),
+            '?' => {
+                asm_error_no_terminate!(info, "Unexpected character");
+                asm_hint!("Labels may not start with a '?'");
+                terminate!();
+            }
             _ => asm_error!(info, "Unexpected character"),
         },
 
@@ -153,11 +157,14 @@ fn updated_context(
         Context::HexOrDec => match cur_char {
             'x' => (Context::Hex, None, None),
             c if c.is_ascii_digit() => (Context::Dec, Some(c), None),
-            c if c.is_ascii_alphabetic() => asm_error!(
-                info,
-                "Unexpected character when defining Hex or Dec literal {}",
-                asm_hint!("Labels may not start with a number")
-            ),
+            c if c.is_ascii_alphabetic() => {
+                asm_error_no_terminate!(
+                    info,
+                    "Unexpected character when defining Hex or Dec literal",
+                );
+                asm_hint!("Labels may not start with a number");
+                terminate!();
+            }
             _ => (
                 Context::DontConsume,
                 None,
@@ -272,19 +279,18 @@ fn updated_context(
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
             c => {
-                let mut offset = 1;
-                if !buffer.is_empty() {
-                    offset = buffer.parse::<i32>().unwrap();
+                let offset = if !buffer.is_empty() {
                     if c == 'x' && buffer.starts_with('0') {
-                        asm_error!(
-                            info,
-                            "& may not directly precede a hex number {}",
-                            asm_hint!(
-                                "Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"
-                            )
+                        asm_error_no_terminate!(info, "& may not directly precede a hex number",);
+                        asm_hint!(
+                            "Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"
                         );
+                        terminate!();
                     }
-                }
+                    buffer.parse::<i32>().unwrap()
+                } else {
+                    asm_error!(info, "Expected an offset",);
+                };
 
                 (
                     Context::DontConsume,

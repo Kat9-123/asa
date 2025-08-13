@@ -78,9 +78,9 @@ function_stack -> !Stack::Create 128
     cur_arg -> 0
     0xABCD
     ARG_BASE -> &s_args?
-    ARGS_END -> &0
+    ARGS_END -> $0
 
-    _return_address -> &1
+    _return_address -> $1
 }
 
 
@@ -92,7 +92,7 @@ function_stack -> !Stack::Create 128
 
 @Arg name? [
     !Stack::Pop function_stack name?
-    !J &2
+    !J $2
     name? -> 0
 ]
 

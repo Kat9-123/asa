@@ -17,7 +17,7 @@ return_stack -> !Stack::Create 32
 
     !J name?
 
-    _return_address -> &1
+    _return_address -> $1
 }
 
 

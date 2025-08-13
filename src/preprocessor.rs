@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use log::error;
 
-use crate::feedback::terminate;
+use crate::terminate;
 
 /// Does some basic and safe sanitisation. It's fine to apply it multiple times.
 pub fn generic_sanitisation(text: &str) -> String {
@@ -52,8 +52,7 @@ pub fn include_imports(text: &str, currently_imported: &mut Vec<PathBuf>) -> Str
 
         let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
             error!("Couldn't include the file: '{:?}'", path);
-            terminate();
-            unreachable!()
+            terminate!();
         });
         let contents = generic_sanitisation(&contents);
         let contents = include_imports(&contents, currently_imported);

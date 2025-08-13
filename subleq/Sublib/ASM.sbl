@@ -7,7 +7,7 @@
     name? = 0
 **
 @ASM::AssignZero name? [
-    name? -= name? &2
+    name? -= name? $2
     name? -> 0
 ]
 
@@ -16,7 +16,7 @@
 **
 @ASM::AssignLit name? L_LIT? [
     _ASM -= _ASM
-    name? -= name? &3
+    name? -= name? $3
     name? -> 0
     {
         n_lit -> L_LIT?
@@ -29,7 +29,7 @@
     name? = -L_N_LIT?
 **
 @ASM::AssignNLit name? L_N_LIT? [
-    name? -= name? &3
+    name? -= name? $3
     name? -> 0
     {
         n_lit -> L_N_LIT?
@@ -42,7 +42,7 @@
     name? = target?
 **
 @ASM::AssignLabel name? target? [
-    _ASM -= _ASM &2
+    _ASM -= _ASM $2
     name? -> 0
     name? -= name?
  

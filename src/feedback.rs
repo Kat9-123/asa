@@ -12,7 +12,8 @@ enum Type {
     Info,
     Warn,
     Error,
-    Instruction,
+    Trace,
+    Details,
 }
 impl Type {
     pub fn colour(&self) -> Color {
@@ -20,7 +21,8 @@ impl Type {
             Type::Info => Color::Blue,
             Type::Warn => Color::Yellow,
             Type::Error => Color::Red,
-            Type::Instruction => Color::Blue,
+            Type::Trace => Color::Blue,
+            Type::Details => Color::Blue,
         }
     }
 }
@@ -66,6 +68,16 @@ macro_rules! asm_details {
 }
 
 #[macro_export]
+macro_rules! asm_trace {
+    ($info:expr, $($arg:tt)*) => {
+
+        {
+            $crate::feedback::_asm_trace(format!($($arg)*), $info, file!(), line!());
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! asm_instruction {
     ($info:expr, $($arg:tt)*) => {
         {
@@ -74,8 +86,11 @@ macro_rules! asm_instruction {
     };
 }
 
-pub fn terminate() {
-    exit(1);
+#[macro_export]
+macro_rules! terminate {
+    () => {
+        panic!();
+    };
 }
 
 #[macro_export]
@@ -101,7 +116,7 @@ macro_rules! asm_warn {
 macro_rules! asm_hint {
     ($($arg:tt)*) => {
 
-        format!("\n     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white())
+        println!("     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
     };
 }
 #[macro_export]
@@ -140,29 +155,44 @@ pub fn _asm_error(msg: String, info: &Info, file_name: &str, line: u32) {
         info.start_char
     );
 
-    asm_msg(msg, info, Type::Error, false);
+    asm_msg(msg, info, Type::Error);
 }
 
-fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
+/* Example:
+    ERROR [asa::feedback] (src\feedback.rs:277) ./subleq/testing.sbl:52:10
+      50 |
+      51 | @mac a b {
+      52 >     a -= b
+         |          ~
+         - Address at 'A' is outside of memory bounds
+*/
+
+fn asm_msg(msg: String, info: &Info, msg_type: Type) {
     let contents = get_file_contents(&info.file);
     let lines = contents.lines().collect::<Vec<&str>>();
-    let prefix = if !sub_msg { "" } else { "     |" };
 
-    //  println!("{:?}",info);
+    let file_preview_prefix = match msg_type {
+        Type::Details => "     |",
+        Type::Trace => "     |",
+        _ => "",
+    };
+
+    // The lines above the target line
     for i in (2..4).rev() {
         if info.line_number - i >= 0 {
             println!(
                 "{}{: >4} | {}",
-                prefix,
+                file_preview_prefix,
                 format!("{}", info.line_number - (i - 1)).bright_cyan(),
                 lines[(info.line_number - i) as usize]
             );
         }
     }
 
+    // The target line
     let fmt = format!(
         "{}{: >4}{}{}",
-        prefix,
+        file_preview_prefix,
         format!("{}", info.line_number).color(msg_type.colour()),
         " > ".color(msg_type.colour()),
         lines[(info.line_number - 1) as usize]
@@ -173,40 +203,43 @@ fn asm_msg(msg: String, info: &Info, msg_type: Type, sub_msg: bool) {
         println!("{fmt}");
     }
 
-    if msg_type == Type::Instruction && info.line_number + 1 < lines.len() as i32 {
-        println!(
-            "{}{: >4} | {}",
-            prefix,
-            format!("{}", info.line_number + 1).bright_cyan(),
-            lines[(info.line_number) as usize]
-        );
-    }
+    // Squiggly line
     let start = info.start_char;
     let mut length = info.length;
     if length == 0 {
         length = 1;
     }
-    let prefix = if !sub_msg { "     | " } else { "     |     | " };
+    let prefix = match msg_type {
+        Type::Details => "     |     | ",
+        Type::Trace => "     |     | ",
+        _ => "     | ",
+    };
+    print!("{prefix}");
 
-    if msg_type != Type::Instruction {
-        print!("{prefix}");
+    for _ in 0..start - 1 {
+        print!(" ");
+    }
+    for _ in 0..length {
+        print!("{}", "~".color(msg_type.colour()));
+    }
+    println!();
 
-        for _ in 0..start - 1 {
-            print!(" ");
-        }
-        for _ in 0..length {
-            print!("{}", "~".color(msg_type.colour()));
-        }
-        println!();
+    if msg_type == Type::Trace {
+        return;
     }
 
-    let prefix = if !sub_msg { "     - " } else { "     |     - " };
+    // Message
+    let prefix = match msg_type {
+        Type::Details => "     |     - ",
+        _ => "     - ",
+    };
 
     match msg_type {
         Type::Error => println!("{}{}", prefix, msg.red()),
-        Type::Warn => println!("{}{}", prefix, msg.bold().yellow()),
+        Type::Warn => println!("{}{}", prefix, msg.yellow()),
         Type::Info => println!("{}{}", prefix, msg.bold()),
-        Type::Instruction => println!("{}{}", prefix, msg.bold()),
+        Type::Trace => println!("{}{}", prefix, msg.bold()),
+        Type::Details => println!("{}{}", prefix, msg.bold()),
     }
 }
 
@@ -223,7 +256,7 @@ pub fn _asm_warning(msg: String, info: &Info, file_name: &str, line: u32) {
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::Warn, false);
+    asm_msg(msg, info, Type::Warn);
 }
 
 pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
@@ -241,31 +274,35 @@ pub fn _asm_info(msg: String, info: &Info, file_name: &str, line: u32) {
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::Info, false);
+    asm_msg(msg, info, Type::Info);
 }
 
 pub fn asm_runtime_error(e: RuntimeError, tokens: &[Token]) {
     match e {
         RuntimeError::InstructionOutOfRange(pc) => {
             asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");
-            asm_details!(&tokens[pc].info, "'A' part");
-            asm_details!(&tokens[pc + 1].info, "'B' part");
+            for i in tokens[pc + 2].origin_info.iter().rev().skip(1) {
+                asm_trace!(i, "");
+            }
         }
         RuntimeError::AOutOfRange(pc) => {
-            asm_error_no_terminate!(
-                &tokens[pc].info,
-                "Address at 'A' is outside of memory bounds"
-            );
-            asm_details!(&tokens[pc + 1].info, "'B' part");
-            asm_details!(&tokens[pc + 2].info, "'C' part");
+            let info = &tokens[pc]
+                .origin_info
+                .last()
+                .unwrap_or_else(|| &tokens[pc].info);
+            asm_error_no_terminate!(info, "Address at 'A' is outside of memory bounds");
+            for i in tokens[pc].origin_info.iter().rev().skip(1) {
+                asm_trace!(i, "");
+            }
         }
         RuntimeError::BOutOfRange(pc) => {
             asm_error_no_terminate!(
                 &tokens[pc + 1].info,
                 "Address at 'B' is outside of memory bounds"
             );
-            asm_details!(&tokens[pc].info, "'A' part");
-            asm_details!(&tokens[pc + 2].info, "'C' part");
+            for i in tokens[pc + 1].origin_info.iter().rev().skip(1) {
+                asm_trace!(i, "");
+            }
         }
     }
 }
@@ -286,18 +323,24 @@ pub fn _asm_details(msg: String, info: &Info, file_name: &str, line: u32) {
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::Info, true);
+    asm_msg(msg, info, Type::Details);
 }
 
-pub fn _asm_instruction(msg: String, info: &Info, file_name: &str, line: u32) {
-    println!();
+pub fn _asm_trace(msg: String, info: &Info, file_name: &str, line: u32) {
+    if FEEDBACK_TYPE.with(|cell| {
+        let t = cell.borrow();
 
+        log::max_level() < *t
+    }) {
+        return;
+    }
+    println!("     |");
     println!(
-        "{} ({file_name}:{line}) {}:{}:{}",
-        "Instruction".blue(),
+        "     + {} ({file_name}:{line}) {}:{}:{}",
+        "Trace".blue(),
         info.file,
         info.line_number,
         info.start_char
     );
-    asm_msg(msg, info, Type::Instruction, false);
+    asm_msg(msg, info, Type::Trace);
 }

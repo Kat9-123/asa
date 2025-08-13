@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
 use crate::asm_details;
+use crate::asm_error_no_terminate;
 use crate::asm_hint;
 use crate::feedback::*;
+use crate::terminate;
 use crate::tokens;
 use crate::tokens::*;
 use colored::Colorize;
+use crossterm::terminal;
 
 /// Labels may be defined inside of instructions using the following syntax:
 /// (label -> 0). This routine converts these definitions into single tokens
@@ -132,16 +135,14 @@ pub fn resolve_labels_and_relatives(
             }
         }
         if name == "_ASM" {
-            asm_error!(
-                info,
-                "No definition for label '{name}' found {}{}",
-                asm_hint!(
-                    "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
-                ),
-                asm_hint!(
-                    "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
-                )
+            asm_error_no_terminate!(info, "No definition for label '{name}' found",);
+            asm_hint!(
+                "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
             );
+            asm_hint!(
+                "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
+            );
+            terminate!();
         }
         asm_error!(info, "No definition for label '{name}' found");
     }

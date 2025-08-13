@@ -9,7 +9,9 @@ use std::{
 use asa::{
     args, assembler,
     codegen::{from_bin, to_bin},
-    debugger, interpreter,
+    debugger,
+    feedback::asm_runtime_error,
+    interpreter::{self, RuntimeError},
 };
 
 fn main() {
@@ -31,7 +33,13 @@ fn main() {
 
     let timer = Instant::now();
     let (mut mem, tokens) = assembler::assemble(&contents, file_path);
-    println!("Assembled in: {:.3?}", timer.elapsed());
+    println!("\nAssembled in: {:.3?}", timer.elapsed());
+    println!(
+        "Size: {}/{}, {:.4}%",
+        mem.len(),
+        0xFFFF,
+        (mem.len() as f32 / 0xFFFF as f32) * 100f32
+    );
     println!("Running...");
 
     let mut file = File::create("test.bin").unwrap();
@@ -41,9 +49,13 @@ fn main() {
     if args::get().debugger {
         debugger::run_with_debugger(&mut mem, &tokens, false);
     } else {
-        interpreter::interpret(&mut mem, false).unwrap();
+        let result = interpreter::interpret(&mut mem, false);
+        match result {
+            Err(e) => asm_runtime_error(e, &tokens),
+            _ => {}
+        }
     }
-    println!("Execution took: {:.3?}", timer.elapsed());
+    println!("\nExecution took: {:.3?}\n", timer.elapsed());
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
     //}

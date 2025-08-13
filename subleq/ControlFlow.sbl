@@ -35,6 +35,7 @@ TEST -> 0
 .main->{
     !IfElse::Eq x y {
         !IO::PrintLnLit "EQ"
+
     } {
         !IO::PrintLnLit "NEQ"
     }

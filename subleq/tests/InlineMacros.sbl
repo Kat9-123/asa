@@ -18,7 +18,7 @@
 ]
 
 
-!Test3 a b &2
+!Test3 a b $2
 0xBEEF
 !Test1 a b
 !Test2 a b

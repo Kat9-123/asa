@@ -52,7 +52,7 @@
 ]
 
 @CopyLit L_FROM? to? {
-    Z -= Z &2
+    Z -= Z $2
     from -> L_FROM?
     !Clr to?
     Z   -= from
@@ -101,13 +101,13 @@
 }
 
 @AssignZero name? [
-    name? -= name? &2
+    name? -= name? $2
     name? -> 0
 ]
 
 
 @AssignLabel name? label? [
-    Z -= Z &2
+    Z -= Z $2
     name? -> 0
     !Clr name?
 

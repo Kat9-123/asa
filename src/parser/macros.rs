@@ -1,12 +1,15 @@
 use crate::args;
 use crate::asm_details;
+use crate::asm_error_no_terminate;
 use crate::asm_hint;
 use crate::asm_info;
 use crate::feedback::*;
 use crate::symbols;
+use crate::terminate;
 use crate::tokens::*;
 
 use colored::Colorize;
+use crossterm::terminal;
 use std::collections::HashMap;
 use std::fmt;
 use std::thread::current;
@@ -117,9 +120,9 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                     if !name.ends_with('?') {
                         asm_info!(
                             &token.info,
-                            "Notate macro parameters with a trailing question mark {}",
-                            asm_hint!("'{name}' -> '{name}?'")
+                            "Notate macro parameters with a trailing question mark ",
                         );
+                        asm_hint!("'{name}' -> '{name}?'");
                     }
                 }
                 TokenVariant::MacroBodyStart => {
@@ -153,9 +156,9 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                         if !name.ends_with('?') {
                             asm_warn!(
                                 &token.info,
-                                "Label definitions in non-scoped macros are very dangerous, though it is acceptable if the label being defined is a macro parameter {}",
-                                asm_hint!("Use '{{' and '}}' instead of '[' and ']'")
+                                "Label definitions in non-scoped macros are very dangerous, though it is acceptable if the label being defined is a macro parameter",
                             );
+                            asm_hint!("Use '{{' and '}}' instead of '[' and ']'");
                         }
                     }
                 }
@@ -314,6 +317,12 @@ enum TokenOrTokenVec {
 }
 
 fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name: &str) {
+    fn wrong_type(tok_info: &Info, arg_info: &Info, expected: &str) {
+        asm_info!(tok_info, "Expected a '{}' as argument ", expected);
+        asm_hint!("See the documentation for information on the typing system");
+        asm_details!(arg_info, "Macro definition");
+    }
+
     if args::exist() && args::get().disable_type_checking {
         return;
     }
@@ -322,23 +331,13 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
         match &lower[..2] {
             symbols::SCOPE_TYPE_PREFIX => {
                 if !matches!(token.variant, TokenVariant::Scope) {
-                    asm_info!(
-                        &token.info,
-                        "Expected a SCOPE as argument {}",
-                        asm_hint!("See the documentation for information on the typing system")
-                    );
-                    asm_details!(argument_info, "Macro definition");
+                    wrong_type(&token.info, argument_info, "scope");
                 }
                 return;
             }
             symbols::MACRO_TYPE_PREFIX => {
                 if !matches!(token.variant, TokenVariant::BraceOpen) {
-                    asm_info!(
-                        &token.info,
-                        "Expected a BRACED as argument {}",
-                        asm_hint!("See the documentation for information on the typing system")
-                    );
-                    asm_details!(argument_info, "Macro definition");
+                    wrong_type(&token.info, argument_info, "braced");
                 }
                 return;
             }
@@ -347,12 +346,7 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
                     token.variant,
                     TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. }
                 ) {
-                    asm_info!(
-                        &token.info,
-                        "Expected a LITERAL as argument {}",
-                        asm_hint!("See the documentation for information on the typing system")
-                    );
-                    asm_details!(argument_info, "Macro definition");
+                    wrong_type(&token.info, argument_info, "literal");
                 }
                 return;
             }
@@ -363,13 +357,7 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
         }
     }
     if !matches!(token.variant, TokenVariant::Label { .. }) {
-        asm_info!(
-            &token.info,
-            "Expected a LABEL as argument, found {:?} {}",
-            &token.variant,
-            asm_hint!("See the documentation for information on the typing system")
-        );
-        asm_details!(argument_info, "Argument in macro definition");
+        wrong_type(&token.info, argument_info, "label");
     }
 }
 /*
@@ -445,16 +433,17 @@ pub fn insert_macros(
                     &current_macro_safe.params[param_to_arg_map.len()];
 
                 if let TokenVariant::Linebreak = token.variant {
-                    asm_error!(
+                    asm_error_no_terminate!(
                         &token.info,
-                        "Expected {} args, found {} {} {}",
+                        "Expected {} args, found {}",
                         current_macro_safe.params.len(),
                         param_to_arg_map.len(),
-                        asm_hint!("A newline may not separate macro arguments."),
-                        asm_hint!(
-                            "Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
-                        )
                     );
+                    asm_hint!("A newline may not separate macro arguments.");
+                    asm_hint!(
+                        "Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
+                    );
+                    terminate!();
                 }
                 macro_argument_type_check(parameter_info, token, parameter_name);
 
@@ -466,13 +455,11 @@ pub fn insert_macros(
                     continue;
                 }
                 if TokenVariant::Unscope == token.variant {
-                    asm_error!(
-                        &token.info,
-                        "Unexpected token{}",
-                        asm_hint!(
-                            "If you want to pass a macro as an argument, you must surround it with '(' and ')' instead of '{{' and '}}'"
-                        )
+                    asm_error_no_terminate!(&token.info, "Unexpected token",);
+                    asm_hint!(
+                        "If you want to pass a macro as an argument, you must surround it with '(' and ')' instead of '{{' and '}}'"
                     );
+                    terminate!();
                 }
 
                 if let TokenVariant::BraceOpen = token.variant {

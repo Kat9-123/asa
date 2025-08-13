@@ -1,5 +1,9 @@
 use std::num::Wrapping;
 
+use crossterm::event::KeyCode;
+
+use crate::debugger::get_key;
+
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
 const PERF_ADDR: i16 = -3;
@@ -42,21 +46,22 @@ pub enum IOOperation {
 pub fn interpret_single(
     mem: &mut [u16],
     pc: usize,
+    prev_pc: usize,
 ) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
     let a = if pc < mem.len() {
         mem[pc] as usize
     } else {
-        return Err(RuntimeError::InstructionOutOfRange(pc));
+        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
     };
     let b = if pc + 1 < mem.len() {
         mem[pc + 1] as usize
     } else {
-        return Err(RuntimeError::InstructionOutOfRange(pc));
+        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
     };
     let c = if pc + 2 < mem.len() {
         mem[pc + 2] as usize
     } else {
-        return Err(RuntimeError::InstructionOutOfRange(pc));
+        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
     };
 
     let mut original_value_at_b = 0;
@@ -70,6 +75,12 @@ pub fn interpret_single(
         result = mem[a];
         io = IOOperation::Debug(result);
     } else if a == 0xFFFF {
+        let c = match get_key() {
+            KeyCode::Char(x) => x,
+            _ => '\0',
+        };
+        result = c as u16;
+        mem[b] = c as u16;
     } else {
         if a >= mem.len() {
             return Err(RuntimeError::AOutOfRange(pc));
@@ -142,8 +153,10 @@ pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>,
     let mut pc: usize = 0;
     let mut buf = String::new();
     let mut total_ran: u128 = 0;
+    let mut prev_pc: usize = 0xFFFF;
     loop {
-        let (new_pc, io_operation, _) = interpret_single(mem, pc)?;
+        let (new_pc, io_operation, _) = interpret_single(mem, pc, prev_pc)?;
+        prev_pc = pc;
         pc = new_pc;
         total_ran += 1;
         match io_operation {

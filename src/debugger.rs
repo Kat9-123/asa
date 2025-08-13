@@ -126,7 +126,7 @@ fn display(info: &Info, pc: usize, mem: &[u16], current_error: &Option<RuntimeEr
     );
 }
 
-fn user_input() -> KeyCode {
+pub fn get_key() -> KeyCode {
     loop {
         if let Event::Key(event) = read().unwrap() {
             if event.kind == KeyEventKind::Press {
@@ -137,7 +137,7 @@ fn user_input() -> KeyCode {
 }
 
 pub fn run_with_debugger(mem: &mut [u16], tokens: &[Token], in_debugging_mode: bool) {
-    debug(mem, tokens, in_debugging_mode, user_input);
+    debug(mem, tokens, in_debugging_mode, get_key);
 }
 
 fn debug<T: FnMut() -> KeyCode>(
@@ -251,7 +251,7 @@ fn debug<T: FnMut() -> KeyCode>(
         }
 
         if current_error.is_none() {
-            let result = interpreter::interpret_single(mem, pc);
+            let result = interpreter::interpret_single(mem, pc, 0);
             let result = match result {
                 Ok(e) => e,
                 Err(e) => {
