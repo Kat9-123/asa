@@ -1,4 +1,5 @@
 use crate::interpreter::RuntimeError;
+use crate::lexer;
 use crate::{
     interpreter::{self, IOOperation, InstructionHistoryItem},
     mem_view,
@@ -50,14 +51,17 @@ fn address_to_string(addr: u16, mem: &[u16], data_type: DataType) -> String {
     }
 }
 
-fn get_file_contents(path: &String) -> String {
-    fs::read_to_string(path).expect("Should have been able to read the file")
+fn get_file_contents(index: usize) -> String {
+    fs::read_to_string(lexer::FILES.with_borrow(|v| v[index].clone()))
+        .expect("Should have been able to read the file")
 }
+
 fn display(info: &Info, pc: usize, mem: &[u16], current_error: &Option<RuntimeError>) {
-    if info.file.is_empty() {
+    if lexer::FILES.with_borrow(|f| f.is_empty()) {
         return;
     }
-    let contents = get_file_contents(&info.file);
+    let contents = get_file_contents(info.file);
+
     let lines = contents.lines().collect::<Vec<&str>>();
 
     const UPPER_SIZE: i32 = 10;

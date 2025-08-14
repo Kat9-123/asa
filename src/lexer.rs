@@ -1,12 +1,23 @@
 //! Converts a string into a vector of tokens.
 
+use std::cell::RefCell;
+use std::ops::Index;
+
 use crate::terminate;
 use crate::{
     asm_error, asm_error_no_terminate, asm_hint, preprocessor,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 use colored::Colorize;
+
+use once_cell::sync::Lazy;
 use unescape::unescape;
+
+use std::sync::{LazyLock, Mutex, RwLock};
+
+thread_local! {
+    pub static FILES: RefCell<Vec<String>> = RefCell::new(vec![]);
+}
 
 #[derive(Debug, PartialEq, Eq)]
 enum Context {
@@ -36,6 +47,12 @@ enum Context {
     PossibleBlockCommentEnd,
 }
 
+fn is_valid_macro_name(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == ':'
+}
+fn is_valid_label_name(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == ':' || c == '?' || c == '.'
+}
 fn updated_context(
     context: &Context,
     buffer: &str,
@@ -95,6 +112,7 @@ fn updated_context(
 
         Context::BlockComment => match cur_char {
             '*' => (Context::PossibleBlockCommentEnd, None, None),
+            '\n' => (Context::BlockComment, None, Some(TokenVariant::Linebreak)),
             _ => (Context::BlockComment, None, None),
         },
         Context::PossibleBlockCommentEnd => match cur_char {
@@ -202,9 +220,7 @@ fn updated_context(
             ),
         },
         Context::Label => match cur_char {
-            c if c.is_alphanumeric() || c == '?' || c == '_' || c == ':' || c == '.' => {
-                (Context::Label, Some(cur_char), None)
-            }
+            c if is_valid_label_name(c) => (Context::Label, Some(cur_char), None),
             _ => (
                 Context::DontConsume,
                 None,
@@ -215,9 +231,7 @@ fn updated_context(
         },
 
         Context::MacroDeclaration => match cur_char {
-            c if c.is_alphanumeric() || c == '_' || c == ':' => {
-                (Context::MacroDeclaration, Some(cur_char), None)
-            }
+            c if is_valid_macro_name(c) => (Context::MacroDeclaration, Some(cur_char), None),
 
             _ => (
                 Context::DontConsume,
@@ -228,9 +242,7 @@ fn updated_context(
             ),
         },
         Context::MacroCall => match cur_char {
-            c if c.is_alphanumeric() || c == '_' || c == ':' => {
-                (Context::MacroCall, Some(cur_char), None)
-            }
+            c if is_valid_macro_name(c) => (Context::MacroCall, Some(cur_char), None),
             _ => (
                 Context::DontConsume,
                 None,
@@ -281,11 +293,7 @@ fn updated_context(
             c => {
                 let offset = if !buffer.is_empty() {
                     if c == 'x' && buffer.starts_with('0') {
-                        asm_error_no_terminate!(info, "& may not directly precede a hex number",);
-                        asm_hint!(
-                            "Place a space in between & and the Hex number. '&0x...' -> '& 0x...'"
-                        );
-                        terminate!();
+                        asm_error!(info, "Hex numbers may not be used as relative offsets");
                     }
                     buffer.parse::<i32>().unwrap()
                 } else {
@@ -303,12 +311,14 @@ fn updated_context(
 }
 
 pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
+    let mut result_tokens: Vec<Token> = Vec::new();
+
     text = preprocessor::generic_sanitisation(&text);
     text.push('\n'); // Little hack
 
-    let mut name_space_stack: Vec<String> = vec![path.clone()];
+    let mut name_space_stack: Vec<usize> = vec![0];
+    FILES.set(vec![path.clone()]);
     let mut line_number_stack: Vec<i32> = Vec::new();
-    let mut result_tokens: Vec<Token> = Vec::new();
 
     let mut context: Context = Context::None;
     let mut buffer: String = String::new();
@@ -316,8 +326,8 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
         start_char: 0,
         length: 0,
         line_number: 1,
-        file: path,
-        append_to_sourceline: None,
+        file: 0,
+        sourceline_suffix: None,
     };
     let mut idx_in_line = 0;
     for c in text.chars() {
@@ -337,27 +347,34 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
             if let Some(var) = &variant_to_add {
                 match &var {
                     TokenVariant::Namespace { name } => {
-                        name_space_stack.push(name.clone());
+                        let idx = FILES.with_borrow_mut(|files| {
+                            files.iter().position(|r| r == name).unwrap_or_else(|| {
+                                files.push(name.clone());
+                                files.len() - 1
+                            })
+                        });
+
+                        name_space_stack.push(idx);
                         line_number_stack.push(info.line_number);
                         info.line_number = 0;
-                        info.file = name.clone();
+                        info.file = idx;
                     }
                     TokenVariant::NamespaceEnd => {
                         name_space_stack.pop();
-                        info.file = name_space_stack
-                            .last()
-                            .expect("Unmatched namespace symbol")
-                            .clone();
+                        info.file = *name_space_stack.last().expect("Unmatched namespace symbol");
                         info.line_number = line_number_stack.pop().unwrap();
                     }
                     _ => {}
                 }
+
+                if context == Context::None {
+                    info.length += 1;
+                }
                 let token = Token {
                     info: info.clone(),
                     variant: var.clone(),
-                    origin_info: vec![], //macro_trace: None,
+                    origin_info: vec![],
                 };
-                //   println!("{:?} {:?}", token, token.info);\
 
                 // Consecutive newlines do not carry any information
                 if let Some(x) = result_tokens.last() {

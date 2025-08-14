@@ -177,7 +177,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                 let mut updated_info = tokens[i + 2].info.clone();
                 updated_info.start_char += updated_info.length + 2;
                 updated_info.length = 2;
-                updated_info.append_to_sourceline = Some("&1".to_string());
+                updated_info.sourceline_suffix = Some("$1".to_string());
 
                 // Flip b and a
                 new_tokens.push(tokens[i + 2].clone());

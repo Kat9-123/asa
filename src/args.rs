@@ -58,7 +58,7 @@ impl FeedbackLevel {
 #[command(version, about, long_about = None)]
 pub struct Args {
     /// File to assemble
-    pub target: String,
+    pub target: Option<String>,
 
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,

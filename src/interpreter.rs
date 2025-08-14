@@ -58,21 +58,13 @@ pub fn interpret_single(
     pc: usize,
     prev_pc: usize,
 ) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
-    let a = if pc < mem.len() {
-        mem[pc] as usize
-    } else {
+    if pc + 2 >= mem.len() {
         return Err(RuntimeError::InstructionOutOfRange(prev_pc));
-    };
-    let b = if pc + 1 < mem.len() {
-        mem[pc + 1] as usize
-    } else {
-        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
-    };
-    let c = if pc + 2 < mem.len() {
-        mem[pc + 2] as usize
-    } else {
-        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
-    };
+    }
+
+    let a = mem[pc] as usize;
+    let b = mem[pc + 1] as usize;
+    let c = mem[pc + 2] as usize;
 
     let mut original_value_at_b = 0;
 
@@ -216,6 +208,11 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
             let ch = (result as i16).to_string();
             println!("{ch}");
         } else if a == 0xFFFF {
+            let c = match get_key() {
+                KeyCode::Char(x) => x,
+                _ => '\0',
+            };
+            mem[b] = c as u16;
         } else {
             if a >= mem.len() {
                 return Err(RuntimeError::AOutOfRange(pc));

@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["sublib/tests/jumpiftest.sbl", "-f", "note"],
+            "args": ["Sublib/tests/ControlTest.sbl", "-f", "note"],
             "cwd": "${workspaceFolder}"
         },
         {

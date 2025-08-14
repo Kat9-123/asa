@@ -11,8 +11,8 @@ pub struct Info {
     pub start_char: i32,
     pub length: i32,
     pub line_number: i32,
-    pub file: String,
-    pub append_to_sourceline: Option<String>,
+    pub file: usize,
+    pub sourceline_suffix: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -135,8 +135,8 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
                 start_char: x.0,
                 length: 0,
                 line_number: 0,
-                file: String::new(),
-                append_to_sourceline: None,
+                file: 0,
+                sourceline_suffix: None,
             },
             variant: x.1.clone(),
             origin_info: Default::default(),

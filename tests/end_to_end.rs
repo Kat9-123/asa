@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use log::{LevelFilter, info};
 use simple_logger::SimpleLogger;
 
-use asa::*;
+use asa::{feedback::asm_runtime_error, *};
 
 fn test_at_path(path: &str) {
     let paths = fs::read_dir(path).unwrap();
@@ -19,7 +19,7 @@ fn test_at_path(path: &str) {
         info!("Name: {}", p);
 
         let contents = fs::read_to_string(&p).unwrap();
-        let (mut mem, _tokens) = assembler::assemble(&contents, p.to_string());
+        let (mut mem, tokens) = assembler::assemble(&contents, p.to_string());
         let result = codegen::to_text(&mem);
 
         let mut sblx_path = p[..p.len() - 4].to_string();
@@ -41,7 +41,12 @@ fn test_at_path(path: &str) {
         }
         let expected_out = fs::read_to_string(fp).unwrap();
         let expected_out = preprocessor::generic_sanitisation(&expected_out);
-        let out = interpreter::interpret(&mut mem, true).unwrap().unwrap();
+        let out = interpreter::interpret(&mut mem, true)
+            .unwrap_or_else(|e| {
+                asm_runtime_error(e, &tokens);
+                terminate!()
+            })
+            .unwrap();
         assert_eq!(out, expected_out);
 
         println!();
