@@ -1,4 +1,4 @@
-Z -= Z _main
+Z -= Z _main    ; ~~~~ line
 
 Z -> 0
 {

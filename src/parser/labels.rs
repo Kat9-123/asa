@@ -8,7 +8,6 @@ use crate::terminate;
 use crate::tokens;
 use crate::tokens::*;
 use colored::Colorize;
-use crossterm::terminal;
 
 /// Labels may be defined inside of instructions using the following syntax:
 /// (label -> 0). This routine converts these definitions into single tokens

@@ -17,6 +17,7 @@ fn test_at_path(path: &str) {
         }
 
         info!("Name: {}", p);
+        println!("{}", "-".repeat(80));
 
         let contents = fs::read_to_string(&p).unwrap();
         let (mut mem, tokens) = assembler::assemble(&contents, p.to_string());

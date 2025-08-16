@@ -1,6 +1,7 @@
 use crate::{
     asm_error, asm_info,
-    tokens::{Info, LabelOffset, Token, TokenVariant},
+    feedback::origin_info_or_info,
+    tokens::{LabelOffset, Token, TokenVariant},
 };
 
 /// LABEL * 3 => LABEL LABEL LABEL
@@ -24,21 +25,6 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
         i += 1;
     }
     new_tokens
-}
-
-fn token_variants_to_tokens(
-    token_variants: Vec<TokenVariant>,
-    info: &Info,
-    origin_info: &[Info],
-) -> Vec<Token> {
-    token_variants
-        .iter()
-        .map(|x| Token {
-            variant: x.clone(),
-            info: info.clone(),
-            origin_info: origin_info.to_owned(),
-        })
-        .collect()
 }
 
 pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token>) -> Vec<Token> {
@@ -202,7 +188,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                     let mut split_name = name.split('?');
                     if !split_name.next_back().unwrap().starts_with('.') {
                         asm_info!(
-                            &tokens[i + 3].info,
+                            origin_info_or_info(&tokens[i + 3]),
                             "Labels which are jump targets should be prefixed with a '.'"
                         );
                     }

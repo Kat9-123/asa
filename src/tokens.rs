@@ -69,11 +69,11 @@ pub enum TokenVariant {
     NamespaceEnd,
 }
 
-impl ToString for Token {
-    /// Only really used for debugging
-    fn to_string(&self) -> String {
+/// Only really used for debugging
+impl fmt::Display for Token {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenVariant::*;
-        match &self.variant {
+        let s = match &self.variant {
             DecLiteral { value } => value.to_string(),
             TokenVariant::HexLiteral { value } => format!("0x{value}"),
             LabelArrow { .. } => "->".to_string(),
@@ -97,9 +97,11 @@ impl ToString for Token {
             Asterisk => "*".to_string(),
             NamespaceEnd => "\\".to_string(),
             Equals => "=".to_string(),
-        }
+        };
+        write!(fmt, "{s}")
     }
 }
+
 /// Used for debugging
 pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
     let mut buf: String = String::new();

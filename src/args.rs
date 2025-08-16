@@ -1,3 +1,5 @@
+use core::fmt;
+
 use clap::Parser;
 use once_cell::sync::OnceCell;
 
@@ -20,25 +22,26 @@ pub enum OutType {
     None,
 }
 
-impl ToString for OutType {
-    // Required method
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for OutType {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
             OutType::SBLX => "sblx".to_owned(),
             OutType::BIN => "bin".to_owned(),
             OutType::None => "none".to_owned(),
-        }
+        };
+        write!(fmt, "{s}")
     }
 }
-impl ToString for FeedbackLevel {
-    // Required method
-    fn to_string(&self) -> String {
-        match self {
+
+impl fmt::Display for FeedbackLevel {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
             FeedbackLevel::Debug => "debug".to_owned(),
             FeedbackLevel::Note => "note".to_owned(),
             FeedbackLevel::Warn => "warn".to_owned(),
             FeedbackLevel::Error => "error".to_owned(),
-        }
+        };
+        write!(fmt, "{s}")
     }
 }
 

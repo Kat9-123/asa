@@ -225,17 +225,17 @@ THREE -> 3
         n_cur -= *p_cell
         cur -= n_cur
         !IfElse cur {
-          ;!IO::PutCharLit '%'
+          !IO::PutCharLit '%'
         } {
 
-         ;!IO::PutCharLit '.'
+         !IO::PutCharLit '.'
         }
     } {
-       ;!IO::PutCharLit '\n'
+       !IO::PutCharLit '\n'
 
     }
 
-   ;!IO::PutCharLit '\n'
+   !IO::PutCharLit '\n'
 }
 
 .main -> {
@@ -261,7 +261,7 @@ THREE -> 3
         !Routine::Call .SwapBuffers
      ;   !Debug i
        ; !Inc i
-      ;  Z -= -1
+        Z -= -1
     }
 
     !Halt

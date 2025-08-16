@@ -1,7 +1,5 @@
-use colored::{Color, Colorize, Style};
+use colored::{Color, Colorize};
 use core::fmt;
-use crossterm::cursor::SetCursorStyle;
-use log::LevelFilter;
 use std::cell::RefCell;
 use std::fs;
 
@@ -29,6 +27,15 @@ impl Type {
             Type::Details => Color::Blue,
         }
     }
+    pub fn to_log_level(&self) -> log::Level {
+        match self {
+            Type::Info => log::Level::Info,
+            Type::Warn => log::Level::Warn,
+            Type::Error => log::Level::Error,
+            Type::Trace => log::Level::Info,
+            Type::Details => log::Level::Info,
+        }
+    }
 }
 
 impl fmt::Display for Type {
@@ -41,8 +48,12 @@ impl fmt::Display for Type {
             Type::Details => "Details",
         }
         .stylise(*self);
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
+}
+
+pub fn origin_info_or_info(tok: &Token) -> &Info {
+    tok.origin_info.last().unwrap_or(&tok.info)
 }
 
 trait Stylise {
@@ -101,14 +112,16 @@ macro_rules! asm_details {
 
 #[macro_export]
 macro_rules! asm_trace {
-    ($info:expr) => {{
-        $crate::feedback::_asm_msg(
-            $crate::feedback::Type::Trace,
-            "".to_string(),
-            $info,
-            file!(),
-            line!(),
-        );
+    ($origin_info:expr) => {{
+        for i in $origin_info.iter().rev().skip(1) {
+            $crate::feedback::_asm_msg(
+                $crate::feedback::Type::Trace,
+                "".to_string(),
+                i,
+                file!(),
+                line!(),
+            );
+        }
     }};
 }
 
@@ -152,7 +165,10 @@ macro_rules! asm_warn {
 macro_rules! asm_hint {
     ($($arg:tt)*) => {
 
-        println!("     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
+        if $crate::feedback::sub_instruction_level_check() {
+            println!("     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
+
+        }
     };
 }
 #[macro_export]
@@ -190,6 +206,14 @@ fn get_file_contents(index: usize) -> String {
          - Address at 'A' is outside of memory bounds
 */
 
+pub fn sub_instruction_level_check() -> bool {
+    FEEDBACK_TYPE.with(|cell| {
+        let t = cell.borrow();
+
+        log::max_level() >= *t
+    })
+}
+
 pub fn _asm_msg(
     msg_type: Type,
     msg: String,
@@ -199,19 +223,15 @@ pub fn _asm_msg(
 ) {
     match msg_type {
         Type::Trace | Type::Details => {
-            if FEEDBACK_TYPE.with(|cell| {
-                let t = cell.borrow();
-
-                log::max_level() < *t
-            }) {
+            if !sub_instruction_level_check() {
                 return;
             }
 
             println!("     |");
         }
         _ => {
-            FEEDBACK_TYPE.set(log::Level::Error);
-            if log::max_level() < LevelFilter::Error {
+            FEEDBACK_TYPE.set(msg_type.to_log_level());
+            if log::max_level() < msg_type.to_log_level() {
                 return;
             }
             println!();
@@ -306,30 +326,26 @@ pub fn _asm_msg(
 
 pub fn asm_runtime_error(e: RuntimeError, tokens: &[Token]) {
     match e {
-        RuntimeError::InstructionOutOfRange(pc) => {
-            asm_error_no_terminate!(&tokens[pc + 2].info, "Jump outside of memory bounds");
-            for i in tokens[pc + 2].origin_info.iter().rev().skip(1) {
-                asm_trace!(i);
-            }
-        }
         RuntimeError::AOutOfRange(pc) => {
-            let info = &tokens[pc]
-                .origin_info
-                .last()
-                .unwrap_or_else(|| &tokens[pc].info);
-            asm_error_no_terminate!(info, "Address at 'A' is outside of memory bounds");
-            for i in tokens[pc].origin_info.iter().rev().skip(1) {
-                asm_trace!(i);
-            }
+            asm_error_no_terminate!(
+                origin_info_or_info(&tokens[pc]),
+                "Address at 'A' is outside of memory bounds"
+            );
+            asm_trace!(&tokens[pc].origin_info);
         }
         RuntimeError::BOutOfRange(pc) => {
             asm_error_no_terminate!(
-                &tokens[pc + 1].info,
+                origin_info_or_info(&tokens[pc + 1]),
                 "Address at 'B' is outside of memory bounds"
             );
-            for i in tokens[pc + 1].origin_info.iter().rev().skip(1) {
-                asm_trace!(i);
-            }
+            asm_trace!(&tokens[pc + 1].origin_info);
+        }
+        RuntimeError::COutOfRange(pc) => {
+            asm_error_no_terminate!(
+                origin_info_or_info(&tokens[pc + 2]),
+                "Jump outside of memory bounds"
+            );
+            asm_trace!(&tokens[pc + 2].origin_info);
         }
     }
 }

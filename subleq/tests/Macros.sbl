@@ -1,10 +1,11 @@
 
 @T [0xAAA]
 
-@Gamma F?[ F?-=!T ]
+@Gamma S_F?[ S_F?-=!T ]
 
 @Beta E?
-    {!Gamma E? \ E? -= E? E?}
+    {!Gamma E? 
+    E? -= E? E?}
 
 
 @Alpha C? D?

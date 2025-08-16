@@ -1,4 +1,7 @@
-use std::num::Wrapping;
+use std::{
+    num::Wrapping,
+    time::{Duration, Instant},
+};
 
 use crossterm::event::KeyCode;
 
@@ -28,7 +31,7 @@ pub struct InstructionHistoryItem {
 
 #[derive(Debug)]
 pub enum RuntimeError {
-    InstructionOutOfRange(usize),
+    COutOfRange(usize),
     AOutOfRange(usize),
     BOutOfRange(usize),
 }
@@ -43,23 +46,13 @@ pub enum IOOperation {
     None,
 }
 
-fn with_thousands(s: String) -> String {
-    s.as_bytes()
-        .rchunks(3)
-        .rev()
-        .map(std::str::from_utf8)
-        .collect::<Result<Vec<&str>, _>>()
-        .unwrap()
-        .join(",")
-}
-
 pub fn interpret_single(
     mem: &mut [u16],
     pc: usize,
     prev_pc: usize,
 ) -> Result<(usize, IOOperation, InstructionHistoryItem), RuntimeError> {
     if pc + 2 >= mem.len() {
-        return Err(RuntimeError::InstructionOutOfRange(prev_pc));
+        return Err(RuntimeError::COutOfRange(prev_pc));
     }
 
     let a = mem[pc] as usize;
@@ -186,13 +179,16 @@ pub fn interpret(mem: &mut [u16], return_output: bool) -> Result<Option<String>,
     }
 }
 
-pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
+pub fn interpret_fast(mem: &mut [u16]) -> (Result<(), RuntimeError>, u128, Duration) {
     let mut prev_pc: usize = 0xFFFF;
     let mut pc = 0;
+    let mut total_ran: u128 = 0;
+    let mut io_time: Duration = Duration::new(0, 0);
     loop {
         // mem_view::draw_mem(&mem, pc);
+        total_ran += 1;
         if pc + 2 >= mem.len() {
-            return Err(RuntimeError::InstructionOutOfRange(prev_pc));
+            return (Err(RuntimeError::COutOfRange(prev_pc)), total_ran, io_time);
         }
         let a = mem[pc] as usize;
         let b = mem[pc + 1] as usize;
@@ -202,23 +198,30 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
         if b == 0xFFFF {
             result = mem[a];
             let ch = result as u8 as char;
+            let timer = Instant::now();
             print!("{ch}");
+            io_time += timer.elapsed();
         } else if b == 0xFFFE {
             result = mem[a];
             let ch = (result as i16).to_string();
+            let timer = Instant::now();
             println!("{ch}");
+            io_time += timer.elapsed();
         } else if a == 0xFFFF {
+            let timer = Instant::now();
+
             let c = match get_key() {
                 KeyCode::Char(x) => x,
                 _ => '\0',
             };
+            io_time += timer.elapsed();
             mem[b] = c as u16;
         } else {
             if a >= mem.len() {
-                return Err(RuntimeError::AOutOfRange(pc));
+                return (Err(RuntimeError::AOutOfRange(pc)), total_ran, io_time);
             }
             if b >= mem.len() {
-                return Err(RuntimeError::BOutOfRange(pc));
+                return (Err(RuntimeError::BOutOfRange(pc)), total_ran, io_time);
             }
             result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             mem[b] = result;
@@ -234,6 +237,5 @@ pub fn interpret_fast(mem: &mut [u16]) -> Result<(), RuntimeError> {
             pc += 3;
         }
     }
-
-    Ok(())
+    (Ok(()), total_ran, io_time)
 }

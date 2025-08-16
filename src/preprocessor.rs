@@ -51,7 +51,7 @@ pub fn include_imports(text: &str, currently_imported: &mut Vec<PathBuf>) -> Str
         currently_imported.push(path.clone());
 
         let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
-            error!("Couldn't include the file: '{:?}'", path);
+            error!("Couldn't include the file: '{path:?}'");
             terminate!();
         });
         let contents = generic_sanitisation(&contents);

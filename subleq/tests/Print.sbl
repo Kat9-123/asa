@@ -1,4 +1,4 @@
-W -= W _loop
+W -= W .loop
 
 
 
@@ -8,13 +8,13 @@ W -= W _loop
 
 @SubLit a? l_b? {
     a?      -= literal_pointer
-    W       -= W             _fin
+    W       -= W             .fin
     literal_pointer -> l_b?
-    _fin ->
+    .fin ->
 }
 
 
-_loop ->
+.loop ->
     !Clear iChar
     !Clear char
 
@@ -25,14 +25,15 @@ _loop ->
     0xFFFF  -= char
 
     !SubLit ptr 0xFFFF
-    Z       -= Z _loop
+    Z       -= Z .loop
 
 
 
 char -> 0
 iChar -> 0
 
-W -> 0 \ Z -> 0
+W -> 0 
+Z -> 0
 nOne -> 0xFFFF
 string -> "(\\'Hello, world!;\\')"
 

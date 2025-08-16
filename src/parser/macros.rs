@@ -3,16 +3,15 @@ use crate::asm_details;
 use crate::asm_error_no_terminate;
 use crate::asm_hint;
 use crate::asm_info;
+use crate::asm_trace;
 use crate::feedback::*;
 use crate::symbols;
 use crate::terminate;
 use crate::tokens::*;
 
 use colored::Colorize;
-use crossterm::terminal;
 use std::collections::HashMap;
 use std::fmt;
-use std::thread::current;
 
 struct IterVec<'a, T> {
     vec: &'a Vec<T>,
@@ -317,8 +316,8 @@ enum TokenOrTokenVec {
 }
 
 fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name: &str) {
-    fn wrong_type(tok_info: &Info, arg_info: &Info, expected: &str) {
-        asm_info!(tok_info, "Expected a '{}' as argument ", expected);
+    fn wrong_type(tok: &Token, arg_info: &Info, expected: &str) {
+        asm_info!(&tok.info, "Expected a '{}' as argument ", expected);
         asm_hint!("See the documentation for information on the typing system");
         asm_details!(arg_info, "Macro definition");
     }
@@ -331,13 +330,13 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
         match &lower[..2] {
             symbols::SCOPE_TYPE_PREFIX => {
                 if !matches!(token.variant, TokenVariant::Scope) {
-                    wrong_type(&token.info, argument_info, "scope");
+                    wrong_type(token, argument_info, "scope");
                 }
                 return;
             }
             symbols::MACRO_TYPE_PREFIX => {
                 if !matches!(token.variant, TokenVariant::BraceOpen) {
-                    wrong_type(&token.info, argument_info, "braced");
+                    wrong_type(token, argument_info, "braced");
                 }
                 return;
             }
@@ -346,7 +345,7 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
                     token.variant,
                     TokenVariant::DecLiteral { .. } | TokenVariant::StrLiteral { .. }
                 ) {
-                    wrong_type(&token.info, argument_info, "literal");
+                    wrong_type(token, argument_info, "literal");
                 }
                 return;
             }
@@ -356,8 +355,11 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
             _ => {}
         }
     }
-    if !matches!(token.variant, TokenVariant::Label { .. }) {
-        wrong_type(&token.info, argument_info, "label");
+    if !matches!(
+        token.variant,
+        TokenVariant::Label { .. } | TokenVariant::MacroCall { .. } | TokenVariant::Relative { .. }
+    ) {
+        wrong_type(token, argument_info, "label");
     }
 }
 /*
@@ -441,7 +443,7 @@ pub fn insert_macros(
                     );
                     asm_hint!("A newline may not separate macro arguments.");
                     asm_hint!(
-                        "Scopes containing newlines are allowed. Multiple scopes must be chained with }} and {{ on the same line"
+                        "Scopes containing newlines are allowed. Multiple scopes as arguments must be chained with }} and {{ on the same line"
                     );
                     terminate!();
                 }

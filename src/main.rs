@@ -2,7 +2,6 @@ use simple_logger::SimpleLogger;
 use std::{
     fs::{self, File},
     io::Write,
-    process::exit,
     time::Instant,
 };
 
@@ -15,6 +14,16 @@ use asa::{
     terminate,
 };
 
+fn with_thousands(s: String) -> String {
+    s.as_bytes()
+        .rchunks(3)
+        .rev()
+        .map(std::str::from_utf8)
+        .collect::<Result<Vec<&str>, _>>()
+        .unwrap()
+        .join(",")
+}
+
 fn main() {
     SimpleLogger::new().init().unwrap();
     args::parse();
@@ -25,7 +34,7 @@ fn main() {
         .target
         .clone()
         .unwrap_or_else(|| "./Main.sbl".to_string());
-    let file_path = format!("./subleq/{}", target);
+    let file_path = format!("./subleq/{target}");
     println!("Assembling {file_path}");
     let contents = fs::read_to_string(&file_path);
     let contents = contents.unwrap_or_else(|e| {
@@ -44,20 +53,30 @@ fn main() {
     );
     println!("Running...");
 
+    println!("{}", "-".repeat(80));
     let mut file = File::create("test.bin").unwrap();
     let timer = Instant::now();
 
     file.write_all(&to_bin(&mem)).unwrap();
-    if args::get().debugger {
-        debugger::run_with_debugger(&mut mem, &tokens, false);
-    } else {
-        let result = interpreter::interpret_fast(&mut mem);
-        match result {
-            Err(e) => asm_runtime_error(e, &tokens),
-            _ => {}
-        }
+
+    let (result, total_ran, io_time) = interpreter::interpret_fast(&mut mem);
+    let elapsed = timer.elapsed();
+    let compute_time = elapsed - io_time;
+    println!("{}\n", "-".repeat(80));
+    if let Err(e) = result {
+        asm_runtime_error(e, &tokens)
     }
-    println!("\nExecution took: {:.3?}\n", timer.elapsed());
+    println!("Execution took: {elapsed:.3?}");
+    println!("Time spent on IO: {io_time:.3?}");
+    println!("Time spent on instructions: {compute_time:.3?}\n");
+    println!(
+        "Instruction executed: {}",
+        with_thousands(total_ran.to_string())
+    );
+    println!(
+        "Instructions per second: {}",
+        with_thousands(((total_ran as f64 / compute_time.as_secs_f64()) as u128).to_string())
+    );
     //if let Err(e) = result {
     //    asm_runtime_error(e, &tokens);
     //}

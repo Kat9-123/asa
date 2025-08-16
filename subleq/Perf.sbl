@@ -1,0 +1,13 @@
+!RepeatLit 0x7FFFF {
+    !RepeatLit 0x7FFF {
+        !RepeatLit 0x7FFF {
+        Z -= Z
+        }
+    }
+}
+!Halt
+a -> 'A'
+
+#Sublib
+
+

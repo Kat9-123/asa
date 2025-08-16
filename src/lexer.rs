@@ -1,7 +1,6 @@
 //! Converts a string into a vector of tokens.
 
 use std::cell::RefCell;
-use std::ops::Index;
 
 use crate::terminate;
 use crate::{
@@ -10,13 +9,10 @@ use crate::{
 };
 use colored::Colorize;
 
-use once_cell::sync::Lazy;
 use unescape::unescape;
 
-use std::sync::{LazyLock, Mutex, RwLock};
-
 thread_local! {
-    pub static FILES: RefCell<Vec<String>> = RefCell::new(vec![]);
+    pub static FILES: RefCell<Vec<String>> = const { RefCell::new(vec![]) };
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -77,7 +73,6 @@ fn updated_context(
             '}' => (Context::None, None, Some(TokenVariant::Unscope)),
             '[' => (Context::None, None, Some(TokenVariant::MacroBodyStart)),
             ']' => (Context::None, None, Some(TokenVariant::MacroBodyEnd)),
-            '\\' => (Context::None, None, Some(TokenVariant::Linebreak)),
             '=' => (Context::None, None, Some(TokenVariant::Equals)),
 
             '/' => (Context::None, None, Some(TokenVariant::NamespaceEnd)),
@@ -337,8 +332,6 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
 
             context = new_context;
             info.start_char = idx_in_line - info.length;
-
-            //println_debug!("{idx_in_line} '{c}' {:?}, {:?}, {:?}, {:?}", context, add_to_buffer, variant_to_add, info);
 
             if let Some(ch) = add_to_buffer {
                 buffer.push(ch)

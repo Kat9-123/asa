@@ -32,9 +32,8 @@ pub fn from_bin(data: &[u8]) -> Vec<u16> {
     u16data
 }
 pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
-    let mut mem: Vec<u16> = Vec::new();
-    let mut final_tokens: Vec<Token> = Vec::new();
-
+    let mut mem: Vec<u16> = Vec::with_capacity(statements.len());
+    let mut final_tokens: Vec<Token> = Vec::with_capacity(statements.len());
     for statement in statements {
         match &statement.variant {
             TokenVariant::DecLiteral { value } => {
