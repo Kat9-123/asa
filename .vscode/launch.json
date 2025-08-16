@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["perf.sbl", "-f", "note"],
+            "args": ["./subleq/GameOfLife.sbl", "-o", "out.sblx", "-f", "note", "-s"],
             "cwd": "${workspaceFolder}"
         },
         {

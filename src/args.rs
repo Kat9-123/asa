@@ -1,4 +1,5 @@
 use core::fmt;
+use std::{fs::File, str::FromStr};
 
 use clap::Parser;
 use once_cell::sync::OnceCell;
@@ -13,23 +14,14 @@ pub enum FeedbackLevel {
     Error,
 }
 
-#[derive(clap::ValueEnum, Clone, Debug, Default)]
-pub enum OutType {
-    SBLX,
-    BIN,
-
-    #[default]
-    None,
-}
-
-impl fmt::Display for OutType {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            OutType::SBLX => "sblx".to_owned(),
-            OutType::BIN => "bin".to_owned(),
-            OutType::None => "none".to_owned(),
-        };
-        write!(fmt, "{s}")
+impl FeedbackLevel {
+    pub fn to_log_level(&self) -> log::LevelFilter {
+        match self {
+            FeedbackLevel::Debug => log::LevelFilter::Debug,
+            FeedbackLevel::Note => log::LevelFilter::Info,
+            FeedbackLevel::Warn => log::LevelFilter::Warn,
+            FeedbackLevel::Error => log::LevelFilter::Error,
+        }
     }
 }
 
@@ -45,17 +37,6 @@ impl fmt::Display for FeedbackLevel {
     }
 }
 
-impl FeedbackLevel {
-    pub fn to_log_level(&self) -> log::LevelFilter {
-        match self {
-            FeedbackLevel::Debug => log::LevelFilter::Debug,
-            FeedbackLevel::Note => log::LevelFilter::Info,
-            FeedbackLevel::Warn => log::LevelFilter::Warn,
-            FeedbackLevel::Error => log::LevelFilter::Error,
-        }
-    }
-}
-
 /// Advanced Subleq Assembler
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -63,23 +44,31 @@ pub struct Args {
     /// File to assemble
     pub target: Option<String>,
 
+    /// Level of assembler and runtime feedback
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
 
-    // Run with debugger
+    /// Disable execution
+    #[arg(short = 'e', long, default_value_t = false)]
+    pub disable_execution: bool,
+    /// Run with debugger
     #[arg(short, long, default_value_t = false)]
     pub debugger: bool,
-    /// Root path. This is the path includes are resolved from.
-    #[arg(long, default_value = "")]
+    /// Sublib directory
+    #[arg(long, default_value = "./subleq/Sublib")]
     root_path: String,
 
     /// Disable type checking
-    #[arg(long, default_value_t = false)]
+    #[arg(short = 't', long, default_value_t = false)]
     pub disable_type_checking: bool,
 
-    /// Out file type
-    #[arg(long, default_value_t = OutType::None)]
-    pub out_file_type: OutType,
+    /// Out file
+    #[arg(short, long, default_value = None)]
+    pub output: Option<String>,
+
+    /// Suppresses all assembler output expect for errors, overrides --feedback-level. Program output will still be shown.
+    #[arg(short, long, default_value_t = false)]
+    pub silent: bool,
 }
 
 pub fn get() -> &'static Args {

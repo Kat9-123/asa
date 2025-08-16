@@ -1,84 +1,87 @@
 use simple_logger::SimpleLogger;
 use std::{
-    fs::{self, File},
+    env,
+    fs::{self, File, FileType},
     io::Write,
+    path::{Path, PathBuf},
     time::Instant,
 };
 
 use asa::{
-    args, assembler,
-    codegen::to_bin,
-    debugger,
+    args::{self, get},
+    assembler, debugger,
     feedback::asm_runtime_error,
+    files::{self, OutputFile, to_bin},
     interpreter::{self},
-    terminate,
+    terminate, utils,
 };
 
-fn with_thousands(s: String) -> String {
-    s.as_bytes()
-        .rchunks(3)
-        .rev()
-        .map(std::str::from_utf8)
-        .collect::<Result<Vec<&str>, _>>()
-        .unwrap()
-        .join(",")
+macro_rules! println_silenceable {
+    ($($arg:tt)*) => {
+        if !args::get().silent {
+            println!($($arg)*);
+        }
+    };
 }
 
 fn main() {
+    // Setup
     SimpleLogger::new().init().unwrap();
     args::parse();
-
     log::set_max_level(args::get().feedback_level.to_log_level());
-    //disable_raw_mode();
-    let target = &args::get()
-        .target
-        .clone()
-        .unwrap_or_else(|| "./Main.sbl".to_string());
-    let file_path = format!("./subleq/{target}");
-    println!("Assembling {file_path}");
-    let contents = fs::read_to_string(&file_path);
+    if args::get().silent {
+        log::set_max_level(log::LevelFilter::Error);
+    }
+
+    let (target, module) = files::get_target_and_module_name(args::get().target.clone());
+    let output_file = OutputFile::new(&args::get().output, module.clone());
+
+    // Assembly
+    println_silenceable!("Assembling {target:?}, {module}");
+    let contents = fs::read_to_string(&target);
     let contents = contents.unwrap_or_else(|e| {
-        log::error!("Error reading file: {file_path}. {e}");
+        log::error!("Error reading file: {target:?}. {e}");
         terminate!();
     });
 
     let timer = Instant::now();
-    let (mut mem, tokens) = assembler::assemble(&contents, file_path);
-    println!("\nAssembled in: {:.3?}", timer.elapsed());
-    println!(
+    let (mut mem, tokens) = assembler::assemble(&contents, target.to_str().unwrap().to_string());
+    println_silenceable!("\nAssembled in: {:.3?}", timer.elapsed());
+    println_silenceable!(
         "Size: {}/{}, {:.4}%",
         mem.len(),
         0xFFFF,
         (mem.len() as f32 / 0xFFFF as f32) * 100f32
     );
-    println!("Running...");
+    files::to_file(&mem, output_file);
 
-    println!("{}", "-".repeat(80));
-    let mut file = File::create("test.bin").unwrap();
-    let timer = Instant::now();
+    if args::get().disable_execution {
+        return;
+    }
 
-    file.write_all(&to_bin(&mem)).unwrap();
+    // Execution
+    println_silenceable!("Running...");
+
+    println_silenceable!("{}", "-".repeat(80));
 
     let (result, total_ran, io_time) = interpreter::interpret_fast(&mut mem);
     let elapsed = timer.elapsed();
     let compute_time = elapsed - io_time;
-    println!("{}\n", "-".repeat(80));
+    println_silenceable!("{}\n", "-".repeat(80));
     if let Err(e) = result {
         asm_runtime_error(e, &tokens)
     }
-    println!("Execution took: {elapsed:.3?}");
-    println!("Time spent on IO: {io_time:.3?}");
-    println!("Time spent on instructions: {compute_time:.3?}\n");
-    println!(
+    println_silenceable!("Execution took: {elapsed:.3?}");
+    println_silenceable!("Time spent on IO: {io_time:.3?}");
+    println_silenceable!("Time spent on instructions: {compute_time:.3?}\n");
+    println_silenceable!(
         "Instruction executed: {}",
-        with_thousands(total_ran.to_string())
+        utils::with_thousands(total_ran.to_string())
     );
-    println!(
+    println_silenceable!(
         "Instructions per second: {}",
-        with_thousands(((total_ran as f64 / compute_time.as_secs_f64()) as u128).to_string())
+        utils::with_thousands(
+            ((total_ran as f64 / compute_time.as_secs_f64()) as u128).to_string()
+        )
     );
-    //if let Err(e) = result {
-    //    asm_runtime_error(e, &tokens);
-    //}
-    //interpreter::interpret_fast(&mut mem);
 }
