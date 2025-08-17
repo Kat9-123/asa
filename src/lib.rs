@@ -1,14 +1,13 @@
 pub mod args;
 pub mod assembler;
 pub mod codegen;
-pub mod debugger;
 pub mod feedback;
 pub mod files;
-pub mod interpreter;
 pub mod lexer;
 pub mod mem_view;
 pub mod parser;
 pub mod preprocessor;
+pub mod runtimes;
 pub mod symbols;
 pub mod tokens;
 pub mod utils;

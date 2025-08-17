@@ -405,6 +405,18 @@ pub fn insert_macros(
                             current_macro = Some(x);
                             caller_info = Some(token.info.clone());
                             mode = Mode::Args;
+                            if name == "ASM::Breakpoint" {
+                                asm_info!(
+                                    &token.info,
+                                    "Breakpoints are non-canonical and specific to this assembler"
+                                );
+                            }
+                            if name == "ASM::Debug" {
+                                asm_info!(
+                                    &token.info,
+                                    "Debug prints are non-canonical and specific to this assembler"
+                                );
+                            }
                         }
                     }
                 }

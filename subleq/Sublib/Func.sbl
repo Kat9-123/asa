@@ -46,7 +46,7 @@ function_stack -> !Stack::Create 128
 @Func::Call name? s_args? {
     !Cpy ARGS_END arg_idx
  ;   !IO::PrintLit "RET "
-    ;!BreakPoint
+    ;!ASM::Breakpoint
     !Stack::Push function_stack _return_address
     .arg_loop ->
         !Clr n_arg
@@ -60,15 +60,15 @@ function_stack -> !Stack::Create 128
 
         !DerefAndCopy cur_arg derefed_cur_arg
         
-       ; !Debug cur_arg
+       ; !ASM::Debug cur_arg
         ;!IO::PrintLn cur_arg
-     ;   !Debug arg_idx
-    ;    !Debug ARGS_END
+     ;   !ASM::Debug arg_idx
+    ;    !ASM::Debug ARGS_END
        ; !IO::PrintLit "ARG "
         !Stack::Push function_stack derefed_cur_arg
         !J .arg_loop
-     ;   !Debug arg_idx
-       ; !BreakPoint
+     ;   !ASM::Debug arg_idx
+       ; !ASM::Breakpoint
 
 
    ; !IO::PrintLnLit "JP"
@@ -103,7 +103,7 @@ function_stack -> !Stack::Create 128
 
 
 
-   ; !Debug c
+   ; !ASM::Debug c
     !IO::PrintLn a
 
     !IfElse c {

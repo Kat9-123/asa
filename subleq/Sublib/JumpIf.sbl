@@ -170,7 +170,7 @@ l -> 0
 
 @JumpIf::EqZero num? .address?
 {
-    !Debug num?
+    !ASM::Debug num?
 
     !JumpIf::Eq num? SMALLEST_NEGATIVE .notZero
     !Clear A

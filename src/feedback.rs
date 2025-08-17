@@ -3,8 +3,8 @@ use core::fmt;
 use std::cell::RefCell;
 use std::fs;
 
-use crate::interpreter::RuntimeError;
 use crate::lexer;
+use crate::runtimes::interpreter::RuntimeError;
 use crate::{tokens::Info, tokens::Token};
 
 thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = const { RefCell::new(log::Level::Debug) });
@@ -53,7 +53,8 @@ impl fmt::Display for Type {
 }
 
 pub fn origin_info_or_info(tok: &Token) -> &Info {
-    tok.origin_info.last().unwrap_or(&tok.info)
+    // tok.origin_info.last().unwrap_or(&tok.info)
+    &tok.info
 }
 
 trait Stylise {
@@ -249,10 +250,10 @@ pub fn _asm_msg(
     };
 
     // Title
-    println!(
-        "{title_prefix}{} + ({asa_call_origin}:{asa_line_number}) {}:{}:{}",
-        msg_type, name, info.line_number, info.start_char
-    );
+    print!("{title_prefix}{} + ", msg_type);
+    #[cfg(debug_assertions)] // We dont want to show the origin of the error inside of the assembler in release builds
+    print!("({asa_call_origin}:{asa_line_number}) ");
+    println!("{}:{}:{}", name, info.line_number, info.start_char);
 
     let file_preview_prefix = match msg_type {
         Type::Details | Type::Trace => "     |",
@@ -347,5 +348,6 @@ pub fn asm_runtime_error(e: RuntimeError, tokens: &[Token]) {
             );
             asm_trace!(&tokens[pc + 2].origin_info);
         }
+        RuntimeError::Breakpoint(..) => todo!(),
     }
 }

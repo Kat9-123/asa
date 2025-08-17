@@ -188,7 +188,7 @@ THREE -> 3
         *p_back_cell -= *p_back_cell
         !IfElse current_cell_state {
             ; Alive
-            ;!Debug neighbour_count
+            ;!ASM::Debug neighbour_count
             !If::Geq neighbour_count TWO {
                 !If::Leq neighbour_count THREE {
                     *p_back_cell -= N_ONE
@@ -200,7 +200,9 @@ THREE -> 3
                 *p_back_cell -= N_ONE       
             }
         }
+        ;!ASM::Breakpoint
 
+        0x9000 -= 0x9000
 
 
     } {}
@@ -261,9 +263,9 @@ THREE -> 3
         !Routine::Call .Draw
         !Routine::Call .GetNeighbours
         !Routine::Call .SwapBuffers
-     ;   !Debug i
+     ;   !ASM::Debug i
        ; !Inc i
-        Z -= -1
+    Z -= -1
     }
 
     !Halt

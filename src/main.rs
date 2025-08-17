@@ -9,7 +9,8 @@ use asa::{
     assembler,
     feedback::asm_runtime_error,
     files::{self, OutputFile},
-    interpreter::{self},
+    runtimes::debugger,
+    runtimes::interpreter,
     terminate, utils,
 };
 
@@ -32,6 +33,7 @@ fn main() {
 
     let (target, module) = files::get_target_and_module_name(args::get().target.clone());
     let output_file = OutputFile::new(&args::get().output, module.clone());
+
     // Assembly
     println_silenceable!("Assembling {target:?}, {module}");
     let contents = fs::read_to_string(&target);
@@ -59,19 +61,25 @@ fn main() {
     println_silenceable!("Running...");
 
     println_silenceable!("{}", "-".repeat(80));
+    //
 
-    let (result, total_ran, io_time) = interpreter::interpret_fast(&mut mem);
+    if args::get().debugger {
+        debugger::run_with_debugger(&mut mem, &tokens, false);
+        return;
+    }
+    let (result, total_ran, io_time) = interpreter::interpret(&mut mem);
+
     let elapsed = timer.elapsed();
     let compute_time = elapsed - io_time;
-    println_silenceable!("{}\n", "-".repeat(80));
+    println_silenceable!("{}", "-".repeat(80));
     if let Err(e) = result {
         asm_runtime_error(e, &tokens)
     }
-    println_silenceable!("Execution took: {elapsed:.3?}");
+    println_silenceable!("\nExecution took: {elapsed:.3?}");
     println_silenceable!("Time spent on IO: {io_time:.3?}");
     println_silenceable!("Time spent on instructions: {compute_time:.3?}\n");
     println_silenceable!(
-        "Instruction executed: {}",
+        "Instructions executed: {}",
         utils::with_thousands(total_ran.to_string())
     );
     println_silenceable!(

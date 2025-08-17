@@ -1,0 +1,32 @@
+Z -= Z
+Z -= Z
+!Mac {
+    0x1 -= 0x1
+}
+
+0x9000 -= 0x0000 0xFFFE
+Z -= Y
+Z -= Z 0xFFFE
+Z -= Z
+Z -= Z -1
+
+
+
+
+Z -> 0
+Y -> 0x7FFF
+
+
+@Mac body? {
+    body?
+}
+
+
+
+
+
+
+
+
+
+

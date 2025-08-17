@@ -55,3 +55,16 @@
     _ASM -= from?
     to? -= _ASM
 ]
+
+
+
+@ASM::Breakpoint {
+    _ASM -= _ASM -2
+}
+
+@ASM::Debug x? {
+    -2 -= x?
+}
+@ASM::Perf {
+    !J !PERF_ADDR
+}

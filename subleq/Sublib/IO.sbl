@@ -57,16 +57,3 @@
 }
 
 
-@BreakPoint {
-    !J !DEBUG_ADDR
-}
-@Breakpoint {
-    !J !DEBUG_ADDR
-}
-
-@Debug x? {
-    !DEBUG_ADDR -= x?
-}
-@Perf {
-    !J !PERF_ADDR
-}

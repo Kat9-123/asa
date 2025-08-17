@@ -42,12 +42,11 @@ fn test_at_path(path: &str) {
         }
         let expected_out = fs::read_to_string(fp).unwrap();
         let expected_out = preprocessor::generic_sanitisation(&expected_out);
-        let out = interpreter::interpret(&mut mem, true)
-            .unwrap_or_else(|e| {
-                asm_runtime_error(e, &tokens);
-                terminate!()
-            })
-            .unwrap();
+        let (result, ..) = runtimes::interpreter::interpret(&mut mem);
+        let out = result.unwrap_or_else(|e| {
+            asm_runtime_error(e, &tokens);
+            terminate!()
+        });
         assert_eq!(out, expected_out);
 
         println!();

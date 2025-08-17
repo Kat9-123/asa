@@ -3,7 +3,7 @@
     !JumpIf::Eq A? B? .fin
 
     !IO::PrintLit "Assertion failed."
-    !BreakPoint
+    !ASM::Breakpoint
 
     .fin ->
 }
@@ -14,9 +14,9 @@
     
     !IO::PrintLnLit "Assertion failed."
     !IO::PrintLit "LH: "
-    !Debug A?
+    !ASM::Debug A?
     !IO::PrintLit "RH: "
-    !Debug LIT_LBL
+    !ASM::Debug LIT_LBL
 
     W W -2
 

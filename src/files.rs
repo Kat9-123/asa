@@ -54,36 +54,37 @@ pub fn to_text(data: &[u16]) -> String {
 
 #[derive(PartialEq, Debug)]
 pub struct OutputFile {
+    /// Example: .sblx, .bin, etc.
     file_type: FileType,
-    file_name: String,
+    /// Example: ./folder/filename
+    file_base: PathBuf,
 }
 impl OutputFile {
-    /*
-     * Only filetype: SBLX, BIN....
-     * Only filename: File
-     * File + Filetype: File.sblx
-     */
+    /// The argument given can be of four types:
+    ///
+    /// * None, in which case None is returned
+    /// * Only a filetype, like 'sblx' or 'bin', the file will become module_name.filetype
+    /// * Only a path without extension, like ./my_folder/my_file, the file will become path_given.bin
+    /// * A path with extension.
     pub fn new(argument: &Option<String>, module_name: String) -> Option<Self> {
         let argument = argument.clone()?;
 
-        let file_type = FileType::from_str(&argument);
-
-        // Filetype
-        if let Some(file_type) = file_type {
+        // The argument is only a filetype
+        if let Some(file_type) = FileType::from_str(&argument) {
             return Some(OutputFile {
                 file_type,
-                file_name: module_name,
+                file_base: Path::new(&module_name).to_path_buf(),
             });
         };
 
         let path = Path::new(&argument).to_path_buf();
 
         // File + Filetype
-        if let Some(x) = path.extension() {
-            let file_type = FileType::from_str(x.to_str().unwrap());
+        if let Some(ext) = path.extension() {
+            let file_type = FileType::from_str(ext.to_str().unwrap());
             if let Some(file_type) = file_type {
                 return Some(OutputFile {
-                    file_name: path.with_extension("").to_string_lossy().to_string(),
+                    file_base: path.with_extension(""),
                     file_type,
                 });
             }
@@ -92,28 +93,26 @@ impl OutputFile {
         // File only
         Some(OutputFile {
             file_type: FileType::Binary,
-            file_name: argument,
+            file_base: path,
         })
     }
 }
 
-pub fn to_file(dat: &[u16], output: Option<OutputFile>) {
+pub fn to_file(data: &[u16], output: Option<OutputFile>) {
     let output = match output {
         Some(out) => out,
         None => return,
     };
-    let binding = to_text(dat).as_bytes().to_vec();
-    let data = match output.file_type {
+    let bytes = match output.file_type {
         FileType::Debuggable => todo!(),
-        FileType::Plaintext => binding,
-
-        FileType::Binary => to_bin(dat),
+        FileType::Plaintext => to_text(data).as_bytes().to_vec(),
+        FileType::Binary => to_bin(data),
     };
 
-    let mut path = Path::new(&output.file_name).to_path_buf();
+    let mut path = output.file_base;
     path.set_extension(output.file_type.extension());
     let mut file = File::create(path).unwrap();
-    file.write_all(&data).unwrap();
+    file.write_all(&bytes).unwrap();
 }
 
 /// Binary format is in Big Endian
@@ -138,7 +137,7 @@ pub fn from_bin(data: &[u8]) -> Vec<u16> {
 
     u16data
 }
-
+/// TODO
 pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, String) {
     let target = argument.unwrap_or_else(|| ".".to_string());
     let cwd = env::current_dir().unwrap();
@@ -179,7 +178,7 @@ mod tests {
         assert_eq!(
             result,
             Some(OutputFile {
-                file_name: "mod".to_owned(),
+                file_base: Path::new("mod").to_path_buf(),
                 file_type: FileType::Plaintext
             })
         );
@@ -187,7 +186,7 @@ mod tests {
         assert_eq!(
             result,
             Some(OutputFile {
-                file_name: "mod2".to_owned(),
+                file_base: Path::new("mod2").to_path_buf(),
                 file_type: FileType::Binary
             })
         );
@@ -196,7 +195,7 @@ mod tests {
         assert_eq!(
             result,
             Some(OutputFile {
-                file_name: "test".to_owned(),
+                file_base: Path::new("test").to_path_buf(),
                 file_type: FileType::Binary
             })
         );
@@ -205,7 +204,7 @@ mod tests {
         assert_eq!(
             result,
             Some(OutputFile {
-                file_name: "abc/file".to_owned(),
+                file_base: Path::new("abc/file").to_path_buf(),
                 file_type: FileType::Debuggable
             })
         );
@@ -216,7 +215,7 @@ mod tests {
         assert_eq!(
             result,
             Some(OutputFile {
-                file_name: "abc/defg/file.dsblx.hello".to_owned(),
+                file_base: Path::new("abc/defg/file.dsblx.hello").to_path_buf(),
                 file_type: FileType::Binary
             })
         );
