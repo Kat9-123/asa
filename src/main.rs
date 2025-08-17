@@ -61,14 +61,13 @@ fn main() {
     println_silenceable!("Running...");
 
     println_silenceable!("{}", "-".repeat(80));
-    //
 
     if args::get().debugger {
         debugger::run_with_debugger(&mut mem, &tokens, false);
         return;
     }
-    let (result, total_ran, io_time) = interpreter::interpret(&mut mem);
 
+    let (result, total_ran, io_time) = interpreter::interpret(&mut mem);
     let elapsed = timer.elapsed();
     let compute_time = elapsed - io_time;
     println_silenceable!("{}", "-".repeat(80));

@@ -161,6 +161,7 @@ fn debug<T: FnMut() -> KeyCode>(
     mut in_debugging_mode: bool,
     mut input: T,
 ) {
+    in_debugging_mode = true;
     //execute!(io::stdout(), EnterAlternateScreen);
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
@@ -193,6 +194,12 @@ fn debug<T: FnMut() -> KeyCode>(
             result = mem[a];
             io = IOOperation::Debug(result);
         } else if a == 0xFFFF {
+            println!("Input: ");
+            let c = match get_key() {
+                KeyCode::Char(x) => x,
+                _ => '\0',
+            };
+            result = c as u16;
         } else {
             if a >= mem.len() {
                 current_error = Some(RuntimeError::AOutOfRange(pc));

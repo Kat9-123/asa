@@ -1,5 +1,6 @@
-# Advanced Subleq Assembler
+![](logo.png)
 
+# Advanced Subleq Assembler
 This Subleq assembler uses a custom assembly-like language that will be directly converted to Subleq
 
 
