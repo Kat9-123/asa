@@ -13,7 +13,7 @@ use crate::{print_debug, println_debug};
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
 
-    char_and_hex_to_dec(&mut tokens);
+    char_and_hex_to_dec_and_check_scopes(&mut tokens);
     let tokens = handle_assignments(&tokens);
 
     let tokens = grab_braced_label_definitions(tokens);

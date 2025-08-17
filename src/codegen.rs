@@ -1,7 +1,7 @@
-use std::{fs::File, io::Write, path::Path, process::Output};
+use std::num::TryFromIntError;
 
 use crate::{
-    args,
+    asm_error, asm_warn,
     tokens::{Token, TokenVariant},
 };
 
@@ -11,11 +11,28 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     for statement in statements {
         match &statement.variant {
             TokenVariant::DecLiteral { value } => {
-                mem.push(*value as u16);
+                let as_u16 = *value as u16;
+                if (*value >> 16) > 0 {
+                    asm_warn!(
+                        &statement.info,
+                        "Number is too large, it will equal {}",
+                        as_u16
+                    );
+                }
+                mem.push(as_u16);
                 final_tokens.push(statement.clone());
             }
-            _ => {
+
+            // Ideally none of these would be here
+            TokenVariant::Scope
+            | TokenVariant::Unscope
+            | TokenVariant::LabelDefinition { .. }
+            | TokenVariant::Namespace { .. } // These two shouldnt be allowed
+            | TokenVariant::NamespaceEnd => {
                 continue;
+            }
+            _ => {
+                asm_error!(&statement.info, "Unprocessed token",);
             }
         }
     }

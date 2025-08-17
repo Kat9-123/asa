@@ -324,7 +324,7 @@ pub fn tokenise(mut text: String, path: String) -> Vec<Token> {
         file: 0,
         sourceline_suffix: None,
     };
-    let mut idx_in_line = 0;
+    let mut idx_in_line = 1;
     for c in text.chars() {
         loop {
             let (new_context, add_to_buffer, variant_to_add) =

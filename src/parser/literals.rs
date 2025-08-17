@@ -1,9 +1,12 @@
+use std::thread::scope;
+
 use unescape::unescape;
 
-use crate::{feedback::*, tokens::*};
-
+use crate::{feedback::*, terminate, tokens::*};
 /// Convert character and hex literals into dec literals inplace
-pub fn char_and_hex_to_dec(tokens: &mut [Token]) {
+pub fn char_and_hex_to_dec_and_check_scopes(tokens: &mut [Token]) {
+    let mut scope_tracker: i32 = 0;
+
     for token in tokens.iter_mut() {
         match &token.variant {
             TokenVariant::HexLiteral { value } => {
@@ -18,8 +21,22 @@ pub fn char_and_hex_to_dec(tokens: &mut [Token]) {
                     value: *value as i32,
                 };
             }
+            TokenVariant::Scope => scope_tracker += 1,
+
+            TokenVariant::Unscope => {
+                scope_tracker -= 1;
+            }
+
             _ => continue,
         }
+    }
+
+    if scope_tracker > 0 {
+        log::error!("Unmatched scope");
+        terminate!();
+    } else if scope_tracker < 0 {
+        log::error!("Unmatched unscope");
+        terminate!();
     }
 }
 
@@ -64,7 +81,7 @@ mod tests {
                 value: "GARBAGE".to_string(),
             },
         )]);
-        char_and_hex_to_dec(&mut input);
+        char_and_hex_to_dec_and_check_scopes(&mut input);
     }
 
     #[test]
@@ -100,7 +117,7 @@ mod tests {
             (0, TokenVariant::DecLiteral { value: 291 }),
             (0, TokenVariant::DecLiteral { value: -170 }),
         ]);
-        char_and_hex_to_dec(&mut input);
+        char_and_hex_to_dec_and_check_scopes(&mut input);
         assert_eq!(input, expected);
     }
 

@@ -1,15 +1,8 @@
-use std::fmt;
 use std::{
     env,
     fs::File,
     io::Write,
     path::{Path, PathBuf},
-    process::Output,
-};
-
-use crate::{
-    args,
-    tokens::{Token, TokenVariant},
 };
 
 const PLAINTEXT_EXTENSION: &str = "sblx";
@@ -97,10 +90,10 @@ impl OutputFile {
         }
 
         // File only
-        return Some(OutputFile {
+        Some(OutputFile {
             file_type: FileType::Binary,
             file_name: argument,
-        });
+        })
     }
 }
 
@@ -109,7 +102,7 @@ pub fn to_file(dat: &[u16], output: Option<OutputFile>) {
         Some(out) => out,
         None => return,
     };
-    let binding = to_text(&dat).as_bytes().to_vec();
+    let binding = to_text(dat).as_bytes().to_vec();
     let data = match output.file_type {
         FileType::Debuggable => todo!(),
         FileType::Plaintext => binding,
@@ -123,6 +116,7 @@ pub fn to_file(dat: &[u16], output: Option<OutputFile>) {
     file.write_all(&data).unwrap();
 }
 
+/// Binary format is in Big Endian
 pub fn to_bin(data: &[u16]) -> Vec<u8> {
     let mut u8data: Vec<u8> = Vec::with_capacity(data.len() * 2);
 
@@ -134,6 +128,7 @@ pub fn to_bin(data: &[u16]) -> Vec<u8> {
     u8data
 }
 
+/// Binary format is in Big Endian
 pub fn from_bin(data: &[u8]) -> Vec<u16> {
     let mut u16data: Vec<u16> = Vec::with_capacity((data.len() / 2) + 1); // Is +1 necessary
 

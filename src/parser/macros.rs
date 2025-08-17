@@ -3,7 +3,6 @@ use crate::asm_details;
 use crate::asm_error_no_terminate;
 use crate::asm_hint;
 use crate::asm_info;
-use crate::asm_trace;
 use crate::feedback::*;
 use crate::symbols;
 use crate::terminate;

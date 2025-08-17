@@ -27,6 +27,7 @@ pub fn expand_mults(tokens: &[Token]) -> Vec<Token> {
     new_tokens
 }
 
+/// Routine used for syntax sugar. Gives a macro call with it's arguments
 pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token>) -> Vec<Token> {
     let mut toks: Vec<Token> = Vec::new();
     toks.push(Token::with_info(
@@ -40,8 +41,8 @@ pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token
 
     toks
 }
-
-/// TODO
+/// Handle the assignment syntax sugar like, x = 0, y = x, z = 10.
+/// Inserts macros in their stead
 pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;

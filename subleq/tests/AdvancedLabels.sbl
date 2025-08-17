@@ -1,10 +1,9 @@
-Z -= Z _main    ; ~~~~ line
+Z -= Z _main
 
 Z -> 0
 {
     Z -> 100
 }
-
 _main -> {
 
     _main -> {

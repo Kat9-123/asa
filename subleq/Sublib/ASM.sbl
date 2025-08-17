@@ -50,5 +50,8 @@
 
 ]
 @ASM::Copy from? to? [
-
+    _ASM -= _ASM
+    to? -= to?
+    _ASM -= from?
+    to? -= _ASM
 ]

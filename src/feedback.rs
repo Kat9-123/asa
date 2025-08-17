@@ -42,8 +42,8 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             Type::Info => "Note",
-            Type::Warn => "Warn",
-            Type::Error => "Error",
+            Type::Warn => "WARN",
+            Type::Error => "ERROR",
             Type::Trace => "Trace",
             Type::Details => "Details",
         }
@@ -137,7 +137,7 @@ macro_rules! asm_instruction {
 #[macro_export]
 macro_rules! terminate {
     () => {
-        panic!();
+        std::process::exit(1);
     };
 }
 

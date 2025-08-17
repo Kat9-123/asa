@@ -1,17 +1,14 @@
 use simple_logger::SimpleLogger;
 use std::{
-    env,
-    fs::{self, File, FileType},
-    io::Write,
-    path::{Path, PathBuf},
+    fs::{self},
     time::Instant,
 };
 
 use asa::{
-    args::{self, get},
-    assembler, debugger,
+    args::{self},
+    assembler,
     feedback::asm_runtime_error,
-    files::{self, OutputFile, to_bin},
+    files::{self, OutputFile},
     interpreter::{self},
     terminate, utils,
 };
@@ -35,7 +32,6 @@ fn main() {
 
     let (target, module) = files::get_target_and_module_name(args::get().target.clone());
     let output_file = OutputFile::new(&args::get().output, module.clone());
-
     // Assembly
     println_silenceable!("Assembling {target:?}, {module}");
     let contents = fs::read_to_string(&target);
