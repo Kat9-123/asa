@@ -1,26 +1,27 @@
-![](logo.png)
+<img src="logo.png" width="80"/>
 
 # Advanced Subleq Assembler
-This Subleq assembler uses a custom assembly-like language that will be directly converted to Subleq
+This Subleq assembler uses a custom assembly-like language, called Sublang, that is assembled to Subleq
 
 
 ## Features
-* Interpreter with in an advanced debugger
+* Interpreter and debugger
 * Macros
-* Pointer syntax sugar
+* Syntax sugar for common constructs
 * In depth assembler feedback
 * Optional typing system
 * Fully fledged standard lib including functions and high level control flow constructs like If or While
-* Scopes
+* Fine grained control
 
 ## What is Subleq?
-Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that had only one instruction, namely Subleq. The instruction has three operands: A, B, C
-Where the value at memory address A is subtracted from the value at address B. If the resulting number is less than or equal to zero, a jump takes place to address C. Otherwise the next instruction is executed
+Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that has only the `SUBLEQ` instruction. It has three operands: `A`, `B`, `C`.
+The value at memory address `A` is subtracted from the value at address `B`. If the resulting number is less than or equal to zero, a jump takes place to address `C`. Otherwise the next instruction is executed.
 Since there is only one instruction, the assembly does not contain opcodes.
 So: 
-SUBLEQ 1 2 3
+`SUBLEQ 1 2 3`
 would just be
-1 2 3
+`1 2 3`
+
 A very basic subleq interpreter written in Python would look as follows
 ```Python
 while True:

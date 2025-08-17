@@ -73,7 +73,8 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
         Body { bounded_by_scopes: bool },
     }
     let mut mode: Mode = Mode::Normal;
-    let mut scope_tracker = 0;
+    let mut internal_scope_tracker = 0;
+    let mut global_scope_tracker = 0;
     let mut cur_macro: Option<Macro> = None;
 
     for i in 0..tokens.len() {
@@ -88,8 +89,13 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                         body: Vec::new(),
                         labels_defined_in_macro: Vec::new(),
                     });
-                    scope_tracker = 0;
-
+                    internal_scope_tracker = 0;
+                    if global_scope_tracker != 0 {
+                        asm_warn!(
+                            &token.info,
+                            "Macros defined inside of a scope will still be globally accessible"
+                        );
+                    }
                     if let Some(x) = macros.get(&cur_macro.as_mut().unwrap().name) {
                         asm_warn!(
                             &token.info,
@@ -101,6 +107,14 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
                 TokenVariant::MacroBodyStart | TokenVariant::MacroBodyEnd => {
                     asm_error!(&token.info, "Unexpected token");
+                }
+                TokenVariant::Scope => {
+                    global_scope_tracker += 1;
+                    new_tokens.push(token.clone())
+                }
+                TokenVariant::Unscope => {
+                    global_scope_tracker -= 1;
+                    new_tokens.push(token.clone())
                 }
                 _ => {
                     new_tokens.push(token.clone());
@@ -133,7 +147,7 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                         bounded_by_scopes: true,
                     };
                     cur_macro.as_mut().unwrap().body.push(token.clone());
-                    scope_tracker += 1;
+                    internal_scope_tracker += 1;
                 }
 
                 _ => {
@@ -147,7 +161,7 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
             Mode::Body { bounded_by_scopes } => match &token.variant {
                 TokenVariant::LabelArrow { .. } if !bounded_by_scopes => {
                     cur_macro.as_mut().unwrap().body.push(token.clone());
-                    if scope_tracker > 0 {
+                    if internal_scope_tracker > 0 {
                         continue;
                     }
                     if let TokenVariant::Label { name } = &tokens[i - 1].variant {
@@ -179,7 +193,7 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
                 TokenVariant::Scope => {
                     cur_macro.as_mut().unwrap().body.push(token.clone());
-                    scope_tracker += 1;
+                    internal_scope_tracker += 1;
                 }
 
                 TokenVariant::MacroDeclaration { .. } => {
@@ -216,11 +230,11 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                 TokenVariant::Unscope => {
                     let mac = cur_macro.as_mut().unwrap();
                     mac.body.push(token.clone());
-                    scope_tracker -= 1;
+                    internal_scope_tracker -= 1;
                     if !bounded_by_scopes {
                         continue;
                     }
-                    if scope_tracker != 0 {
+                    if internal_scope_tracker != 0 {
                         continue;
                     }
                     /*

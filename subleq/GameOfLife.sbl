@@ -64,7 +64,7 @@
         !AddLit p_back_cell? 2
     }
 }
-
+{
 @IterOverGrid p_cell? s_cell? s_line? {
 
     !Add p_cell? GRID_WIDTH
@@ -79,7 +79,7 @@
         s_line?
     }
 }
-
+}
 
 GRID_PTR_0 -> !MakeBuffer
 
@@ -115,6 +115,7 @@ THREE -> 3
     *index -= N_ONE 
 
 }**
+
 
 
 
@@ -245,7 +246,6 @@ THREE -> 3
 .main -> {
     ;0x9000 -= 0x9000
    ; i = 0
-       Z -= -1
     !Cpy GRID_PTR_0 p_front_buffer
     !Cpy GRID_PTR_1 p_back_buffer
     !Set 54 54
@@ -266,7 +266,7 @@ THREE -> 3
         !Routine::Call .SwapBuffers
      ;   !ASM::Debug i
        ; !Inc i
-    Z -= -1
+   ; Z -= -1
     }
 
     !Halt

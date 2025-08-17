@@ -1,12 +1,17 @@
-## Introduction to .sbl
+# Introduction to Sublang
+Sublang is a bare bones assembly languages consisting of three main elements:
+* The SUBLEQ instruction
+* Labels
+* Macros
 
-### Basics
+
+### Subleq
 
 ```clojure
 1 2 3 ; Standard subleq: mem[2] -= mem[1] jump to 3 if leq otherwise next instruction.
 ; This syntax is valid, but pointless.
 
-; memory adresses and instructions may be labeled
+; memory addresses and instructions may be labeled
 a -> 1
 b -> 2
 c ->
@@ -17,10 +22,10 @@ c ->
 
 ; These two are equivalent
 a -= b
-a -= b &1 ; `&1` gives a relative address with offset one
+a -= b $1 ; `$1` gives a relative address with offset one
 
 a -= b ; is equivalent to
-b a &1 ; This syntax works but is not recommended, since it makes it harder for the assembler to give hints
+b a $1 ; This syntax works but is not recommended, since it makes it harder for the assembler to give hints
 
 ; Other examples, literals and labels may freely be combined
 a -= b 0x0000
@@ -40,7 +45,7 @@ c -> 9
 ```
 
 ### Scopes
-Scoping works like in most other languages. Note: Only labels can be scoped, macro definitions can't.
+Scoping works like in most other languages. Note: Only labels are effected by scopes, macro definitions in scopes will still be globally accessible
 ```clojure
 Z -> 123
 X -> 456
@@ -50,9 +55,6 @@ Y -> 0
     X -= Z  ; 456 - 789
 }
 Y -= Z ; 0 - 123
-
-
-
 ```
 
 
@@ -65,8 +67,7 @@ The assembler has a simple type-checker, which can be disabled.
 * `a_value` anything, no type checking
 * `m_value` a macro call passed as argument, must be braced.
 
-These naming conventions are checked by the assembler, currently they are only
-checked for macro parameters.
+Currently types are only checked checked for macro parameters.
 
 ### Naming conventions
 * `@MyMacro` macros in CamelCase
@@ -134,7 +135,8 @@ You may pass scopes as macro arguments
 }
 
 
-!Mac { a -= b } ; =>
+!Mac { a -= b } 
+; =>
 {
     { a -= b }
 }
@@ -147,7 +149,8 @@ If you don't want the argument to be surrounded by scopes, you can use braces
 }
 ;
 
-!Mac ( a -= b ) ; =>
+!Mac ( a -= b )
+; =>
 {
     a -= b
 }
@@ -162,8 +165,8 @@ This means that you can 'curry' macros (using that term loosely)
 @CurriedMacro l_a? l_b? {
     l_a? -= l_b?
 }
-;
-!Mac ( !CurriedMacro 5 ) ; =>
+; =>
+!Mac ( !CurriedMacro 5 ) 
 {
     {
         5 -= 10
@@ -178,14 +181,14 @@ This means that you can 'curry' macros (using that term loosely)
 To create a pointer to a value
 
 ```clojure
-ptr -> &1 0x1234
+ptr -> $1 0x1234
 
-ptr -> &1 "String"
+ptr -> $1 "String"
 ; or
 ptr -> &'A'
-ptr -> &"String" ; Doesn't work for Hex or Dec literals, for those there must be a space in beteeen the & and the number
-pre -> & 123
-; because &123 would be a relative address +123
+ptr -> &"String"
+pre -> &123
+; & is equivalent to $1
 ```
 
 #### Dereferencing
@@ -235,7 +238,7 @@ If you want to create a module (a set of .sbl files in a folder) you must create
 
 See subleq/Sublib for an example.
 
-### Miscellaneous
+### Syntax sugar
 #### Mult operator
 When the '*' is placed before a literal ?? The previous token is repeated n times
 ```clojure
@@ -245,13 +248,42 @@ label label label
 0x123 * 0x4 ; =>
 0x123 0x123 0x123 0x123
 ```
-
+#### Dereference operator
 
 #### Assignment
-The '=' can be used to declare a label, and assign it a value.
+The '=' can be used to declare a label, and assign it a value. The value may be a literal or another label. every time the assignment is executed the value is reset to the given value
+```clojure
+label = 10
+; =>
+_ASM -= _ASM
+label -= label $3
+label -> 0
+{
+    n_lit -> 10
+    _ASM -= n_lit
+    label -= _ASM
+}
+; Zero is a special case
+label2 = 0
+; =>
+label2 -= label2 $2
+label2 -> 0
 
-### Advanced
+
+; Another label
+label3 = label2
+; =>
+_ASM -= _ASM $2
+label3 -> 0
+label3 -= label3
+
+_ASM -= label2
+label3 -= _ASM
+```
+
+## Conclusion
+For many more examples see the standard library, called Sublib
 
 
-### Sublib
+# Sublib
 Sublib is the standard library. It has a range of very basic features (Base.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.
