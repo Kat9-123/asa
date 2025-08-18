@@ -5,21 +5,34 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::terminate;
+
 const PLAINTEXT_EXTENSION: &str = "sblx";
 const BINARY_EXTENSION: &str = "bin";
 
-#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum FileType {
     Debuggable,
     Plaintext,
     Binary,
 }
 
-enum InputFileType {
+#[derive(Clone, Debug, PartialEq)]
+pub enum InputFileType {
     Sublang,
-    Debuggable,
     Plaintext,
     Binary,
+}
+
+impl InputFileType {
+    fn from_str(value: &str) -> Option<Self> {
+        match value.to_lowercase().trim() {
+            "sbl" => Some(InputFileType::Sublang),
+            PLAINTEXT_EXTENSION => Some(InputFileType::Plaintext),
+            BINARY_EXTENSION => Some(InputFileType::Binary),
+            _ => None,
+        }
+    }
 }
 
 impl FileType {
@@ -50,6 +63,12 @@ pub fn to_text(data: &[u16]) -> String {
     text.pop();
 
     text
+}
+
+pub fn from_text(text: &String) -> Vec<u16> {
+    text.split_ascii_whitespace()
+        .map(|val| val.parse::<u16>().unwrap())
+        .collect()
 }
 
 #[derive(PartialEq, Debug)]
@@ -138,7 +157,7 @@ pub fn from_bin(data: &[u8]) -> Vec<u16> {
     u16data
 }
 /// TODO
-pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, String) {
+pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFileType, String) {
     let target = argument.unwrap_or_else(|| ".".to_string());
     let cwd = env::current_dir().unwrap();
 
@@ -158,8 +177,21 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, String)
     } else {
         target_path
     };
-
-    (target, module)
+    let input_file_type = InputFileType::from_str(
+        target
+            .extension()
+            .unwrap_or_else(|| {
+                log::error!("Target file does not have a file extension");
+                terminate!();
+            })
+            .to_str()
+            .unwrap(),
+    )
+    .unwrap_or_else(|| {
+        log::error!("Target file has an invalid file extension");
+        terminate!();
+    });
+    (target, input_file_type, module)
 }
 
 pub fn get_mode(target: PathBuf) {
@@ -223,17 +255,19 @@ mod tests {
 
     #[test]
     fn target_and_module_name() {
-        let (target, module) = get_target_and_module_name(None);
+        let (target, input_file_type, module) = get_target_and_module_name(None);
         assert_eq!(target, Path::new("./Main.sbl"));
         assert_eq!(module, "asa");
-
-        let (target, module) =
+        assert_eq!(input_file_type, InputFileType::Sublang);
+        let (target, input_file_type, module) =
             get_target_and_module_name(Some("subleq/tests/Fibonacci.sbl".to_owned()));
         assert_eq!(target, Path::new("subleq/tests/Fibonacci.sbl"));
         assert_eq!(module, "Fibonacci");
-
-        let (target, module) = get_target_and_module_name(Some("subleq".to_owned()));
+        assert_eq!(input_file_type, InputFileType::Sublang);
+        let (target, input_file_type, module) =
+            get_target_and_module_name(Some("subleq".to_owned()));
         assert_eq!(target, Path::new("subleq/Main.sbl"));
         assert_eq!(module, "subleq");
+        assert_eq!(input_file_type, InputFileType::Sublang);
     }
 }

@@ -41,10 +41,10 @@ fn test_at_path(path: &str) {
             continue;
         }
         let expected_out = fs::read_to_string(fp).unwrap();
-        let expected_out = preprocessor::generic_sanitisation(&expected_out);
+        let expected_out = lexer::generic_sanitisation(&expected_out);
         let (result, ..) = runtimes::interpreter::interpret(&mut mem);
         let out = result.unwrap_or_else(|e| {
-            asm_runtime_error(e, &tokens);
+            asm_runtime_error(e, &Some(tokens));
             terminate!()
         });
         assert_eq!(out, expected_out);

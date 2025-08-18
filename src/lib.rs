@@ -6,7 +6,6 @@ pub mod files;
 pub mod lexer;
 pub mod mem_view;
 pub mod parser;
-pub mod preprocessor;
 pub mod runtimes;
 pub mod symbols;
 pub mod tokens;

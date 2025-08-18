@@ -1,5 +1,4 @@
 use core::fmt;
-use std::{fs::File, str::FromStr};
 
 use clap::Parser;
 use once_cell::sync::OnceCell;
@@ -62,11 +61,12 @@ pub struct Args {
     #[arg(short = 't', long, default_value_t = false)]
     pub disable_type_checking: bool,
 
-    /// Out file
+    /// Output file, may be: Nothing: no output will be generated, BIN or SBLX, will output with the module name
+    /// and the given file extension.
     #[arg(short, long, default_value = None)]
     pub output: Option<String>,
 
-    /// Suppresses all assembler output expect for errors, overrides --feedback-level. Program output will still be shown.
+    /// Suppresses all assembler output except for errors, overrides --feedback-level. Program output will still be shown.
     #[arg(short, long, default_value_t = false)]
     pub silent: bool,
 }

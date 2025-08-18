@@ -1,16 +1,17 @@
 //! Converts a string into a vector of tokens.
 
 use std::cell::RefCell;
+use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::preprocessor::read_module;
 use crate::terminate;
 use crate::{
-    asm_error, asm_error_no_terminate, asm_hint, preprocessor,
+    asm_error, asm_error_no_terminate, asm_hint,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 use colored::Colorize;
 
+use log::error;
 use unescape::unescape;
 
 thread_local! {
@@ -45,6 +46,11 @@ enum Context {
     PossibleBlockCommentEnd,
 }
 
+/// Does some basic and safe sanitisation. It's fine to apply it multiple times.
+pub fn generic_sanitisation(text: &str) -> String {
+    text.replace("\r\n", "\n").replace("\t", "    ")
+}
+
 fn is_valid_macro_name(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == ':'
 }
@@ -76,8 +82,6 @@ fn updated_context(
             '[' => (Context::None, None, Some(TokenVariant::MacroBodyStart)),
             ']' => (Context::None, None, Some(TokenVariant::MacroBodyEnd)),
             '=' => (Context::None, None, Some(TokenVariant::Equals)),
-
-            '/' => (Context::None, None, Some(TokenVariant::NamespaceEnd)),
 
             '(' => (Context::None, None, Some(TokenVariant::BraceOpen)),
             ')' => (Context::None, None, Some(TokenVariant::BraceClose)),
@@ -315,6 +319,40 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
     result
 }
 
+fn include(name: &String, currently_imported: &mut Vec<PathBuf>) -> Option<Vec<Token>> {
+    let mut path = Path::new(&format!("./subleq/{}", name)).to_path_buf();
+    // When trying to import a folder, it looks for a .sbl file with the same name inside of the folder
+    if path.is_dir() {
+        path.push(path.clone().file_stem().unwrap());
+    }
+
+    if path.extension().is_none() {
+        path.set_extension("sbl");
+    }
+    //                        println!("{}", path.display());
+
+    let exists = FILES.with_borrow_mut(|files| {
+        if !files.contains(&path) {
+            files.push(path.clone());
+            return false;
+        }
+        true
+    });
+    if !exists {
+        let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
+            error!("Couldn't include the file: '{path:?}'");
+            terminate!();
+        });
+        Some(recursive_tokenisation(
+            contents,
+            FILES.with_borrow_mut(|files| files.len() - 1),
+            currently_imported,
+        ))
+    } else {
+        None
+    }
+}
+
 fn recursive_tokenisation(
     mut text: String,
     file_idx: usize,
@@ -322,7 +360,7 @@ fn recursive_tokenisation(
 ) -> Vec<Token> {
     let mut result_tokens: Vec<Token> = Vec::new();
 
-    text = preprocessor::generic_sanitisation(&text);
+    text = generic_sanitisation(&text);
     text.push('\n'); // Little hack
 
     let mut context: Context = Context::None;
@@ -334,51 +372,24 @@ fn recursive_tokenisation(
         file: file_idx,
         sourceline_suffix: None,
     };
-    let mut idx_in_line = 1;
+    let mut column = 1;
     for c in text.chars() {
         loop {
             let (new_context, add_to_buffer, variant_to_add) =
                 updated_context(&context, &buffer, c, &info);
 
             context = new_context;
-            info.start_char = idx_in_line - info.length;
+            info.start_char = column - info.length;
 
             if let Some(ch) = add_to_buffer {
                 buffer.push(ch)
             }
 
             if let Some(var) = &variant_to_add {
-                match &var {
-                    TokenVariant::Namespace { name } => {
-                        let mut path = Path::new(&format!("./subleq/{}", name)).to_path_buf();
-                        // When trying to import a folder, it looks for a .sbl file with the same name inside of the folder
-                        if path.is_dir() {
-                            path.push(path.clone().file_stem().unwrap());
-                        }
-
-                        if path.extension().is_none() {
-                            path.set_extension("sbl");
-                        }
-                        //                        println!("{}", path.display());
-
-                        let exists = FILES.with_borrow_mut(|files| {
-                            if !files.contains(&path) {
-                                files.push(path.clone());
-                                return false;
-                            }
-                            true
-                        });
-                        if !exists {
-                            let text = read_module(&path);
-                            result_tokens.append(&mut recursive_tokenisation(
-                                text,
-                                FILES.with_borrow_mut(|files| files.len() - 1),
-                                currently_imported,
-                            ));
-                        }
+                if let TokenVariant::Namespace { name } = var {
+                    if let Some(mut toks) = include(name, currently_imported) {
+                        result_tokens.append(&mut toks);
                     }
-
-                    _ => {}
                 }
 
                 if context == Context::None {
@@ -390,9 +401,10 @@ fn recursive_tokenisation(
                     origin_info: vec![],
                 };
 
-                // Consecutive newlines do not carry any information
                 if let TokenVariant::Namespace { .. } = token.variant {
                 } else {
+                    // Consecutive newlines do not carry any information
+
                     if let Some(x) = result_tokens.last() {
                         if token.variant != TokenVariant::Linebreak
                             || x.variant != TokenVariant::Linebreak
@@ -403,12 +415,14 @@ fn recursive_tokenisation(
                         result_tokens.push(token);
                     }
                 }
+
+                // Reset
                 buffer.clear();
                 if let TokenVariant::Linebreak = var {
                     info.line_number += 1;
                     info.start_char = 0;
                     info.length = 0;
-                    idx_in_line = 0;
+                    column = 0;
                     break;
                 }
             }
@@ -426,113 +440,8 @@ fn recursive_tokenisation(
         } else {
             info.length += 1;
         }
-        idx_in_line += 1;
+        column += 1;
     }
 
     result_tokens
 }
-/*
-pub fn oldtokenisation(mut text: String, path: String) -> Vec<Token> {
-    let mut result_tokens: Vec<Token> = Vec::new();
-
-    text = preprocessor::generic_sanitisation(&text);
-    text.push('\n'); // Little hack
-
-    let mut name_space_stack: Vec<usize> = vec![0];
-    FILES.set(vec![path.clone()]);
-    let mut line_number_stack: Vec<i32> = Vec::new();
-
-    let mut context: Context = Context::None;
-    let mut buffer: String = String::new();
-    let mut info: Info = Info {
-        start_char: 0,
-        length: 0,
-        line_number: 1,
-        file: 0,
-        sourceline_suffix: None,
-    };
-    let mut idx_in_line = 1;
-    for c in text.chars() {
-        loop {
-            let (new_context, add_to_buffer, variant_to_add) =
-                updated_context(&context, &buffer, c, &info);
-
-            context = new_context;
-            info.start_char = idx_in_line - info.length;
-
-            if let Some(ch) = add_to_buffer {
-                buffer.push(ch)
-            }
-
-            if let Some(var) = &variant_to_add {
-                match &var {
-                    TokenVariant::Namespace { name } => {
-                        let idx = FILES.with_borrow_mut(|files| {
-                            files.iter().position(|r| r == name).unwrap_or_else(|| {
-                                files.push(name.clone());
-                                files.len() - 1
-                            })
-                        });
-
-                        name_space_stack.push(idx);
-                        line_number_stack.push(info.line_number);
-                        info.line_number = 0;
-                        info.file = idx;
-                    }
-                    TokenVariant::NamespaceEnd => {
-                        name_space_stack.pop();
-                        info.file = *name_space_stack.last().expect("Unmatched namespace symbol");
-                        info.line_number = line_number_stack.pop().unwrap();
-                    }
-                    _ => {}
-                }
-
-                if context == Context::None {
-                    info.length += 1;
-                }
-                let token = Token {
-                    info: info.clone(),
-                    variant: var.clone(),
-                    origin_info: vec![],
-                };
-
-                // Consecutive newlines do not carry any information
-                if let Some(x) = result_tokens.last() {
-                    if token.variant != TokenVariant::Linebreak
-                        || x.variant != TokenVariant::Linebreak
-                    {
-                        result_tokens.push(token);
-                    }
-                } else {
-                    result_tokens.push(token);
-                }
-
-                buffer.clear();
-                if let TokenVariant::Linebreak = var {
-                    info.line_number += 1;
-                    info.start_char = 0;
-                    info.length = 0;
-                    idx_in_line = 0;
-                    break;
-                }
-            }
-
-            if let Context::DontConsume = context {
-                context = Context::None;
-                continue;
-            }
-
-            break;
-        }
-
-        if context == Context::None {
-            info.length = 0;
-        } else {
-            info.length += 1;
-        }
-        idx_in_line += 1;
-    }
-
-    result_tokens
-}
- */

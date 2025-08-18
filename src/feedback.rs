@@ -333,28 +333,40 @@ pub fn _asm_msg(
     }
 }
 
-pub fn asm_runtime_error(e: RuntimeError, tokens: &[Token]) {
+pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
     match e {
         RuntimeError::AOutOfRange(pc) => {
-            asm_error_no_terminate!(
-                origin_info_or_info(&tokens[pc]),
-                "Address at 'A' is outside of memory bounds"
-            );
-            asm_trace!(&tokens[pc].origin_info);
+            if let Some(tokens) = tokens {
+                asm_error_no_terminate!(
+                    origin_info_or_info(&tokens[pc]),
+                    "Address at 'A' is outside of memory bounds"
+                );
+                asm_trace!(&tokens[pc].origin_info);
+            } else {
+                log::error!("Address at 'A' is outside of memory bounds. PC: {pc}");
+            }
         }
         RuntimeError::BOutOfRange(pc) => {
-            asm_error_no_terminate!(
-                origin_info_or_info(&tokens[pc + 1]),
-                "Address at 'B' is outside of memory bounds"
-            );
-            asm_trace!(&tokens[pc + 1].origin_info);
+            if let Some(tokens) = tokens {
+                asm_error_no_terminate!(
+                    origin_info_or_info(&tokens[pc + 1]),
+                    "Address at 'B' is outside of memory bounds"
+                );
+                asm_trace!(&tokens[pc + 1].origin_info);
+            } else {
+                log::error!("Address at 'B' is outside of memory bounds. PC: {pc}");
+            }
         }
         RuntimeError::COutOfRange(pc) => {
-            asm_error_no_terminate!(
-                origin_info_or_info(&tokens[pc + 2]),
-                "Jump outside of memory bounds"
-            );
-            asm_trace!(&tokens[pc + 2].origin_info);
+            if let Some(tokens) = tokens {
+                asm_error_no_terminate!(
+                    origin_info_or_info(&tokens[pc + 2]),
+                    "Jump outside of memory bounds"
+                );
+                asm_trace!(&tokens[pc + 2].origin_info);
+            } else {
+                log::error!("Jump outside of memory bounds. PC: {pc}");
+            }
         }
         RuntimeError::Breakpoint(..) => todo!(),
     }

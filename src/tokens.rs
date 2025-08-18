@@ -66,7 +66,6 @@ pub enum TokenVariant {
     BracedLabelDefinition { name: String, data: IntOrString },
 
     Asterisk,
-    NamespaceEnd,
 }
 
 /// Only really used for debugging
@@ -95,7 +94,6 @@ impl fmt::Display for Token {
             Linebreak => "\n".to_string(),
             BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
             Asterisk => "*".to_string(),
-            NamespaceEnd => "\\".to_string(),
             Equals => "=".to_string(),
         };
         write!(fmt, "{s}")
