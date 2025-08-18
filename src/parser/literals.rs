@@ -1,5 +1,3 @@
-use std::thread::scope;
-
 use unescape::unescape;
 
 use crate::{feedback::*, terminate, tokens::*};

@@ -1,0 +1,55 @@
+Z -= Z .main
+Z -> 0
+
+@Mac1{
+    !Mac2
+    !Mac2
+    !Mac2
+    !Mac2
+    !Mac2
+}
+
+@Mac2 {
+    !Mac3
+    !Mac3
+    !Mac3
+    !Mac3
+    !Mac3
+}
+
+@Mac3 {
+    !Mac4
+    !Mac4
+    !Mac4
+    !Mac4
+    !Mac4
+}
+
+@Mac4 {
+    !Mac5
+    !Mac5
+    !Mac5
+    !Mac5
+    !Mac5
+}
+
+@Mac5 {
+    !Mac6
+    !Mac6
+    !Mac6
+    !Mac6
+    !Mac6
+}
+@Mac6 {
+    Z -= Z
+}
+
+.main ->
+!Mac1
+!Mac1
+!Mac1
+!Mac1
+!Mac1
+
+
+Z -= Z -1

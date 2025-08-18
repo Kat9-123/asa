@@ -93,13 +93,14 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                     if global_scope_tracker != 0 {
                         asm_warn!(
                             &token.info,
-                            "Macros defined inside of a scope will still be globally accessible"
+                            "Macros defined inside of a scope will still be accessible globally"
                         );
                     }
                     if let Some(x) = macros.get(&cur_macro.as_mut().unwrap().name) {
                         asm_warn!(
                             &token.info,
-                            "A macro with this name has already been defined"
+                            "A macro with this name has already been defined {}",
+                            x.name
                         );
                         asm_details!(&x.info, "Here");
                     }

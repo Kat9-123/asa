@@ -1,4 +1,4 @@
 /target
 .VSCodeCounter
 tarpaulin-report.html
-.vscode
+/.vscode

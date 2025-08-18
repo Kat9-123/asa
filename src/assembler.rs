@@ -9,11 +9,11 @@ use log::debug;
 pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
     let mut currently_imported: Vec<PathBuf> = vec![Path::new(&path).to_path_buf()];
 
-    let with_imports = preprocessor::include_imports(text, &mut currently_imported);
-    debug!("With imports: ");
-    print_debug!("{}", with_imports);
+    // let with_imports = preprocessor::include_imports(text, &mut currently_imported);
+    //debug!("With imports: ");
+    //  print_debug!("{}", with_imports);
 
-    let tokens = lexer::tokenise(with_imports, path);
+    let tokens = lexer::tokenise(text.to_owned(), path);
     println_debug!("Tokens:");
 
     for i in &tokens {

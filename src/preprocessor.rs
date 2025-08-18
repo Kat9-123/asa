@@ -9,7 +9,15 @@ use crate::terminate;
 pub fn generic_sanitisation(text: &str) -> String {
     text.replace("\r\n", "\n").replace("\t", "    ")
 }
+pub fn read_module(path: &PathBuf) -> String {
+    let mut path = path.clone();
 
+    let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
+        error!("Couldn't include the file: '{path:?}'");
+        terminate!();
+    });
+    generic_sanitisation(&contents)
+}
 pub fn include_imports(text: &str, currently_imported: &mut Vec<PathBuf>) -> String {
     let cleaned_string: String = generic_sanitisation(text);
 

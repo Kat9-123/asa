@@ -3,7 +3,6 @@
 #Sublib
 #Sublib/Routines.sbl
 #Sublib/Control.sbl
-
 @GRID_SIZE_WITH_SURROUNDING [10404**(25 + 2)^2**]
 ;@GRID_SIZE_WITH_SURROUNDING [729**(25 + 2)^2**]
 

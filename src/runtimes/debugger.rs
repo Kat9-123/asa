@@ -12,7 +12,7 @@ use crossterm::{
     terminal::{self},
 };
 use std::fs;
-use std::io::{self, *};
+use std::io::{self};
 use std::num::Wrapping;
 
 pub fn revert_historic_instruction(

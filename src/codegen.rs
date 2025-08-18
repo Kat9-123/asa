@@ -1,7 +1,7 @@
 use std::num::TryFromIntError;
 
 use crate::{
-    asm_error, asm_warn,
+    asm_error, asm_warn, terminate,
     tokens::{Token, TokenVariant},
 };
 
@@ -9,13 +9,18 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::with_capacity(statements.len());
     let mut final_tokens: Vec<Token> = Vec::with_capacity(statements.len());
     for statement in statements {
+        if final_tokens.len() > 0xFFF0 {
+            log::error!("Program is too big");
+            terminate!();
+        }
         match &statement.variant {
             TokenVariant::DecLiteral { value } => {
                 let as_u16 = *value as u16;
                 if (*value >> 16) > 0 {
                     asm_warn!(
                         &statement.info,
-                        "Number is too large, it will equal {}",
+                        "Number {} is too large, it will equal {}",
+                        value,
                         as_u16
                     );
                 }
@@ -24,11 +29,7 @@ pub fn generate(statements: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
             }
 
             // Ideally none of these would be here
-            TokenVariant::Scope
-            | TokenVariant::Unscope
-            | TokenVariant::LabelDefinition { .. }
-            | TokenVariant::Namespace { .. } // These two shouldnt be allowed
-            | TokenVariant::NamespaceEnd => {
+            TokenVariant::Scope | TokenVariant::Unscope | TokenVariant::LabelDefinition { .. } => {
                 continue;
             }
             _ => {

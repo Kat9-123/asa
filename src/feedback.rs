@@ -194,8 +194,11 @@ pub(crate) use asm_error;
 pub(crate) use asm_warn;
 
 fn get_file_contents(index: usize) -> String {
-    fs::read_to_string(lexer::FILES.with_borrow(|v| v[index].clone()))
-        .expect("Should have been able to read the file")
+    let path = lexer::FILES.with_borrow(|v| v[index].clone());
+    fs::read_to_string(&path).expect(&format!(
+        "Should have been able to read the file {}",
+        path.display()
+    ))
 }
 
 /* Example:
@@ -253,7 +256,12 @@ pub fn _asm_msg(
     print!("{title_prefix}{} + ", msg_type);
     #[cfg(debug_assertions)] // We dont want to show the origin of the error inside of the assembler in release builds
     print!("({asa_call_origin}:{asa_line_number}) ");
-    println!("{}:{}:{}", name, info.line_number, info.start_char);
+    println!(
+        "{}:{}:{}",
+        name.display(),
+        info.line_number,
+        info.start_char
+    );
 
     let file_preview_prefix = match msg_type {
         Type::Details | Type::Trace => "     |",
