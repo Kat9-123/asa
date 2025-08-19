@@ -1,28 +1,15 @@
 use std::{
     env,
-    fs::File,
+    fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
+    time::Instant,
 };
 
-use crate::terminate;
+use crate::{assembler, println_silenceable, terminate, tokens::Token};
 
 const PLAINTEXT_EXTENSION: &str = "sblx";
 const BINARY_EXTENSION: &str = "bin";
-
-#[derive(Clone, Debug, PartialEq)]
-enum FileType {
-    Debuggable,
-    Plaintext,
-    Binary,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum InputFileType {
-    Sublang,
-    Plaintext,
-    Binary,
-}
 
 impl InputFileType {
     fn from_str(value: &str) -> Option<Self> {
@@ -35,46 +22,40 @@ impl InputFileType {
     }
 }
 
-impl FileType {
+#[derive(Clone, Debug, PartialEq)]
+pub enum InputFileType {
+    Sublang,
+    Plaintext,
+    Binary,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum OutputFileType {
+    Plaintext,
+    Binary,
+}
+
+impl OutputFileType {
     fn extension(&self) -> String {
         match self {
-            FileType::Debuggable => "dsblx",
-            FileType::Plaintext => PLAINTEXT_EXTENSION,
-            FileType::Binary => BINARY_EXTENSION,
+            OutputFileType::Plaintext => PLAINTEXT_EXTENSION,
+            OutputFileType::Binary => BINARY_EXTENSION,
         }
         .to_owned()
     }
     fn from_str(value: &str) -> Option<Self> {
         match value.to_lowercase().trim() {
-            "dsblx" => Some(FileType::Debuggable),
-            PLAINTEXT_EXTENSION => Some(FileType::Plaintext),
-            BINARY_EXTENSION => Some(FileType::Binary),
+            PLAINTEXT_EXTENSION => Some(OutputFileType::Plaintext),
+            BINARY_EXTENSION => Some(OutputFileType::Binary),
             _ => None,
         }
     }
 }
 
-pub fn to_text(data: &[u16]) -> String {
-    let mut text: String = String::new();
-    for i in data {
-        text.push_str(&i.to_string());
-        text.push(' ');
-    }
-    text.pop();
-
-    text
-}
-
-pub fn from_text(text: &String) -> Vec<u16> {
-    text.split_ascii_whitespace()
-        .map(|val| val.parse::<u16>().unwrap())
-        .collect()
-}
-
 #[derive(PartialEq, Debug)]
 pub struct OutputFile {
     /// Example: .sblx, .bin, etc.
-    file_type: FileType,
+    file_type: OutputFileType,
     /// Example: ./folder/filename
     file_base: PathBuf,
 }
@@ -89,7 +70,7 @@ impl OutputFile {
         let argument = argument.clone()?;
 
         // The argument is only a filetype
-        if let Some(file_type) = FileType::from_str(&argument) {
+        if let Some(file_type) = OutputFileType::from_str(&argument) {
             return Some(OutputFile {
                 file_type,
                 file_base: Path::new(&module_name).to_path_buf(),
@@ -100,7 +81,7 @@ impl OutputFile {
 
         // File + Filetype
         if let Some(ext) = path.extension() {
-            let file_type = FileType::from_str(ext.to_str().unwrap());
+            let file_type = OutputFileType::from_str(ext.to_str().unwrap());
             if let Some(file_type) = file_type {
                 return Some(OutputFile {
                     file_base: path.with_extension(""),
@@ -111,31 +92,31 @@ impl OutputFile {
 
         // File only
         Some(OutputFile {
-            file_type: FileType::Binary,
+            file_type: OutputFileType::Binary,
             file_base: path,
         })
     }
 }
 
-pub fn to_file(data: &[u16], output: Option<OutputFile>) {
-    let output = match output {
-        Some(out) => out,
-        None => return,
-    };
-    let bytes = match output.file_type {
-        FileType::Debuggable => todo!(),
-        FileType::Plaintext => to_text(data).as_bytes().to_vec(),
-        FileType::Binary => to_bin(data),
-    };
+pub fn to_text(data: &[u16]) -> String {
+    let mut text: String = String::new();
+    for i in data {
+        text.push_str(&i.to_string());
+        text.push(' ');
+    }
+    text.pop();
 
-    let mut path = output.file_base;
-    path.set_extension(output.file_type.extension());
-    let mut file = File::create(path).unwrap();
-    file.write_all(&bytes).unwrap();
+    text
+}
+
+pub fn from_text(text: &str) -> Vec<u16> {
+    text.split_ascii_whitespace()
+        .map(|val| val.parse::<u16>().unwrap())
+        .collect()
 }
 
 /// Binary format is in Big Endian
-pub fn to_bin(data: &[u16]) -> Vec<u8> {
+pub fn to_bytes(data: &[u16]) -> Vec<u8> {
     let mut u8data: Vec<u8> = Vec::with_capacity(data.len() * 2);
 
     for i in data {
@@ -147,7 +128,7 @@ pub fn to_bin(data: &[u16]) -> Vec<u8> {
 }
 
 /// Binary format is in Big Endian
-pub fn from_bin(data: &[u8]) -> Vec<u16> {
+pub fn from_bytes(data: &[u8]) -> Vec<u16> {
     let mut u16data: Vec<u16> = Vec::with_capacity((data.len() / 2) + 1); // Is +1 necessary
 
     for i in (0..data.len()).step_by(2) {
@@ -156,6 +137,68 @@ pub fn from_bin(data: &[u8]) -> Vec<u16> {
 
     u16data
 }
+
+pub fn to_file(data: &[u16], output: Option<OutputFile>) {
+    let output = match output {
+        Some(out) => out,
+        None => return,
+    };
+    let bytes = match output.file_type {
+        OutputFileType::Plaintext => to_text(data).as_bytes().to_vec(),
+        OutputFileType::Binary => to_bytes(data),
+    };
+
+    let mut path = output.file_base;
+    path.set_extension(output.file_type.extension());
+    let mut file = File::create(path).unwrap();
+    file.write_all(&bytes).unwrap();
+}
+
+pub fn process_input_file(
+    target: &PathBuf,
+    input_file_type: InputFileType,
+) -> (Vec<u16>, Option<Vec<Token>>) {
+    match input_file_type {
+        InputFileType::Sublang => {
+            let contents = fs::read_to_string(target);
+            let contents = contents.unwrap_or_else(|e| {
+                log::error!("Error reading file: {target:?}. {e}");
+                terminate!();
+            });
+            println_silenceable!("Assembling {target:?}");
+            let timer = Instant::now();
+            let (mem, tokens) =
+                assembler::assemble(&contents, target.to_str().unwrap().to_string());
+            let tokens = Some(tokens);
+            println_silenceable!("\nAssembled in: {:.3?}", timer.elapsed());
+            println_silenceable!(
+                "Size: {}/{}, {:.4}%",
+                mem.len(),
+                0xFFFF,
+                (mem.len() as f32 / 0xFFFF as f32) * 100f32
+            );
+
+            (mem, tokens)
+        }
+        InputFileType::Binary => {
+            let contents = fs::read(target);
+            let contents = contents.unwrap_or_else(|e| {
+                log::error!("Error reading file: {target:?}. {e}");
+                terminate!();
+            });
+            (from_bytes(&contents), None)
+        }
+        InputFileType::Plaintext => {
+            let contents = fs::read_to_string(target);
+            let contents = contents.unwrap_or_else(|e| {
+                log::error!("Error reading file: {target:?}. {e}");
+                terminate!();
+            });
+            (from_text(&contents), None)
+        }
+    }
+}
+
 /// TODO
 pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFileType, String) {
     let target = argument.unwrap_or_else(|| ".".to_string());
@@ -194,10 +237,6 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFi
     (target, input_file_type, module)
 }
 
-pub fn get_mode(target: PathBuf) {
-    let ext = target.extension().unwrap();
-}
-
 mod tests {
     use super::*;
 
@@ -211,7 +250,7 @@ mod tests {
             result,
             Some(OutputFile {
                 file_base: Path::new("mod").to_path_buf(),
-                file_type: FileType::Plaintext
+                file_type: OutputFileType::Plaintext
             })
         );
         let result = OutputFile::new(&Some("bin".to_owned()), "mod2".to_owned());
@@ -219,7 +258,7 @@ mod tests {
             result,
             Some(OutputFile {
                 file_base: Path::new("mod2").to_path_buf(),
-                file_type: FileType::Binary
+                file_type: OutputFileType::Binary
             })
         );
 
@@ -228,27 +267,27 @@ mod tests {
             result,
             Some(OutputFile {
                 file_base: Path::new("test").to_path_buf(),
-                file_type: FileType::Binary
+                file_type: OutputFileType::Binary
             })
         );
 
-        let result = OutputFile::new(&Some("abc/file.dsblx".to_owned()), "mod4".to_owned());
+        let result = OutputFile::new(&Some("abc/file.sblx".to_owned()), "mod4".to_owned());
         assert_eq!(
             result,
             Some(OutputFile {
                 file_base: Path::new("abc/file").to_path_buf(),
-                file_type: FileType::Debuggable
+                file_type: OutputFileType::Plaintext
             })
         );
         let result = OutputFile::new(
-            &Some("abc/defg/file.dsblx.hello".to_owned()),
+            &Some("abc/defg/file.sblx.hello".to_owned()),
             "mod4".to_owned(),
         );
         assert_eq!(
             result,
             Some(OutputFile {
-                file_base: Path::new("abc/defg/file.dsblx.hello").to_path_buf(),
-                file_type: FileType::Binary
+                file_base: Path::new("abc/defg/file.sblx.hello").to_path_buf(),
+                file_type: OutputFileType::Binary
             })
         );
     }

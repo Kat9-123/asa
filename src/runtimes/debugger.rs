@@ -1,8 +1,7 @@
 use crate::lexer;
-use crate::runtimes::interpreter::RuntimeError;
+use crate::runtimes::RuntimeError;
 use crate::{
     mem_view,
-    runtimes::interpreter::{self, IOOperation, InstructionHistoryItem},
     tokens::{Info, Token},
 };
 use colored::Colorize;
@@ -15,7 +14,30 @@ use std::fs;
 use std::io::{self};
 use std::num::Wrapping;
 
-pub fn revert_historic_instruction(
+enum DataType {
+    Char,
+    Int,
+    Hex,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum IOOperation {
+    Char(char),
+    Debug(u16),
+    Halt,
+    Perf,
+    None,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+
+struct InstructionHistoryItem {
+    pub pc: usize,
+    pub original_value_at_b: u16,
+    pub io_operation: IOOperation,
+}
+
+fn revert_historic_instruction(
     mem: &mut [u16],
     inst: &InstructionHistoryItem,
     io_buffer: &mut String,
@@ -31,19 +53,13 @@ pub fn revert_historic_instruction(
     inst.pc
 }
 
-enum DataType {
-    Char,
-    Int,
-    Hex,
-}
-
 fn val_to_string(val: u16, data_type: DataType) -> String {
     match data_type {
         DataType::Char => {
             format!("'{}'", val as u8 as char)
         }
         DataType::Int => format!("{}", val as i16),
-        DataType::Hex => format!("{:X}", val),
+        DataType::Hex => format!("{val:X}"),
     }
 }
 fn address_to_string(addr: u16, mem: &[u16], data_type: DataType) -> String {
@@ -187,29 +203,35 @@ fn debug<T: FnMut() -> KeyCode>(
 
         let mut result: u16 = 0;
         let mut io: IOOperation = IOOperation::None;
-        if b == 0xFFFF {
-            result = mem[a];
-            io = IOOperation::Char(result as u8 as char);
-        } else if b == 0xFFFE {
-            result = mem[a];
-            io = IOOperation::Debug(result);
-        } else if a == 0xFFFF {
-            println!("Input: ");
-            let c = match get_key() {
-                KeyCode::Char(x) => x,
-                _ => '\0',
-            };
-            result = c as u16;
-        } else {
-            if a >= mem.len() {
+        match (a, b) {
+            (_, 0xFFFF) => {
+                result = mem[a];
+                io = IOOperation::Char(result as u8 as char);
+            }
+            (_, 0xFFFE) => {
+                result = mem[a];
+                io = IOOperation::Debug(result);
+            }
+            (0xFFFF, _) => {
+                println!("Input: ");
+                let c = match get_key() {
+                    KeyCode::Char(x) => x,
+                    _ => '\0',
+                };
+                result = c as u16;
+            }
+            (a, _) if a >= mem.len() => {
                 current_error = Some(RuntimeError::AOutOfRange(pc));
-            } else if b >= mem.len() {
+            }
+            (_, b) if b >= mem.len() => {
                 current_error = Some(RuntimeError::BOutOfRange(pc));
-            } else {
+            }
+            (_, _) => {
                 original_value_at_b = mem[b];
                 result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
             }
         }
+
         let new_pc = if result as i16 <= 0 {
             //  println!("JUMP!");
 

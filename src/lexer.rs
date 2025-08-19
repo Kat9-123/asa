@@ -1,15 +1,15 @@
 //! Converts a string into a vector of tokens.
 
-use std::cell::RefCell;
-use std::fs;
-use std::path::{Path, PathBuf};
-
-use crate::terminate;
+use crate::utils::IterVec;
+use crate::{args, terminate};
 use crate::{
     asm_error, asm_error_no_terminate, asm_hint,
     tokens::{Info, LabelOffset, Token, TokenVariant},
 };
 use colored::Colorize;
+use std::cell::RefCell;
+use std::fs;
+use std::path::{self, Path, PathBuf};
 
 use log::error;
 use unescape::unescape;
@@ -57,6 +57,21 @@ fn is_valid_macro_name(c: char) -> bool {
 fn is_valid_label_name(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == ':' || c == '?' || c == '.'
 }
+
+fn new_lexer(mut characters: IterVec<char>) {
+    loop {
+        let c = characters.consume();
+
+        match c {
+            '\n' => Some(TokenVariant::Linebreak),
+            ' ' => None,
+
+            '@' => None,
+            _ => None,
+        };
+    }
+}
+
 fn updated_context(
     context: &Context,
     buffer: &str,
@@ -314,20 +329,52 @@ fn updated_context(
 pub fn tokenise(text: String, path: String) -> Vec<Token> {
     FILES.set(vec![Path::new(&path).to_path_buf()]);
 
-    let result = recursive_tokenisation(text, 0, &mut vec![Path::new(&path).to_path_buf()]);
+    let binding = Path::new(&path).to_path_buf();
+    let base_dir = path::absolute(binding.parent().unwrap()).unwrap();
+    let result = recursive_tokenisation(
+        text,
+        0,
+        &mut vec![Path::new(&path).to_path_buf()],
+        &base_dir,
+    );
     //FILES.with_borrow(|files| println!("{:?}", files));
     result
 }
 
-fn include(name: &String, currently_imported: &mut Vec<PathBuf>) -> Option<Vec<Token>> {
-    let mut path = Path::new(&format!("./subleq/{}", name)).to_path_buf();
-    // When trying to import a folder, it looks for a .sbl file with the same name inside of the folder
+fn fix_include_path(path: &mut PathBuf) {
+    // When trying to import a folder, it looks for a file name lib.sbl in the folder
+
     if path.is_dir() {
-        path.push(path.clone().file_stem().unwrap());
+        path.push("lib");
     }
 
     if path.extension().is_none() {
         path.set_extension("sbl");
+    }
+}
+
+fn include(
+    name: &String,
+    currently_imported: &mut Vec<PathBuf>,
+    base_dir: &Path,
+) -> Option<Vec<Token>> {
+    let mut path = base_dir.to_path_buf().join(name);
+    println!("{}", path.display());
+    fix_include_path(&mut path);
+
+    if !path.is_file() {
+        let libs_path = if args::exist() {
+            &args::get().libs_path
+        } else {
+            "./subleq/libs"
+        };
+        path = Path::new(libs_path).to_path_buf().join(name);
+        fix_include_path(&mut path);
+        if !path.is_file() {
+            log::error!("File not found {path:?}");
+            log::info!("Make sure the library path is correctly set using the '-l' argument");
+            terminate!();
+        }
     }
     //                        println!("{}", path.display());
 
@@ -347,6 +394,7 @@ fn include(name: &String, currently_imported: &mut Vec<PathBuf>) -> Option<Vec<T
             contents,
             FILES.with_borrow_mut(|files| files.len() - 1),
             currently_imported,
+            base_dir,
         ))
     } else {
         None
@@ -357,6 +405,7 @@ fn recursive_tokenisation(
     mut text: String,
     file_idx: usize,
     currently_imported: &mut Vec<PathBuf>,
+    base_dir: &Path,
 ) -> Vec<Token> {
     let mut result_tokens: Vec<Token> = Vec::new();
 
@@ -387,7 +436,7 @@ fn recursive_tokenisation(
 
             if let Some(var) = &variant_to_add {
                 if let TokenVariant::Namespace { name } = var {
-                    if let Some(mut toks) = include(name, currently_imported) {
+                    if let Some(mut toks) = include(name, currently_imported, base_dir) {
                         result_tokens.append(&mut toks);
                     }
                 }

@@ -53,9 +53,9 @@ pub struct Args {
     /// Run with debugger
     #[arg(short, long, default_value_t = false)]
     pub debugger: bool,
-    /// Sublib directory
-    #[arg(long, default_value = "./subleq/Sublib")]
-    root_path: String,
+    /// Folder that stores libraries
+    #[arg(short = 'l', long, default_value = "./subleq/libs")]
+    pub libs_path: String,
 
     /// Disable type checking
     #[arg(short = 't', long, default_value_t = false)]

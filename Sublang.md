@@ -90,7 +90,7 @@ Currently types are only checked checked for macro parameters.
 @Name {
     ...
 }
-; with args
+; with parameters
 @Name a? b? c? {
     ...
 }

@@ -1,13 +1,14 @@
+use crate::lexer;
+use crate::runtimes::RuntimeError;
+use crate::{tokens::Info, tokens::Token};
 use colored::{Color, Colorize};
 use core::fmt;
 use std::cell::RefCell;
 use std::fs;
 
-use crate::lexer;
-use crate::runtimes::interpreter::RuntimeError;
-use crate::{tokens::Info, tokens::Token};
-
-thread_local!(static FEEDBACK_TYPE: RefCell<log::Level> = const { RefCell::new(log::Level::Debug) });
+thread_local!(
+    /// The type/level of the current feedback message
+    static FEEDBACK_TYPE: RefCell<log::Level> = const { RefCell::new(log::Level::Debug) });
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum Type {
@@ -166,7 +167,7 @@ macro_rules! asm_warn {
 macro_rules! asm_hint {
     ($($arg:tt)*) => {
 
-        if $crate::feedback::sub_instruction_level_check() {
+        if $crate::feedback::sub_message_level_check() {
             println!("     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
 
         }
@@ -189,6 +190,14 @@ macro_rules! print_debug {
         }
     };
 }
+#[macro_export]
+macro_rules! println_silenceable {
+    ($($arg:tt)*) => {
+        if !$crate::args::get().silent {
+            println!($($arg)*);
+        }
+    };
+}
 
 pub(crate) use asm_error;
 pub(crate) use asm_warn;
@@ -201,6 +210,16 @@ fn get_file_contents(index: usize) -> String {
     ))
 }
 
+/// Sub messages, like Traces and Hints should not be printed if their parent message (like Warn) is not
+/// printed
+pub fn sub_message_level_check() -> bool {
+    FEEDBACK_TYPE.with(|cell| {
+        let t = cell.borrow();
+
+        log::max_level() >= *t
+    })
+}
+
 /* Example:
     ERROR (src\feedback.rs:277) ./subleq/testing.sbl:52:10
       50 |
@@ -209,14 +228,6 @@ fn get_file_contents(index: usize) -> String {
          |          ~
          - Address at 'A' is outside of memory bounds
 */
-
-pub fn sub_instruction_level_check() -> bool {
-    FEEDBACK_TYPE.with(|cell| {
-        let t = cell.borrow();
-
-        log::max_level() >= *t
-    })
-}
 
 pub fn _asm_msg(
     msg_type: Type,
@@ -227,7 +238,7 @@ pub fn _asm_msg(
 ) {
     match msg_type {
         Type::Trace | Type::Details => {
-            if !sub_instruction_level_check() {
+            if !sub_message_level_check() {
                 return;
             }
 
@@ -253,7 +264,7 @@ pub fn _asm_msg(
     };
 
     // Title
-    print!("{title_prefix}{} + ", msg_type);
+    print!("{title_prefix}{msg_type} + ");
     #[cfg(debug_assertions)] // We dont want to show the origin of the error inside of the assembler in release builds
     print!("({asa_call_origin}:{asa_line_number}) ");
     println!(
@@ -334,40 +345,23 @@ pub fn _asm_msg(
 }
 
 pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
-    match e {
-        RuntimeError::AOutOfRange(pc) => {
-            if let Some(tokens) = tokens {
-                asm_error_no_terminate!(
-                    origin_info_or_info(&tokens[pc]),
-                    "Address at 'A' is outside of memory bounds"
-                );
-                asm_trace!(&tokens[pc].origin_info);
-            } else {
-                log::error!("Address at 'A' is outside of memory bounds. PC: {pc}");
-            }
-        }
-        RuntimeError::BOutOfRange(pc) => {
-            if let Some(tokens) = tokens {
-                asm_error_no_terminate!(
-                    origin_info_or_info(&tokens[pc + 1]),
-                    "Address at 'B' is outside of memory bounds"
-                );
-                asm_trace!(&tokens[pc + 1].origin_info);
-            } else {
-                log::error!("Address at 'B' is outside of memory bounds. PC: {pc}");
-            }
-        }
-        RuntimeError::COutOfRange(pc) => {
-            if let Some(tokens) = tokens {
-                asm_error_no_terminate!(
-                    origin_info_or_info(&tokens[pc + 2]),
-                    "Jump outside of memory bounds"
-                );
-                asm_trace!(&tokens[pc + 2].origin_info);
-            } else {
-                log::error!("Jump outside of memory bounds. PC: {pc}");
-            }
-        }
-        RuntimeError::Breakpoint(..) => todo!(),
+    let (index, message) = match e {
+        RuntimeError::AOutOfRange(pc) => (pc, "Address at 'A' is outside of memory bounds"),
+        RuntimeError::BOutOfRange(pc) => (
+            if tokens.is_some() { pc + 1 } else { pc },
+            "Address at 'B' is outside of memory bounds",
+        ),
+        RuntimeError::COutOfRange(pc) => (
+            if tokens.is_some() { pc + 2 } else { pc },
+            "Jump outside of memory bounds",
+        ),
+        RuntimeError::Breakpoint(pc) => (if tokens.is_some() { pc + 2 } else { pc }, "Breakpoint"),
+    };
+
+    if let Some(tokens) = tokens {
+        asm_error_no_terminate!(origin_info_or_info(&tokens[index]), "{message}");
+        asm_trace!(&tokens[index].origin_info);
+    } else {
+        log::error!("{message}. PC: {index}");
     }
 }

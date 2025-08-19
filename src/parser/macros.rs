@@ -8,41 +8,10 @@ use crate::symbols;
 use crate::terminate;
 use crate::tokens::*;
 
+use crate::utils::IterVec;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
-
-struct IterVec<'a, T> {
-    vec: &'a Vec<T>,
-    index: usize,
-}
-
-impl<'a, T> IterVec<'a, T> {
-    fn new(vec: &'a Vec<T>) -> Self {
-        Self { vec, index: 0 }
-    }
-
-    fn current(&self) -> &T {
-        &self.vec[self.index]
-    }
-    fn consume(&mut self) -> &T {
-        self.index += 1;
-        &self.vec[self.index - 1]
-    }
-    fn get(&self, offset: i32) -> &T {
-        &self.vec[(self.index as i32 + offset) as usize]
-    }
-    fn finished(&self) -> bool {
-        self.index >= self.vec.len()
-    }
-    fn len(&self) -> usize {
-        self.vec.len()
-    }
-    fn current_index(&self) -> usize {
-        self.index
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct Macro {
     name: String,
