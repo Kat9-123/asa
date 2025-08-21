@@ -1,6 +1,5 @@
 use crate::{
     asm_error, asm_info,
-    feedback::origin_info_or_info,
     tokens::{LabelOffset, Token, TokenVariant},
 };
 
@@ -189,7 +188,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                     let mut split_name = name.split('?');
                     if !split_name.next_back().unwrap().starts_with('.') {
                         asm_info!(
-                            origin_info_or_info(&tokens[i + 3]),
+                            &tokens[i + 3].info, //origin_info_or_info(&tokens[i + 3]),
                             "Labels which are jump targets should be prefixed with a '.'"
                         );
                     }

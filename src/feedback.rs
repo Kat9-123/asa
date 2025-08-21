@@ -42,20 +42,15 @@ impl Type {
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
-            Type::Info => "Note",
-            Type::Warn => "WARN",
+            Type::Info => " Note",
+            Type::Warn => " WARN",
             Type::Error => "ERROR",
             Type::Trace => "Trace",
-            Type::Details => "Details",
+            Type::Details => " Info",
         }
         .stylise(*self);
         write!(f, "{text}")
     }
-}
-
-pub fn origin_info_or_info(tok: &Token) -> &Info {
-    // tok.origin_info.last().unwrap_or(&tok.info)
-    &tok.info
 }
 
 trait Stylise {
@@ -90,6 +85,16 @@ macro_rules! asm_error {
     ($info:expr, $($arg:tt)*) => {
         {
             panic!("{}", format!($($arg)*))
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! error {
+    ($($arg:tt)*) => {
+        {
+            log::error!($($arg)*);
+            std::process::exit(1);
         }
     };
 }
@@ -168,7 +173,7 @@ macro_rules! asm_hint {
     ($($arg:tt)*) => {
 
         if $crate::feedback::sub_message_level_check() {
-            println!("     {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
+            println!("      {} {} {}",":".white(), "Hint:".blue(), format!($($arg)*).white().bold())
 
         }
     };
@@ -199,19 +204,21 @@ macro_rules! println_silenceable {
     };
 }
 
-pub(crate) use asm_error;
-pub(crate) use asm_warn;
+pub fn origin_info_or_info(tok: &Token) -> &Info {
+    tok.origin_info.last().unwrap_or(&tok.info)
+    //&tok.info
+}
 
 fn get_file_contents(index: usize) -> String {
     let path = lexer::FILES.with_borrow(|v| v[index].clone());
-    fs::read_to_string(&path).expect(&format!(
-        "Should have been able to read the file {}",
-        path.display()
-    ))
+    fs::read_to_string(&path).unwrap_or_else(|_| {
+        log::error!("Error reading file for file preview: {}", path.display());
+        terminate!();
+    })
 }
 
 /// Sub messages, like Traces and Hints should not be printed if their parent message (like Warn) is not
-/// printed
+/// printed due to the log level being too low
 pub fn sub_message_level_check() -> bool {
     FEEDBACK_TYPE.with(|cell| {
         let t = cell.borrow();
@@ -220,21 +227,23 @@ pub fn sub_message_level_check() -> bool {
     })
 }
 
-/* Example:
-    ERROR (src\feedback.rs:277) ./subleq/testing.sbl:52:10
-      50 |
-      51 | @mac a b {
-      52 >     a -= b
-         |          ~
-         - Address at 'A' is outside of memory bounds
-*/
-
+/// Prints a pretty error message for errors that happen during the assembly process.
+/// This function is only for errors which are caused by a Token. For other types of error,
+/// see error!()
+///
+/// Example:
+/// ERROR + ./subleq/testing.sbl:52:10
+///    50 |
+///    51 | @mac a b {
+///    52 >     a -= b
+///       |          ~
+///       - Address at 'A' is outside of memory bounds
 pub fn _asm_msg(
     msg_type: Type,
     msg: String,
     info: &Info,
-    asa_call_origin: &str,
-    asa_line_number: u32,
+    #[allow(unused)] asa_call_origin: &str,
+    #[allow(unused)] asa_line_number: u32,
 ) {
     match msg_type {
         Type::Trace | Type::Details => {
@@ -242,7 +251,7 @@ pub fn _asm_msg(
                 return;
             }
 
-            println!("     |");
+            println!("      |");
         }
         _ => {
             FEEDBACK_TYPE.set(msg_type.to_log_level());
@@ -259,7 +268,7 @@ pub fn _asm_msg(
     let lines = contents.lines().collect::<Vec<&str>>();
 
     let title_prefix = match msg_type {
-        Type::Details | Type::Trace => "     + ",
+        Type::Details | Type::Trace => "      + ",
         _ => "",
     };
 
@@ -275,7 +284,7 @@ pub fn _asm_msg(
     );
 
     let file_preview_prefix = match msg_type {
-        Type::Details | Type::Trace => "     |",
+        Type::Details | Type::Trace => "      | ",
         _ => "",
     };
 
@@ -283,7 +292,7 @@ pub fn _asm_msg(
     for i in (2..4).rev() {
         if info.line_number - i >= 0 {
             println!(
-                "{}{: >4} | {}",
+                "{}{: >5} | {}",
                 file_preview_prefix,
                 format!("{}", info.line_number - (i - 1)).bright_cyan(),
                 lines[(info.line_number - i) as usize]
@@ -293,7 +302,7 @@ pub fn _asm_msg(
 
     // The preview target line
     let fmt = format!(
-        "{}{: >4}{}{}",
+        "{}{: >5}{}{}",
         file_preview_prefix,
         format!("{}", info.line_number).color(msg_type.colour()),
         " > ".stylise(msg_type),
@@ -312,8 +321,8 @@ pub fn _asm_msg(
         length = 1;
     }
     let prefix = match msg_type {
-        Type::Details | Type::Trace => "     |     | ",
-        _ => "     | ",
+        Type::Details | Type::Trace => "      |       | ",
+        _ => "      | ",
     };
     print!("{prefix}");
 
@@ -331,8 +340,8 @@ pub fn _asm_msg(
 
     // Message
     let prefix = match msg_type {
-        Type::Details => "     |     - ",
-        _ => "     - ",
+        Type::Details => "      |       - ",
+        _ => "      - ",
     };
 
     match msg_type {
@@ -344,6 +353,7 @@ pub fn _asm_msg(
     }
 }
 
+/// Show a pretty trace for runtime errors
 pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
     let (index, message) = match e {
         RuntimeError::AOutOfRange(pc) => (pc, "Address at 'A' is outside of memory bounds"),
@@ -360,7 +370,7 @@ pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
 
     if let Some(tokens) = tokens {
         asm_error_no_terminate!(origin_info_or_info(&tokens[index]), "{message}");
-        asm_trace!(&tokens[index].origin_info);
+        asm_trace!(&tokens[index].origin_info); // Bug with GameOfLife.sbl and Trace.sbl
     } else {
         log::error!("{message}. PC: {index}");
     }

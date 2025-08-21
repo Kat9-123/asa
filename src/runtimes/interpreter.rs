@@ -10,7 +10,6 @@ use crate::runtimes::debugger::get_key;
 
 const IO_ADDR: i16 = -1;
 const DEBUG_ADDR: i16 = -2;
-const PERF_ADDR: i16 = -3;
 
 pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Duration) {
     let mut prev_pc: usize = 0xFFFF;
@@ -78,7 +77,9 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
             }
             match c as i16 {
                 IO_ADDR => break,
-                DEBUG_ADDR => pc += 3,
+                DEBUG_ADDR => {
+                    return (Err(RuntimeError::Breakpoint(pc)), total_ran, io_time); /*pc += 3*/
+                }
                 _ => pc = c,
             }
         } else {

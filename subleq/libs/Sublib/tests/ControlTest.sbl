@@ -30,12 +30,12 @@ p -> 0
 .main -> {
     !If::Eq SNEG SNEG {
 
-        !Mac (!CopyLit 3)
+        !Mac (!CopyLit 3)   ; 'curried' macro
     }
     !IO -= LINEBREAK
     !If::Ge ZERO SNEG {
 
-        !Mac (!CopyLit 2)
+        !Mac (!CopyLit 2)   ; 'curried' macro
     }
 
     !Halt

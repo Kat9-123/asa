@@ -1,25 +1,19 @@
+**
+ ; Most basic macros that every project should have
+**
+
 #Sublib/Symbols.sbl
 
-@Halt [
-    W -= W  !IO
-]
+@Halt [ W -= W !IO ]
 
+@Jump .address? [ W -= W .address? ]
+@J    .address? [ W -= W .address? ]
 
-@Jump .address? [
-    W -= W  .address?
-]
+@Clear a? [ a? -= a? ]
+@Clr   a? [ a? -= a? ]
 
-@J .address? [
-    W -= W  .address?
-]
-
-@Clear a? [
-    a? -= a?
-]
-@Clr a? [
-    a? -= a?
-]
-
+@Inc a? [ a? -= N_ONE ]
+@Dec a? [ a? -= ONE   ]
 
 @Flip m_mac? .addr? {
     m_mac? .contd
@@ -27,13 +21,6 @@
 
     .contd ->
 }
-
-@Inc a? [
-    a? -= N_ONE
-]
-@Dec a? [
-    a? -= ONE
-]
 
 @Copy from? to? [
     !Clr Z
@@ -52,18 +39,15 @@
 ]
 
 @CopyLit L_FROM? to? {
-    Z -= Z $2
+    Z -= Z .
     from -> L_FROM?
+    . ->
     !Clr to?
     Z   -= from
     to? -= Z
 
     
 }
-
-
-
-
 
 ; a += b
 @Add a? b? [
@@ -72,24 +56,31 @@
     a?  -= Z
 ]
 
-
-
+**
+    b? -= *p_a?
+**
 @SubleqDerefA p_a? b? {
     !Copy p_a? p_local
     b? -= (p_local -> 0)
 }
+
+**
+    p_b? -= a?
+**
 @SubleqDerefB a? p_b?{
     !Copy p_a? p_local
     (p_local -> 0) -= a?
 }
 
+**
+    a? -= b? *p_c?
+**
 @SubleqDerefC a? b? p_c? {
     !Copy p_c? p_local
     b? -= a? (p_local -> 0)
 }
 
 **
-
     to? = *p_from?
 **
 @DerefAndCopy p_from? to? {
@@ -100,34 +91,6 @@
     to? -= Z
 }
 
-@AssignZero name? [
-    name? -= name? $2
-    name? -> 0
-]
-
-
-@AssignLabel name? label? [
-    Z -= Z $2
-    name? -> 0
-    !Clr name?
-
-    Z -= label?
-    name? -= Z
-]
-
-
-**
-@AssignNLit name? l_lit?[
-    {
-        name? -= LIT
-        !J .fin
-
-        LIT -> l_lit?
-        .fin -2>
-    }
-    name? -> 0
-]
-**
 @Repeat times? s_body? {
     times? -= ZERO .fin
     i = times?
@@ -153,17 +116,3 @@
     .fin ->
 }
 
-
-
-**
-!DerefAndCopy P_A? b? {
-    !J .start
-    n_a -> 0
-
-    .start ->
-    !Clr n_a
-    !Clr b?
-    n_a -= *P_A?
-    b? -= n_a
-}
-**

@@ -1,7 +1,6 @@
 use asa::*;
 use criterion::{Criterion, criterion_group, criterion_main};
 use std::fs;
-use std::hint::black_box;
 
 fn runtimes(c: &mut Criterion) {
     let path = "./subleq/sublib/tests/JumpIfTest.sbl";
@@ -14,7 +13,7 @@ fn runtimes(c: &mut Criterion) {
     });
 
     c.bench_function("debugger,", |b| {
-        b.iter(|| runtimes::debugger::run_with_debugger(&mut mem, &toks, black_box(false)))
+        b.iter(|| runtimes::debugger::run_with_debugger(&mut mem, &toks))
     });
 }
 

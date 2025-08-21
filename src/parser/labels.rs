@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use crate::asm_details;
+use crate::asm_error;
 use crate::asm_error_no_terminate;
 use crate::asm_hint;
-use crate::feedback::*;
+use crate::asm_warn;
 use crate::terminate;
 use crate::tokens;
 use crate::tokens::*;
@@ -316,10 +317,6 @@ mod tests {
     use crate::tokens::tokens_from_token_variant_vec;
 
     use super::*;
-    // #[test]
-    fn derefs() {
-        let input: Vec<Token> = tokens_from_token_variant_vec(vec![(0, TokenVariant::BraceOpen)]);
-    }
 
     #[test]
     fn braced_labels() {

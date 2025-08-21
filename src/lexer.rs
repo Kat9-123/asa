@@ -1,7 +1,6 @@
 //! Converts a string into a vector of tokens.
 
-use crate::utils::IterVec;
-use crate::{args, terminate};
+use crate::{args, println_debug, terminate};
 use crate::{
     asm_error, asm_error_no_terminate, asm_hint,
     tokens::{Info, LabelOffset, Token, TokenVariant},
@@ -56,20 +55,6 @@ fn is_valid_macro_name(c: char) -> bool {
 }
 fn is_valid_label_name(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == ':' || c == '?' || c == '.'
-}
-
-fn new_lexer(mut characters: IterVec<char>) {
-    loop {
-        let c = characters.consume();
-
-        match c {
-            '\n' => Some(TokenVariant::Linebreak),
-            ' ' => None,
-
-            '@' => None,
-            _ => None,
-        };
-    }
 }
 
 fn updated_context(
@@ -231,7 +216,9 @@ fn updated_context(
                 Context::DontConsume,
                 None,
                 Some(TokenVariant::DecLiteral {
-                    value: buffer.parse::<i32>().unwrap(),
+                    value: buffer
+                        .parse::<i32>()
+                        .unwrap_or_else(|_| asm_error!(&info, "Invalid decimal literal")),
                 }),
             ),
         },
@@ -274,7 +261,9 @@ fn updated_context(
                 Context::None,
                 None,
                 Some(TokenVariant::CharLiteral {
-                    value: buffer.chars().next().unwrap(),
+                    value: buffer.chars().next().unwrap_or_else(|| {
+                        asm_error!(&info, "Char literal does not contain a character")
+                    }),
                 }),
             ),
             _ => (Context::Char, Some(cur_char), None),
@@ -306,12 +295,11 @@ fn updated_context(
 
         Context::Relative => match cur_char {
             c if c.is_ascii_digit() => (Context::Relative, Some(c), None),
-            c => {
+            _ => {
                 let offset = if !buffer.is_empty() {
-                    if c == 'x' && buffer.starts_with('0') {
-                        asm_error!(info, "Hex numbers may not be used as relative offsets");
-                    }
-                    buffer.parse::<i32>().unwrap()
+                    buffer
+                        .parse::<i32>()
+                        .unwrap_or_else(|_| crate::error!("Relative offsets must be decimal"))
                 } else {
                     asm_error!(info, "Expected an offset",);
                 };
@@ -337,7 +325,8 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
         &mut vec![Path::new(&path).to_path_buf()],
         &base_dir,
     );
-    //FILES.with_borrow(|files| println!("{:?}", files));
+    log::debug!("Included files");
+    FILES.with_borrow(|files| println_debug!("{:#?}", files));
     result
 }
 
@@ -359,7 +348,6 @@ fn include(
     base_dir: &Path,
 ) -> Option<Vec<Token>> {
     let mut path = base_dir.to_path_buf().join(name);
-    println!("{}", path.display());
     fix_include_path(&mut path);
 
     if !path.is_file() {
@@ -371,7 +359,7 @@ fn include(
         path = Path::new(libs_path).to_path_buf().join(name);
         fix_include_path(&mut path);
         if !path.is_file() {
-            log::error!("File not found {path:?}");
+            log::error!("File to include not found {path:?}");
             log::info!("Make sure the library path is correctly set using the '-l' argument");
             terminate!();
         }
@@ -401,6 +389,7 @@ fn include(
     }
 }
 
+/// Recursion occurs on file includes
 fn recursive_tokenisation(
     mut text: String,
     file_idx: usize,

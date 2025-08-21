@@ -32,10 +32,11 @@ Z -> 0
 function_stack -> !Stack::Create 128
 
 
-@Func name? s_body? [
+@Func name? b_args? s_body? [
 
     name? ->
     {
+        b_args?
         s_body?
         !Func::Return
     }
@@ -97,9 +98,12 @@ function_stack -> !Stack::Create 128
 ]
 
 
-!Func FUNtest {
+!Func FUNtest (
     !Arg a
     !Arg c
+    ) {
+
+
 
 
 

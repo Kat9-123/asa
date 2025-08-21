@@ -4,8 +4,7 @@
 ]
 
 @Not a? {
-    !J $2
-    result -> 0
+    result = 0
 
     !RepeatLit 16 {
         !LShift1 result

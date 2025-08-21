@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-/// Prints a pretty overview of the memory. The instruction, A, B and C are highlighted
+/// Prints a pretty overview of the memory. The instruction, mem[A], mem[B] and mem[C] are highlighted
 pub fn draw_mem(mem: &[u16], pc: usize) {
     print!("----  ");
     for i in 0..16 {

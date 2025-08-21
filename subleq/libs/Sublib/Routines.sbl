@@ -2,7 +2,7 @@
 #Sublib
 
 
-return_stack -> !Stack::Create 32
+Routine::return_stack -> !Stack::Create 32
 
 @Routine::Def name? s_body? [
     name? -> s_body?
@@ -13,16 +13,16 @@ return_stack -> !Stack::Create 32
 @Routine::Call name? {
 
 
-    !Stack::Push return_stack _return_address
+    !Stack::Push Routine::return_stack .return_address
 
     !J name?
 
-    _return_address -> $1
+    .return_address -> $1
 }
 
 
 @Routine::Return {
-    !Stack::Pop return_stack return_addr
+    !Stack::Pop Routine::return_stack return_addr
 
     W -= W (return_addr -> 0x0000)
 }

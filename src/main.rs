@@ -23,7 +23,7 @@ fn main() {
         files::get_target_and_module_name(args::get().target.clone());
     let output_file = OutputFile::new(&args::get().output, module.clone());
 
-    // Assembly
+    // Assembly or file reading
     let (mut mem, tokens) = files::process_input_file(&target, input_file_type);
     files::to_file(&mem, output_file);
 
@@ -38,7 +38,7 @@ fn main() {
 
     if args::get().debugger {
         if let Some(tokens) = tokens {
-            debugger::run_with_debugger(&mut mem, &tokens, false);
+            debugger::run_with_debugger(&mut mem, &tokens);
         } else {
             log::error!("Can't run an SBLX or BIN file with the debugger");
         }

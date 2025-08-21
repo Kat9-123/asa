@@ -40,7 +40,7 @@ impl fmt::Display for FeedbackLevel {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    /// File to assemble
+    /// File to assemble or execute. May be .SBL, .BIN or .SBLX
     pub target: Option<String>,
 
     /// Level of assembler and runtime feedback
@@ -50,9 +50,12 @@ pub struct Args {
     /// Disable execution
     #[arg(short = 'e', long, default_value_t = false)]
     pub disable_execution: bool,
+
     /// Run with debugger
+    ///
     #[arg(short, long, default_value_t = false)]
     pub debugger: bool,
+
     /// Folder that stores libraries
     #[arg(short = 'l', long, default_value = "./subleq/libs")]
     pub libs_path: String,
@@ -61,10 +64,10 @@ pub struct Args {
     #[arg(short = 't', long, default_value_t = false)]
     pub disable_type_checking: bool,
 
-    /// Output file, may be: Nothing: no output will be generated, BIN or SBLX, will output with the module name
+    /// Output file, if not given no output be generated. It can be: Nothing, a .bin file with the module name, BIN or SBLX, will output with the module name
     /// and the given file extension.
-    #[arg(short, long, default_value = None)]
-    pub output: Option<String>,
+    #[arg(short, long, num_args = 0..=1)]
+    pub output: Option<Option<String>>,
 
     /// Suppresses all assembler output except for errors, overrides --feedback-level. Program output will still be shown.
     #[arg(short, long, default_value_t = false)]
@@ -72,7 +75,10 @@ pub struct Args {
 }
 
 pub fn get() -> &'static Args {
-    ARGS.get().unwrap()
+    ARGS.get().unwrap_or_else(|| {
+        log::error!("No arguments parsed");
+        crate::terminate!();
+    })
 }
 
 pub fn exist() -> bool {

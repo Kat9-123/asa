@@ -25,7 +25,6 @@ enum IOOperation {
     Char(char),
     Debug(u16),
     Halt,
-    Perf,
     None,
 }
 
@@ -159,7 +158,7 @@ fn display(
 
 pub fn get_key() -> KeyCode {
     loop {
-        if let Event::Key(event) = read().unwrap() {
+        if let Ok(Event::Key(event)) = read() {
             if event.kind == KeyEventKind::Press {
                 return event.code;
             }
@@ -167,8 +166,8 @@ pub fn get_key() -> KeyCode {
     }
 }
 
-pub fn run_with_debugger(mem: &mut [u16], tokens: &[Token], in_debugging_mode: bool) {
-    debug(mem, tokens, in_debugging_mode, get_key);
+pub fn run_with_debugger(mem: &mut [u16], tokens: &[Token]) {
+    debug(mem, tokens, false, get_key);
 }
 
 fn debug<T: FnMut() -> KeyCode>(
@@ -177,7 +176,6 @@ fn debug<T: FnMut() -> KeyCode>(
     mut in_debugging_mode: bool,
     mut input: T,
 ) {
-    in_debugging_mode = true;
     //execute!(io::stdout(), EnterAlternateScreen);
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();

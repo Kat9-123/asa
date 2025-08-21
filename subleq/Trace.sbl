@@ -5,7 +5,20 @@
     !IO -= W .address
 }
 
+
+
+
+
+@J []
+
+
+
+
+
+
+
 @J .address [
+    p ->
     !Jump .address 0
 ]
 

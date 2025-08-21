@@ -66,8 +66,18 @@ impl OutputFile {
     /// * Only a filetype, like 'sblx' or 'bin', the file will become module_name.filetype
     /// * Only a path without extension, like ./my_folder/my_file, the file will become path_given.bin
     /// * A path with extension.
-    pub fn new(argument: &Option<String>, module_name: String) -> Option<Self> {
+    pub fn new(argument: &Option<Option<String>>, module_name: String) -> Option<Self> {
         let argument = argument.clone()?;
+
+        let argument = if let Some(arg) = argument {
+            arg
+        } else {
+            // No name or Filetype was given
+            return Some(OutputFile {
+                file_type: OutputFileType::Binary,
+                file_base: Path::new(&module_name).to_path_buf(),
+            });
+        };
 
         // The argument is only a filetype
         if let Some(file_type) = OutputFileType::from_str(&argument) {
@@ -111,7 +121,10 @@ pub fn to_text(data: &[u16]) -> String {
 
 pub fn from_text(text: &str) -> Vec<u16> {
     text.split_ascii_whitespace()
-        .map(|val| val.parse::<u16>().unwrap())
+        .map(|val| {
+            val.parse::<u16>()
+                .unwrap_or_else(|_| crate::error!("Invalid u16 in input file"))
+        })
         .collect()
 }
 
@@ -150,10 +163,15 @@ pub fn to_file(data: &[u16], output: Option<OutputFile>) {
 
     let mut path = output.file_base;
     path.set_extension(output.file_type.extension());
-    let mut file = File::create(path).unwrap();
-    file.write_all(&bytes).unwrap();
+    let mut file =
+        File::create(path).unwrap_or_else(|e| crate::error!("Failed to create sblx file. {e}"));
+    file.write_all(&bytes)
+        .unwrap_or_else(|e| crate::error!("Failed to write to sblx file. {e}"));
 }
-
+/// Reads and processes the target file, returning its memory and if possible the tokens associated with it.
+/// The assembler can take three types of input files:
+/// * .sbl files will be assembled
+/// * .bin and .sblx files will only be read
 pub fn process_input_file(
     target: &PathBuf,
     input_file_type: InputFileType,
@@ -165,7 +183,7 @@ pub fn process_input_file(
                 log::error!("Error reading file: {target:?}. {e}");
                 terminate!();
             });
-            println_silenceable!("Assembling {target:?}");
+            println_silenceable!("Assembling {}", target.display());
             let timer = Instant::now();
             let (mem, tokens) =
                 assembler::assemble(&contents, target.to_str().unwrap().to_string());
@@ -199,7 +217,7 @@ pub fn process_input_file(
     }
 }
 
-/// TODO
+/// TODO Process the target argument for the assembler. It returns
 pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFileType, String) {
     let target = argument.unwrap_or_else(|| ".".to_string());
     let cwd = env::current_dir().unwrap();
@@ -238,6 +256,7 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFi
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
@@ -245,7 +264,7 @@ mod tests {
         let result = OutputFile::new(&None, "Sublib".to_owned());
         assert_eq!(result, None);
 
-        let result = OutputFile::new(&Some("sblx".to_owned()), "mod".to_owned());
+        let result = OutputFile::new(&Some(Some("sblx".to_owned())), "mod".to_owned());
         assert_eq!(
             result,
             Some(OutputFile {
@@ -253,7 +272,7 @@ mod tests {
                 file_type: OutputFileType::Plaintext
             })
         );
-        let result = OutputFile::new(&Some("bin".to_owned()), "mod2".to_owned());
+        let result = OutputFile::new(&Some(Some("bin".to_owned())), "mod2".to_owned());
         assert_eq!(
             result,
             Some(OutputFile {
@@ -262,7 +281,7 @@ mod tests {
             })
         );
 
-        let result = OutputFile::new(&Some("test".to_owned()), "mod3".to_owned());
+        let result = OutputFile::new(&Some(Some("test".to_owned())), "mod3".to_owned());
         assert_eq!(
             result,
             Some(OutputFile {
@@ -271,7 +290,7 @@ mod tests {
             })
         );
 
-        let result = OutputFile::new(&Some("abc/file.sblx".to_owned()), "mod4".to_owned());
+        let result = OutputFile::new(&Some(Some("abc/file.sblx".to_owned())), "mod4".to_owned());
         assert_eq!(
             result,
             Some(OutputFile {
@@ -280,13 +299,22 @@ mod tests {
             })
         );
         let result = OutputFile::new(
-            &Some("abc/defg/file.sblx.hello".to_owned()),
+            &Some(Some("abc/defg/file.sblx.hello".to_owned())),
             "mod4".to_owned(),
         );
         assert_eq!(
             result,
             Some(OutputFile {
                 file_base: Path::new("abc/defg/file.sblx.hello").to_path_buf(),
+                file_type: OutputFileType::Binary
+            })
+        );
+
+        let result = OutputFile::new(&Some(None), "mod5".to_owned());
+        assert_eq!(
+            result,
+            Some(OutputFile {
+                file_base: Path::new("mod5").to_path_buf(),
                 file_type: OutputFileType::Binary
             })
         );

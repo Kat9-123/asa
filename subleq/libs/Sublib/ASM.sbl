@@ -1,6 +1,9 @@
 **
-    Macros used by the assembler for specific syntax sugar, like assignments and dereferencing.
+ ;  Macros used by the assembler for specific syntax sugar, like assignments and dereferencing.
 **
+
+@DEBUG_ADDR [-2]
+@PERF_ADDR [-3]
 
 **
     name? = 0

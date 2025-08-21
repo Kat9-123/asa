@@ -3,10 +3,11 @@
 #Sublib
 #Sublib/Routines.sbl
 #Sublib/Control.sbl
-@GRID_SIZE_WITH_SURROUNDING [10404**(25 + 2)^2**]
-;@GRID_SIZE_WITH_SURROUNDING [729**(25 + 2)^2**]
 
-@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING]
+; (100 + 2) ** 2
+@GRID_SIZE_WITH_SURROUNDING [10404]
+
+@MakeBuffer [&0 * !GRID_SIZE_WITH_SURROUNDING]
 
 **
     target? += *p_pointer?
@@ -202,7 +203,7 @@ THREE -> 3
         }
         ;!ASM::Breakpoint
 
-;        0x9000 -= 0x9000
+        0x9000 -= 0x9000
 
 
     } {}
@@ -259,13 +260,12 @@ THREE -> 3
     !Set 0 2
     !Set 1 2
     **
-    !RepeatLit 100 {
+    !RepeatLit 200 {
         !Routine::Call .Draw
         !Routine::Call .GetNeighbours
         !Routine::Call .SwapBuffers
      ;   !ASM::Debug i
        ; !Inc i
-   ; Z -= -1
     }
 
     !Halt

@@ -1,52 +1,39 @@
 #Sublib
-#Sublib/Base.sbl
+#Sublib/Prelude.sbl
 
 @Stack::Create l_size? [
     &0xDEAD 0x0000 * l_size?
 ]
 
 @Stack::Push p_stack? val? {
-    !J .start
-    i_val -> 0
-
-    .start ->
+    n_val = 0
     !Inc p_stack?
 
-    !Clear i_val
 
 
-    i_val -= val?
-
-    *p_stack? -= i_val
-;    !IO::PrintLnLit "PUSH"
+    n_val -= val?
+    *p_stack? -= n_val
 
 }
 
-@Stack::PushLit p_stack? L_VAL? {
+@Stack::PushLit p_stack? l_val? {
     !J .
     i_val -> 0
-    val -> L_VAL?
+    VAL -> l_val?
 
     . ->
     !Inc p_stack?
 
     !Clear i_val
 
-    i_val -= val
+    i_val -= VAL
     *p_stack? -= i_val
 }
 
 @Stack::Pop p_stack? out? {
-
-
-
     !DerefAndCopy p_stack? out?
-
     *p_stack? -= out?
-
     !Dec p_stack?
-   ; !IO::PrintLnLit "POP"
-
 }
 
 @Stack::Debug p_stack? l_size? {

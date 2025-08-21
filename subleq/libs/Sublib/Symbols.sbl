@@ -1,16 +1,20 @@
-Z -> 0 ; Temp register, use discouraged
-W -> 0 ; Always empty register
+Z    -> 0 ; Temp register, use discouraged
+W    -> 0 ; Always empty register
 _ASM -> 0 ; assembler reserved
-_ -> 0
+_    -> 0 ; Void register
 
 N_ONE -> -1
-ONE -> 1
-ZERO -> 0
+ONE   -> 1
+ZERO  -> 0
 
 FALSE -> 0
-TRUE -> 1
+TRUE  -> 1
 
 LINEBREAK -> '\n'
 
-
+; Smallest Negative Number. This number causes issues because -SNEG = SNEG
+; which makes it appear like zero
 SNEG -> 0x8000
+
+
+@IO [-1]

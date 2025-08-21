@@ -1,26 +1,43 @@
-#Sublib/Base
+**
+ ; Some very basic arithmetic routines
+ ; mostly in the form: a = a * b, where * is some generic operator
+**
+
+
+#Sublib/Prelude
 
 
 
-@SubLit val? L_LIT? {
-    val?      -= LITERAL_LBL
-    !J            .fin
-    LITERAL_LBL -> L_LIT?
-    .fin ->
-}
-@AddLit val? L_LIT? {
+**
+    val? += l_lit?
+**
+@AddLit val? l_lit? {
     n_val = 0
 
-    n_val       -= LITERAL_LBL
+    n_val       -= LITERAL
     val?        -= n_val
     n_val       -= n_val             .fin
 
-    LITERAL_LBL -> L_LIT?
+    LITERAL -> l_lit?
 
     .fin ->
 
 }
 
+**
+    val? -= l_lit?
+**
+@SubLit val? l_lit? {
+    val?      -= LITERAL
+    !J            .fin
+    LITERAL -> l_lit?
+    .fin ->
+}
+
+**
+    a? *= B?
+    Probably doesn't work for negative numbers
+**
 @Mul a? B? {
 
     acc = 0
@@ -40,6 +57,10 @@
     !Cpy acc a?
 }
 
+**
+    a? %= B?
+    Probably doesn't work for negative numbers
+**
 @Mod a? B? {
     .loop ->
         !JumpIf::Ge B? a? .fin

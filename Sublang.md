@@ -3,12 +3,13 @@ Sublang is a bare bones assembly languages consisting of three main elements:
 * The SUBLEQ instruction
 * Labels
 * Macros
+It also has some syntax sugar.
 
 
 ### Subleq
 
 ```clojure
-1 2 3 ; Standard subleq: mem[2] -= mem[1] jump to 3 if leq otherwise next instruction.
+1 2 3 ; This is interpreted as standard subleq: mem[2] -= mem[1] jump to 3 if LEQ otherwise it goes to the next instruction.
 ; This syntax is valid, but pointless.
 
 ; memory addresses and instructions may be labeled
@@ -18,9 +19,8 @@ c ->
     a -= b ; Subtract b from a
     a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
 
-; If no `c` argument is given, the next instruction will always be executed, even if the result is leq
-
-; These two are equivalent
+; If no `c` argument is given, the next instruction will always be executed, even if the result is LEQ
+; So these two are equivalent
 a -= b
 a -= b $1 ; `$1` gives a relative address with offset one
 
@@ -29,19 +29,18 @@ b a $1 ; This syntax works but is not recommended, since it makes it harder for 
 
 ; Other examples, literals and labels may freely be combined
 a -= b 0x0000
-0x0000 -= 0x0000 c
-
+'\0' -= 0 c
 ```
 
-### Labels
+### Labels and Literals
 ```clojure
-a -> 123
-b -> 0x456
-c -> 9
+a -> 123 ; Decimal
+b -> 0x4C6 ; Hex
+c -> "Hello, World!" ; Strings are null-terminated by the assembler
+d -> 'P' ; Character literals
 
 .label ->
-    a -= b .label
-
+    a -= b .label   ; Repeats as long as (a -= b) <= 0
 ```
 
 ### Scopes
@@ -52,7 +51,9 @@ X -> 456
 Y -> 0
 {
     Z -> 789
-    X -= Z  ; 456 - 789
+    {
+        X -= Z  ; 456 - 789
+    }
 }
 Y -= Z ; 0 - 123
 ```
@@ -79,8 +80,8 @@ Currently types are only checked checked for macro parameters.
 * `n_value` negated value (not type-checked)
 * `value?`  macro argument in definition
 * `.value` label to jump to
-* `CONST_VALUE`constant, can be applied to all of the above, and should be applied to macro arguments*
-* `Module::Value` or `!Module::Macro`
+* `CONST_VALUE` constant, can be applied to all of the above and should be applied to macro arguments, but NOT to literals (l_name), since they are always constant by definition
+* `Module::Value` or `!Module::Macro` namespacing
 * `Module::SubModule::value`
 
 
@@ -90,6 +91,11 @@ Currently types are only checked checked for macro parameters.
 @Name {
     ...
 }
+@Name   ; This is allowed as well, but discouraged
+{
+
+}
+
 ; with parameters
 @Name a? b? c? {
     ...
@@ -99,14 +105,26 @@ Currently types are only checked checked for macro parameters.
 @Name a? [
     ...
 ]
-; This, however, is dangerous when label definitions take place in the macro, , so it is discouraged.
+; This, however, is dangerous when label definitions take place in the macro, so it is generally discouraged.
 
+; There may be linebreaks between parameters
+
+@Name a?
+      b?
+      c?
+      d?
+      e? {
+    ...
+
+}
 
 ```
 #### Expanding
 ```clojure
 !Name
-!Name a b c
+; With arguments
+!Name2 a b c
+; There may NOT be linebreaks between arguments
 ```
 
 #### Hygiene
@@ -118,6 +136,7 @@ a -> 0
     a -= b
     a -> 123
 }
+
 !MyMacro a
 ; Is completely fine, and will become the following:
 {
@@ -140,6 +159,15 @@ You may pass scopes as macro arguments
 {
     { a -= b }
 }
+
+; If a macro takes multiple scopes they can be chained as follow:
+!Mac {
+    ...
+} {
+    ...
+} {
+    ...
+}
 ```
 If you don't want the argument to be surrounded by scopes, you can use braces
 
@@ -147,7 +175,6 @@ If you don't want the argument to be surrounded by scopes, you can use braces
 @Mac b_my_braced? {
     b_my_braced?
 }
-;
 
 !Mac ( a -= b )
 ; =>
@@ -165,8 +192,8 @@ This means that you can 'curry' macros (using that term loosely)
 @CurriedMacro l_a? l_b? {
     l_a? -= l_b?
 }
-; =>
 !Mac ( !CurriedMacro 5 ) 
+; =>
 {
     {
         5 -= 10
@@ -178,16 +205,15 @@ This means that you can 'curry' macros (using that term loosely)
 
 ### Pointers
 #### Referencing
-To create a pointer to a value
-
+To create a pointer to a value, the relative address syntax `$1` must be used to get the address of the next token
 ```clojure
-ptr -> $1 0x1234
+ptr -> $1 0x1234 ; This takes up two words of memory, one for the pointer and one for the value
 
 ptr -> $1 "String"
 ; or
 ptr -> &'A'
 ptr -> &"String"
-pre -> &123
+ptr -> &123
 ; & is equivalent to $1
 ```
 
@@ -215,7 +241,7 @@ a -= (*ID*ptr -> 0)
 ; *ID*ptr is a safe and automatically generated name
 
 ```
-Remember that because of how Subleq works, what are called 'Labels' here, are also just pointers! But since Subleq dereferences them, we can think of them as values.
+Remember that because of how Subleq works, what are called 'Labels' here, are also just pointers! But since Subleq dereferences them, we can think of them as values. But mind that literals need indirection `a -= 10` doesn't subtract 10 from a
 
 
 ### Inclusions
@@ -234,9 +260,9 @@ P -= Z
 ...
 ; But of course beware of the contents of the included file
 ```
-If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'Sublib'). And in that folder create a .sbl file with the module name (like 'Sublib.sbl'). Whenever the 'Sublib' folder is imported, this is automatically resolved to 'Sublib/Sublib.sbl'. In this .sbl folder you may include any other files you might need.
+If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'Sublib'). And in that folder create a Lib.sbl. Whenever the 'Sublib' folder is imported, this is automatically resolved to 'Sublib/Lib.sbl'. In this .sbl file you may include any other files you might need.
 
-See subleq/Sublib for an example.
+See subleq/libs/Sublib for an example.
 
 ### Syntax sugar
 #### Mult operator
@@ -247,6 +273,8 @@ label label label
 
 0x123 * 0x4 ; =>
 0x123 0x123 0x123 0x123
+
+; mind that 3 * label will dereference `label`!
 ```
 #### Dereference operator
 
@@ -263,6 +291,7 @@ label -> 0
     _ASM -= n_lit
     label -= _ASM
 }
+
 ; Zero is a special case
 label2 = 0
 ; =>
@@ -280,6 +309,10 @@ label3 -= label3
 _ASM -= label2
 label3 -= _ASM
 ```
+
+
+## Style guide
+Just make sure it looks good :), or follow the style of the Sublib
 
 ## Conclusion
 For many more examples see the standard library, called Sublib

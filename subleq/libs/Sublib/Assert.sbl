@@ -1,3 +1,6 @@
+**
+ ; Assertions used for testing
+**
 #Sublib
 @Assert::Eq A? B? {
     !JumpIf::Eq A? B? .fin
@@ -7,6 +10,7 @@
 
     .fin ->
 }
+
 
 @Assert::EqToLit A? L_LIT? {
     !JumpIf::Eq A? LIT_LBL .fin
@@ -18,7 +22,7 @@
     !IO::PrintLit "RH: "
     !ASM::Debug LIT_LBL
 
-    W W -2
+    !ASM::Breakpoint
 
     LIT_LBL -> L_LIT?
     .fin ->

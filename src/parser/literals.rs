@@ -1,6 +1,7 @@
+use crate::asm_error;
 use unescape::unescape;
 
-use crate::{feedback::*, terminate, tokens::*};
+use crate::{terminate, tokens::*};
 /// Convert character and hex literals into dec literals inplace
 pub fn char_and_hex_to_dec_and_check_scopes(tokens: &mut [Token]) {
     let mut scope_tracker: i32 = 0;
