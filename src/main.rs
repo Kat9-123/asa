@@ -48,7 +48,7 @@ fn main() {
     let (result, total_ran, io_time) = interpreter::interpret(&mut mem);
     let elapsed = timer.elapsed();
     let compute_time = elapsed - io_time;
-    println_silenceable!("{}", "-".repeat(80));
+    println_silenceable!("\n{}", "-".repeat(80));
     if let Err(e) = result {
         asm_runtime_error(e, &tokens)
     }

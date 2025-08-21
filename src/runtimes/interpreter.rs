@@ -1,15 +1,12 @@
 use crate::runtimes::RuntimeError;
+use crate::symbols::{DEBUG_ADDR, IO_ADDR};
+use crossterm::event::KeyCode;
 use std::{
     num::Wrapping,
     time::{Duration, Instant},
 };
 
-use crossterm::event::KeyCode;
-
 use crate::runtimes::debugger::get_key;
-
-const IO_ADDR: i16 = -1;
-const DEBUG_ADDR: i16 = -2;
 
 pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Duration) {
     let mut prev_pc: usize = 0xFFFF;
@@ -18,7 +15,6 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
     let mut io_buffer = String::new();
     let mut io_time: Duration = Duration::new(0, 0);
     loop {
-        total_ran += 1;
         if pc + 2 >= mem.len() {
             return (Err(RuntimeError::COutOfRange(prev_pc)), total_ran, io_time);
         }
@@ -29,8 +25,15 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
         let mut result: u16 = 0;
 
         match (a, b) {
-            (_, 0xFFFF) => {
-                result = mem[a]; // Can be OOB
+            (a, _) if a >= mem.len() && a != IO_ADDR => {
+                return (Err(RuntimeError::AOutOfRange(pc)), total_ran, io_time);
+            }
+            (_, b) if b >= mem.len() && b != IO_ADDR && b != DEBUG_ADDR => {
+                return (Err(RuntimeError::BOutOfRange(pc)), total_ran, io_time);
+            }
+
+            (_, IO_ADDR) => {
+                result = mem[a];
                 let ch = result as u8 as char;
                 io_buffer.push(ch);
 
@@ -38,8 +41,8 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                 print!("{ch}");
                 io_time += timer.elapsed();
             }
-            (_, 0xFFFE) => {
-                result = mem[a]; // Can be OOB
+            (_, DEBUG_ADDR) => {
+                result = mem[a];
                 let ch = (result as i16).to_string();
                 io_buffer.push_str(&ch);
 
@@ -47,7 +50,7 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                 println!("{ch}");
                 io_time += timer.elapsed();
             }
-            (0xFFFF, _) => {
+            (IO_ADDR, _) => {
                 let timer = Instant::now();
 
                 let c = match get_key() {
@@ -55,30 +58,22 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                     _ => '\0',
                 };
                 io_time += timer.elapsed();
-                mem[b] = c as u16; // Can be OOB
+                mem[b] = c as u16;
             }
-            (a, _) if a >= mem.len() => {
-                return (Err(RuntimeError::AOutOfRange(pc)), total_ran, io_time);
-            }
-            (_, b) if b >= mem.len() => {
-                return (Err(RuntimeError::BOutOfRange(pc)), total_ran, io_time);
-            }
+
             (_, _) => {
                 result = (Wrapping(mem[b]) - (Wrapping(mem[a]))).0;
                 mem[b] = result;
             }
         }
+        total_ran += 1;
 
         prev_pc = pc;
         if result as i16 <= 0 {
-            //  println!("JUMP!");
-            if c as i16 == IO_ADDR {
-                break;
-            }
-            match c as i16 {
+            match c {
                 IO_ADDR => break,
                 DEBUG_ADDR => {
-                    return (Err(RuntimeError::Breakpoint(pc)), total_ran, io_time); /*pc += 3*/
+                    return (Err(RuntimeError::Breakpoint(pc)), total_ran, io_time);
                 }
                 _ => pc = c,
             }

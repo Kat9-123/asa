@@ -61,7 +61,7 @@ fn updated_context(
     context: &Context,
     buffer: &str,
     cur_char: char,
-    #[allow(unused_variables)] info: &Info, // Maybe I'm missing something, but this variable is most definitely used.
+    info: &Info,
 ) -> (Context, Option<char>, Option<TokenVariant>) {
     match context {
         Context::DontConsume => unreachable!(),

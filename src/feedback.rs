@@ -1,5 +1,6 @@
 use crate::lexer;
 use crate::runtimes::RuntimeError;
+use crate::tokens::combine_info_and_origin_info;
 use crate::{tokens::Info, tokens::Token};
 use colored::{Color, Colorize};
 use core::fmt;
@@ -41,13 +42,16 @@ impl Type {
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let text = match self {
-            Type::Info => " Note",
-            Type::Warn => " WARN",
-            Type::Error => "ERROR",
-            Type::Trace => "Trace",
-            Type::Details => " Info",
-        }
+        let text = format!(
+            "{: >5}",
+            match self {
+                Type::Info => "Note",
+                Type::Warn => "WARN",
+                Type::Error => "ERROR",
+                Type::Trace => "Trace",
+                Type::Details => "Info",
+            }
+        )
         .stylise(*self);
         write!(f, "{text}")
     }
@@ -120,7 +124,7 @@ macro_rules! asm_details {
 #[macro_export]
 macro_rules! asm_trace {
     ($origin_info:expr) => {{
-        for i in $origin_info.iter().rev().skip(1) {
+        for i in $origin_info.iter().rev().skip(0) {
             $crate::feedback::_asm_msg(
                 $crate::feedback::Type::Trace,
                 "".to_string(),
@@ -153,7 +157,6 @@ macro_rules! asm_error_no_terminate {
     ($info:expr, $($arg:tt)*) => {
         {
             $crate::feedback::_asm_msg($crate::feedback::Type::Error, format!($($arg)*), $info, file!(), line!());
-
         }
     };
 }
@@ -198,7 +201,7 @@ macro_rules! print_debug {
 #[macro_export]
 macro_rules! println_silenceable {
     ($($arg:tt)*) => {
-        if !$crate::args::get().silent {
+        if $crate::args::exist() && !$crate::args::get().silent {
             println!($($arg)*);
         }
     };
@@ -369,8 +372,12 @@ pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
     };
 
     if let Some(tokens) = tokens {
-        asm_error_no_terminate!(origin_info_or_info(&tokens[index]), "{message}");
-        asm_trace!(&tokens[index].origin_info); // Bug with GameOfLife.sbl and Trace.sbl
+        if index >= tokens.len() {
+            return;
+        }
+        let all_info = combine_info_and_origin_info(&tokens[index]);
+        asm_error_no_terminate!(&all_info[0], "{message}");
+        asm_trace!(all_info); // Bug with GameOfLife.sbl and Trace.sbl
     } else {
         log::error!("{message}. PC: {index}");
     }

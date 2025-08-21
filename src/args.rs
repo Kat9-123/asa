@@ -47,12 +47,11 @@ pub struct Args {
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
 
-    /// Disable execution
+    /// Disable program execution
     #[arg(short = 'e', long, default_value_t = false)]
     pub disable_execution: bool,
 
-    /// Run with debugger
-    ///
+    /// Run program with debugger
     #[arg(short, long, default_value_t = false)]
     pub debugger: bool,
 
@@ -60,7 +59,6 @@ pub struct Args {
     #[arg(short = 'l', long, default_value = "./subleq/libs")]
     pub libs_path: String,
 
-    /// Disable type checking
     #[arg(short = 't', long, default_value_t = false)]
     pub disable_type_checking: bool,
 

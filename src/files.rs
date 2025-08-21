@@ -3,10 +3,9 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    time::Instant,
 };
 
-use crate::{assembler, println_silenceable, terminate, tokens::Token};
+use crate::{assembler, tokens::Token};
 
 const PLAINTEXT_EXTENSION: &str = "sblx";
 const BINARY_EXTENSION: &str = "bin";
@@ -168,6 +167,7 @@ pub fn to_file(data: &[u16], output: Option<OutputFile>) {
     file.write_all(&bytes)
         .unwrap_or_else(|e| crate::error!("Failed to write to sblx file. {e}"));
 }
+
 /// Reads and processes the target file, returning its memory and if possible the tokens associated with it.
 /// The assembler can take three types of input files:
 /// * .sbl files will be assembled
@@ -176,42 +176,32 @@ pub fn process_input_file(
     target: &PathBuf,
     input_file_type: InputFileType,
 ) -> (Vec<u16>, Option<Vec<Token>>) {
+    fn unwrap_contents<T>(contents: Result<T, std::io::Error>, target: &Path) -> T {
+        contents.unwrap_or_else(|e| {
+            crate::error!("Error reading file: {}. {}", target.display(), e);
+        })
+    }
+
     match input_file_type {
         InputFileType::Sublang => {
             let contents = fs::read_to_string(target);
-            let contents = contents.unwrap_or_else(|e| {
-                log::error!("Error reading file: {target:?}. {e}");
-                terminate!();
-            });
-            println_silenceable!("Assembling {}", target.display());
-            let timer = Instant::now();
+            let contents = unwrap_contents(contents, target);
+
             let (mem, tokens) =
                 assembler::assemble(&contents, target.to_str().unwrap().to_string());
-            let tokens = Some(tokens);
-            println_silenceable!("\nAssembled in: {:.3?}", timer.elapsed());
-            println_silenceable!(
-                "Size: {}/{}, {:.4}%",
-                mem.len(),
-                0xFFFF,
-                (mem.len() as f32 / 0xFFFF as f32) * 100f32
-            );
 
-            (mem, tokens)
+            (mem, Some(tokens))
         }
         InputFileType::Binary => {
             let contents = fs::read(target);
-            let contents = contents.unwrap_or_else(|e| {
-                log::error!("Error reading file: {target:?}. {e}");
-                terminate!();
-            });
+            let contents = unwrap_contents(contents, target);
+
             (from_bytes(&contents), None)
         }
         InputFileType::Plaintext => {
             let contents = fs::read_to_string(target);
-            let contents = contents.unwrap_or_else(|e| {
-                log::error!("Error reading file: {target:?}. {e}");
-                terminate!();
-            });
+            let contents = unwrap_contents(contents, target);
+
             (from_text(&contents), None)
         }
     }
@@ -238,19 +228,18 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFi
     } else {
         target_path
     };
+
     let input_file_type = InputFileType::from_str(
         target
             .extension()
             .unwrap_or_else(|| {
-                log::error!("Target file does not have a file extension");
-                terminate!();
+                crate::error!("Target file does not have a file extension");
             })
             .to_str()
             .unwrap(),
     )
     .unwrap_or_else(|| {
-        log::error!("Target file has an invalid file extension");
-        terminate!();
+        crate::error!("Target file has an invalid file extension");
     });
     (target, input_file_type, module)
 }

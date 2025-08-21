@@ -19,10 +19,10 @@ fn test_at_path(path: &str) {
         info!("Name: {}", p);
         println!("{}", "-".repeat(80));
 
-        let contents = fs::read_to_string(&p).unwrap();
-        let (mut mem, tokens) = assembler::assemble(&contents, p.to_string());
+        let (target, input_file_type, _module) =
+            files::get_target_and_module_name(Some(p.to_owned()));
+        let (mut mem, tokens) = files::process_input_file(&target, input_file_type);
         let result = files::to_text(&mem);
-
         let mut sblx_path = p[..p.len() - 4].to_string();
         sblx_path.push_str(".sblx");
 
@@ -44,7 +44,7 @@ fn test_at_path(path: &str) {
         let expected_out = lexer::generic_sanitisation(&expected_out);
         let (result, ..) = runtimes::interpreter::interpret(&mut mem);
         let out = result.unwrap_or_else(|e| {
-            asm_runtime_error(e, &Some(tokens));
+            asm_runtime_error(e, &tokens);
             terminate!()
         });
         assert_eq!(out, expected_out);

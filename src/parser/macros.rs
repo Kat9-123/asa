@@ -22,6 +22,7 @@ pub struct Macro {
     labels_defined_in_macro: Vec<String>,
 }
 
+/// Used for debugging
 impl fmt::Display for Macro {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "{}:    ", self.name.yellow())?;
@@ -92,7 +93,7 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                 }
             },
             Mode::Parameters => match &token.variant {
-                TokenVariant::Linebreak => { /* Linebreaks are allowed between arguments */ }
+                TokenVariant::Linebreak => { /* Linebreaks are allowed between parameters */ }
 
                 TokenVariant::Label { name } => {
                     cur_macro

@@ -11,7 +11,7 @@ use crate::tokens::*;
 use colored::Colorize;
 
 /// Labels may be defined inside of instructions using the following syntax:
-/// (label -> 0). This routine converts these definitions into single tokens
+/// a -= (label -> 0). This routine converts these definitions into single tokens
 pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
     let mut updated_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut i = 0;
@@ -134,21 +134,20 @@ pub fn resolve_labels_and_relatives(
                 return x.clone();
             }
         }
+        asm_error_no_terminate!(info, "No definition for label '{name}' found");
         if name == "_ASM" {
-            asm_error_no_terminate!(info, "No definition for label '{name}' found",);
             asm_hint!(
                 "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
             );
             asm_hint!(
                 "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
             );
-            terminate!();
         }
-        asm_error!(info, "No definition for label '{name}' found");
+        terminate!();
     }
 
     let mut address: usize = 0;
-    // Scope index stack
+    // Scope index stack, the indexes are for the scoped_label_table
     let mut current_scope_indexes: Vec<usize> = vec![0];
     let mut seen_scopes_count: usize = 0;
 
@@ -187,7 +186,7 @@ pub fn resolve_labels_and_relatives(
 
                 token.variant = TokenVariant::DecLiteral { value };
             }
-            // a &2 => a 3
+            // a $2 => a 3
             TokenVariant::Relative { offset } => {
                 token.variant = TokenVariant::DecLiteral {
                     value: address as i32 + offset,

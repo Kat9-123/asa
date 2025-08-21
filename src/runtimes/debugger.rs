@@ -1,5 +1,6 @@
 use crate::lexer;
 use crate::runtimes::RuntimeError;
+use crate::symbols::{DEBUG_ADDR, IO_ADDR};
 use crate::{
     mem_view,
     tokens::{Info, Token},
@@ -29,7 +30,6 @@ enum IOOperation {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-
 struct InstructionHistoryItem {
     pub pc: usize,
     pub original_value_at_b: u16,
@@ -62,11 +62,10 @@ fn val_to_string(val: u16, data_type: DataType) -> String {
     }
 }
 fn address_to_string(addr: u16, mem: &[u16], data_type: DataType) -> String {
-    match addr {
-        0xFFFF => "IO".to_string(),
-        0xFFFE => "Debug".to_string(),
-        0xFFFD => "Perf".to_string(),
-        x if (x as usize) >= mem.len() => "OOB".to_string(),
+    match addr as usize {
+        IO_ADDR => "IO".to_string(),
+        DEBUG_ADDR => "Debug".to_string(),
+        x if x >= mem.len() => "OOB".to_string(),
 
         _ => val_to_string(mem[addr as usize], data_type),
     }
@@ -197,32 +196,34 @@ fn debug<T: FnMut() -> KeyCode>(
         let a = mem[pc] as usize;
         let b = mem[pc + 1] as usize;
         let c = mem[pc + 2] as usize;
+
         let mut original_value_at_b = 0;
 
         let mut result: u16 = 0;
         let mut io: IOOperation = IOOperation::None;
+
         match (a, b) {
-            (_, 0xFFFF) => {
+            (a, _) if a >= mem.len() && a != IO_ADDR => {
+                current_error = Some(RuntimeError::AOutOfRange(pc));
+            }
+            (_, b) if b >= mem.len() && b != IO_ADDR && b != DEBUG_ADDR => {
+                current_error = Some(RuntimeError::BOutOfRange(pc));
+            }
+            (_, IO_ADDR) => {
                 result = mem[a];
                 io = IOOperation::Char(result as u8 as char);
             }
-            (_, 0xFFFE) => {
+            (_, DEBUG_ADDR) => {
                 result = mem[a];
                 io = IOOperation::Debug(result);
             }
-            (0xFFFF, _) => {
+            (IO_ADDR, _) => {
                 println!("Input: ");
                 let c = match get_key() {
                     KeyCode::Char(x) => x,
                     _ => '\0',
                 };
                 result = c as u16;
-            }
-            (a, _) if a >= mem.len() => {
-                current_error = Some(RuntimeError::AOutOfRange(pc));
-            }
-            (_, b) if b >= mem.len() => {
-                current_error = Some(RuntimeError::BOutOfRange(pc));
             }
             (_, _) => {
                 original_value_at_b = mem[b];
@@ -231,14 +232,12 @@ fn debug<T: FnMut() -> KeyCode>(
         }
 
         let new_pc = if result as i16 <= 0 {
-            //  println!("JUMP!");
-
-            match c as i16 {
-                -1 => {
+            match c {
+                IO_ADDR => {
                     io = IOOperation::Halt;
                     c
                 }
-                -2 => {
+                DEBUG_ADDR => {
                     current_error = Some(RuntimeError::Breakpoint(pc));
                     pc + 3
                 }
@@ -254,7 +253,10 @@ fn debug<T: FnMut() -> KeyCode>(
 
         if in_debugging_mode {
             stdout.execute(crossterm::cursor::MoveTo(0, 0)).unwrap();
-
+            println!(
+                "[ESC] exit debug mode  [UP/k]  [DOWN/j]  [LEFT/h] previous instruction  [RIGHT/l] next instruction
+                [x] halt  [m] toggle memory mode"
+            );
             let origin_info = &tokens[pc].origin_info;
             let info = if origin_info.is_empty() {
                 &tokens[pc].info
@@ -289,8 +291,11 @@ fn debug<T: FnMut() -> KeyCode>(
                     skip_interaction = true;
                 }
             } */
-
-            println!("{}", instruction_history.len());
+            lexer::FILES.with_borrow(|files| {
+                if !files.is_empty() {
+                    println!("{}:{}", files[info.file].display(), info.line_number)
+                }
+            });
 
             // asm_instruction!(info, "depth Instruction");
             if !mem_mode {
@@ -307,22 +312,18 @@ fn debug<T: FnMut() -> KeyCode>(
             println!("{io_buffer: <100}");
             // dbg!(&instruction_history);
             // Only works on windows??
+
             match input() {
-                KeyCode::Char(c) => match c {
-                    'm' => {
-                        stdout
-                            .execute(terminal::Clear(terminal::ClearType::All))
-                            .unwrap();
-                        mem_mode = !mem_mode;
-                        continue;
-                    }
-                    'h' => return,
-                    ' ' => {}
-                    _ => {}
-                },
-                KeyCode::Enter => continue,
+                KeyCode::Char('m') => {
+                    stdout
+                        .execute(terminal::Clear(terminal::ClearType::All))
+                        .unwrap();
+                    mem_mode = !mem_mode;
+                    continue;
+                }
+                KeyCode::Char('x') => return,
                 KeyCode::Right => {}
-                KeyCode::Left => {
+                KeyCode::Left | KeyCode::Char('h') => {
                     current_error = None;
                     let instr = instruction_history.pop();
                     match instr {
@@ -333,11 +334,11 @@ fn debug<T: FnMut() -> KeyCode>(
                     }
                     continue;
                 }
-                KeyCode::Down => {
+                KeyCode::Down | KeyCode::Char('j') => {
                     current_depth += 1;
                     continue;
                 }
-                KeyCode::Up => {
+                KeyCode::Up | KeyCode::Char('k') => {
                     current_depth = current_depth.saturating_sub(1);
                     continue;
                 }
@@ -407,7 +408,7 @@ mod tests {
                 KeyCode::Left,
                 KeyCode::Left,
                 KeyCode::Left,
-                KeyCode::Char('h'),
+                KeyCode::Char('x'),
             ];
             let mut iter = keys.into_iter();
 

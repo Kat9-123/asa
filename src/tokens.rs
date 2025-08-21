@@ -147,6 +147,7 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
         .collect()
 }
 impl Token {
+    /// Size in subleq memory of a token.
     pub fn size(&self) -> usize {
         use TokenVariant::*;
         match self.variant {
@@ -159,13 +160,7 @@ impl Token {
             _ => 0,
         }
     }
-    pub fn new(token_variant: TokenVariant) -> Self {
-        Token {
-            info: Default::default(),
-            origin_info: Vec::new(),
-            variant: token_variant,
-        }
-    }
+
     /// Create a new token with the given token variant, but with the info
     /// of the given token
     pub fn with_info(token_variant: TokenVariant, token: &Token) -> Self {
@@ -175,6 +170,18 @@ impl Token {
             variant: token_variant,
         }
     }
+}
+
+pub fn combine_info_and_origin_info(token: &Token) -> Vec<Info> {
+    let mut all_info = token.origin_info.clone();
+    if let Some(last) = token.origin_info.first() {
+        if *last != token.info {
+            all_info.push(token.info.clone());
+        }
+    } else {
+        all_info.push(token.info.clone())
+    }
+    all_info
 }
 
 impl fmt::Debug for Token {
