@@ -1,9 +1,9 @@
 !J .main
 test -> 420
 test2 -> 1003
-#Sublib
-#Sublib/Stack
-#Sublib/Routines
+#sublib
+#sublib/Stack
+#sublib/Routines
 
 
 

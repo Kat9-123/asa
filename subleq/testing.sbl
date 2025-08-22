@@ -2,7 +2,7 @@ W W .main
 
 _ASM -> 0
 
-#Sublib/ASM
+#sublib/ASM
 
 
 @Repeat l_times? s_body? {
@@ -63,7 +63,7 @@ LINE_BREAK -> 0xA
                 !O 0 0x9000
                 0xFFFF -= B
                 W W !Skip
-                0xDEAD
+                0xBEEF
             }
         }
         -1 -= LINE_BREAK

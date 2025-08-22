@@ -36,7 +36,7 @@ impl PartialEq for Token {
 pub struct Token {
     pub info: Info,
     pub variant: TokenVariant,
-    pub origin_info: Vec<Info>, // Option<Info>
+    pub origin_info: Vec<Info>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

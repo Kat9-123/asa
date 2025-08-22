@@ -1,7 +1,14 @@
 [package]
 name = "asa"
-version = "0.1.0"
+version = "0.8.0"
 edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Kat9-123/asa/"
+keywords = ["subleq", "esolang", "assembler", "OISC"]
+categories = ["compilers", "command-line-utilities"] 
+readme = "README.md"
+description = "Advanced Subleq Assembler. Assembles 'sublang' to subleq"
+
 
 [dependencies]
 clap = { version = "4.5.41", features = ["derive"] }

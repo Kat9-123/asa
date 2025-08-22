@@ -1,6 +1,6 @@
 Z -= Z .main
-#Sublib
-#Sublib/Assert
+#sublib
+#sublib/Assert
 _ASM -> 0
 Z -> 0
 

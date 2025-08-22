@@ -2,7 +2,7 @@
  ; Most basic macros that every project should have
 **
 
-#Sublib/Symbols.sbl
+#sublib/Symbols.sbl
 
 @Halt [ W -= W !IO ]
 

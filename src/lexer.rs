@@ -12,7 +12,6 @@ use std::path::{self, Path, PathBuf};
 
 use log::error;
 use unescape::unescape;
-
 thread_local! {
     pub static FILES: RefCell<Vec<PathBuf>> = const { RefCell::new(vec![]) };
 }
@@ -57,6 +56,10 @@ fn is_valid_label_name(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == ':' || c == '?' || c == '.'
 }
 
+/*
+    This code really should be updated to use utils::IterVec, would make is significantly cleaner
+    but it works and I can't really be bothered
+*/
 fn updated_context(
     context: &Context,
     buffer: &str,

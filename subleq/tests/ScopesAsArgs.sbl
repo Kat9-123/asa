@@ -49,7 +49,7 @@ LINE_BREAK -> 0xA
             } {
                 0xFFFF -= B
                 W W !Skip
-                0xDEAD
+                0xBEEF
             }
         }
         -1 -= LINE_BREAK

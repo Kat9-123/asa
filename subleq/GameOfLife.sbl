@@ -1,8 +1,8 @@
 
 !J .main
-#Sublib
-#Sublib/Routines.sbl
-#Sublib/Control.sbl
+#sublib
+#sublib/Routines.sbl
+#sublib/Control.sbl
 
 ; (100 + 2) ** 2
 @GRID_SIZE_WITH_SURROUNDING [10404]

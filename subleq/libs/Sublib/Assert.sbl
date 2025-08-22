@@ -1,7 +1,7 @@
 **
  ; Assertions used for testing
 **
-#Sublib
+#sublib
 @Assert::Eq A? B? {
     !JumpIf::Eq A? B? .fin
 

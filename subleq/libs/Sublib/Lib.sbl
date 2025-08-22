@@ -1,10 +1,10 @@
 
 
-#Sublib/Prelude.sbl
-#Sublib/Symbols.sbl
+#sublib/Prelude.sbl
+#sublib/Symbols.sbl
 
-#Sublib/IO.sbl
-#Sublib/JumpIf.sbl
-#Sublib/Arithmetic.sbl
-#Sublib/Logic.sbl
-#Sublib/ASM.sbl
+#sublib/IO.sbl
+#sublib/JumpIf.sbl
+#sublib/Arithmetic.sbl
+#sublib/Logic.sbl
+#sublib/ASM.sbl

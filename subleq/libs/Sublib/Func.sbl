@@ -1,7 +1,7 @@
 Z -= Z .main
-#Sublib
-#Sublib/Stack
-#Sublib/Control
+#sublib
+#sublib/Stack
+#sublib/Control
 **
 LOW
 ....
@@ -122,7 +122,7 @@ function_stack -> !Stack::Create 128
 
 b -> &"Test"
 a -> &"string"
-d -> &"APPOL"
+d -> &"Hi"
 .main ->
 
     !Func::Call FUNtest { a TRUE }

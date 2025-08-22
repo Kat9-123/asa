@@ -1,5 +1,5 @@
-#Sublib/Symbols.sbl
-#Sublib/Prelude.sbl
+#sublib/Symbols.sbl
+#sublib/Prelude.sbl
 
 
 
@@ -24,6 +24,10 @@
 
     .fin ->
 
+}
+
+@IO::GetChar to? {
+    to? -= !IO ; not quite sure
 }
 
 

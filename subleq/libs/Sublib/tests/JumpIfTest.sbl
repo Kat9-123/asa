@@ -1,5 +1,5 @@
 !J .main
-#Sublib
+#sublib
 
 
 
@@ -172,45 +172,4 @@ d -> 1233
 
 
     !Halt
-**
-.main ->
-    !JumpIf::EqSNEG c .suc
-
-    !Halt
-
-    !JumpIf::GrZero a .next_1       ; 1234 > 0
-    !J .err
-.next_1 ->
-    !JumpIf::GrZero b .err          ; 0xFFEE > 0
-    !JumpIf::GrZero c .err          ;  0 > 0
-    !JumpIf::GrZero EVIL .err       ;  0x8000 > 0
-
-    !JumpIf::EqZero a .err          ; 1234 == 0
-    !JumpIf::EqZero b .err          ; 0xFFFE == 0
-    !JumpIf::EqZero c .next_2       ; 0 == 0
-    
-    !J .err
-.next_2 ->
-    !JumpIf::EqZero EVIL .err       ; 0x8000 == 0
-
-
-    !JumpIf::LeZero a .err
-    !JumpIf::LeZero c .err
-
-
-
-
-    !JumpIf::Le a c .err
-
-
-    !JumpIf::Geq c a .err
-
-    !JumpIf::Eq a b .err
-    !JumpIf::Eq b c .err
-
-    !IO::PrintLit "Success"
-
-    !Halt
-**
-
 

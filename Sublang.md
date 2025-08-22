@@ -314,8 +314,12 @@ label3 -= _ASM
 ## Style guide
 Just make sure it looks good :), or follow the style of the Sublib
 
+## Namespacing
+The format `Namespace::Macro` or `Namespace::label` should be used. This is solely a naming convention and not enforced in any way. This means that module authors must decide what namespace their macros or labels should have. This is obviously bad design, but it is simple.
+
 ## Conclusion
 For many more examples see the standard library, called Sublib
+
 
 
 # Sublib

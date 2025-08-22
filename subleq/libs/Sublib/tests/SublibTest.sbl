@@ -2,7 +2,7 @@
 string2 -> &"is cool! " 0
 
 
-#Sublib
+#sublib
 
 string -> &"Subleq " 0
 

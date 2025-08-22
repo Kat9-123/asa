@@ -3,12 +3,13 @@ mod literals;
 mod macros;
 mod other;
 
+use log::LevelFilter;
+
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
 use crate::tokens::{Token, TokenVariant};
-use crate::{print_debug, println_debug};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
@@ -18,58 +19,69 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
 
     let tokens = grab_braced_label_definitions(tokens);
     let (mut tokens, macros) = read_macros(&tokens);
-    log::debug!("Found macros:");
-    for i in &macros {
-        println_debug!("{}", i.1);
+
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Found macros:");
+        for i in &macros {
+            println!("{}", i.1);
+        }
+        println!();
     }
-    println_debug!();
 
     tokens = insert_macros(tokens, &macros, vec![]);
-
-    log::debug!("Inserted macros:");
-    for token in &tokens {
-        if let TokenVariant::Linebreak = token.variant {
-            println_debug!("");
-            continue;
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Inserted macros:");
+        for token in &tokens {
+            if let TokenVariant::Linebreak = token.variant {
+                println!();
+                continue;
+            }
+            print!("{:?}  ", token);
         }
-        print_debug!("{:?}  ", token);
+        println!();
     }
-    println_debug!();
-
     let tokens = convert_strings(tokens);
     let tokens = expand_mults(&tokens);
     let tokens = expand_derefs(&tokens);
 
-    log::debug!("Derefs and Literals");
-    for token in &tokens {
-        if let TokenVariant::Linebreak = token.variant {
-            println_debug!("");
-            continue;
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Derefs and Literals");
+        for token in &tokens {
+            if let TokenVariant::Linebreak = token.variant {
+                println!();
+                continue;
+            }
+            print!("{:?}  ", token);
         }
-        print_debug!("{:?}  ", token);
+        println!();
     }
-    println_debug!();
 
     let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
     // From this point forwards, memory addresses are fixed.
-    log::debug!("Fixed");
-    for statement in &tokens {
-        println_debug!("{:?}", statement);
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Fixed");
+        for statement in &tokens {
+            println!("{:?}", statement);
+        }
+        println!();
     }
-    println_debug!();
 
     let scoped_label_table = assign_addresses_to_labels(&tokens);
 
-    log::debug!("Label Table");
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Label Table");
 
-    println_debug!("{:?}", scoped_label_table);
-    println_debug!();
-
+        println!("{:?}", scoped_label_table);
+        println!();
+    }
     resolve_labels_and_relatives(&mut tokens, &scoped_label_table);
-    log::debug!("Resolved Labels");
 
-    for statement in &tokens {
-        println_debug!("{:?}", statement);
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("Resolved Labels");
+
+        for statement in &tokens {
+            println!("{:?}", statement);
+        }
     }
 
     tokens

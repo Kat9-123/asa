@@ -1,6 +1,6 @@
 !J .main
-#Sublib
-#Sublib/Assert
+#sublib
+#sublib/Assert
 
 
 x -> 24936

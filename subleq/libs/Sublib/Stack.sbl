@@ -1,8 +1,8 @@
-#Sublib
-#Sublib/Prelude.sbl
+#sublib
+#sublib/Prelude.sbl
 
 @Stack::Create l_size? [
-    &0xDEAD 0x0000 * l_size?
+    &0xBEEF 0x0000 * l_size?
 ]
 
 @Stack::Push p_stack? val? {
