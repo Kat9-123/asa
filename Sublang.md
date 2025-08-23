@@ -1,9 +1,9 @@
 # Introduction to Sublang
-Sublang is a bare bones assembly languages consisting of three main elements:
+Sublang is a bare bones assembly languages consisting of four main elements:
 * The SUBLEQ instruction
 * Labels
 * Macros
-It also has some syntax sugar.
+* Syntax sugar
 
 
 ### Subleq
@@ -16,7 +16,7 @@ It also has some syntax sugar.
 a -> 1
 b -> 2
 c ->
-    a -= b ; Subtract b from a
+    a -= b ; SUBLEQ: Subtract b from a
     a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
 
 ; If no `c` argument is given, the next instruction will always be executed, even if the result is LEQ
@@ -44,7 +44,7 @@ d -> 'P' ; Character literals
 ```
 
 ### Scopes
-Scoping works like in most other languages. Note: Only labels are effected by scopes, macro definitions in scopes will still be globally accessible
+Scoping works like in most other languages. Note: Only labels are affected by scopes, macro definitions in scopes will still be globally accessible
 ```clojure
 Z -> 123
 X -> 456
@@ -93,7 +93,7 @@ Currently types are only checked checked for macro parameters.
 }
 @Name   ; This is allowed as well, but discouraged
 {
-
+    ...
 }
 
 ; with parameters

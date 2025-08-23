@@ -6,15 +6,16 @@ This Subleq assembler uses a custom assembly-like language, called Sublang, that
 
 ## Features
 * Interpreter and debugger
+* Friendly and detailed assembler feedback
 * Macros
-* Syntax sugar for common constructs
-* In depth assembler feedback
+* Syntax sugar for common constructs like dereferencing
 * Optional typing system
 * Fully fledged standard lib including functions and high level control flow constructs like If or While
-* Fine grained control
+* Fine grained control over your code and the assembler
+* 16-bit
 
 ## What is Subleq?
-Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that has only the `SUBLEQ` instruction. It has three operands: `A`, `B`, `C`.
+Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that has only the `SUBLEQ` instruction, which has three operands: `A`, `B`, `C`.
 The value at memory address `A` is subtracted from the value at address `B`. If the resulting number is less than or equal to zero, a jump takes place to address `C`. Otherwise the next instruction is executed.
 Since there is only one instruction, the assembly does not contain opcodes.
 So: 
@@ -37,11 +38,19 @@ while True:
         pc += 3
 ```
 Most subleq implementations, this one included, also include the IO operations: INPUT, OUTPUT and HALT.
-These can be achieved by respectively having A = -1, B = -1 and C = -1. INPUT and OUTPUT read or write singular ASCII characters
+These can be achieved by respectively having `A = -1`, `B = -1` and `C = -1`. INPUT and OUTPUT read or write singular ASCII characters
+
+
+## Installation
+`cargo install asa`
 
 ## Usage
 ```bash
-asa my_subleq.sbl
+asa MySubleq.sbl
 ```
 
 ## Debugger
+
+
+
+

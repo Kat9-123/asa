@@ -8,12 +8,13 @@ use crate::asm_warn;
 use crate::symbols;
 use crate::terminate;
 use crate::tokens::*;
-
 use crate::utils::IterVec;
+
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
-#[derive(Debug, Clone, Default)]
+
+#[derive(Clone, Default)]
 pub struct Macro {
     name: String,
     info: Info,
@@ -22,8 +23,7 @@ pub struct Macro {
     labels_defined_in_macro: Vec<String>,
 }
 
-/// Used for debugging
-impl fmt::Display for Macro {
+impl fmt::Debug for Macro {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "{}:    ", self.name.yellow())?;
         for i in &self.params {
@@ -33,7 +33,8 @@ impl fmt::Display for Macro {
         Ok(())
     }
 }
-
+/// Grab all macro definitions, returns the tokens without macro definitions and a
+/// map with macros
 pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
     let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut macros: HashMap<String, Macro> = HashMap::new();
@@ -41,10 +42,15 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
     enum Mode {
         Normal,
         Parameters,
-        Body { bounded_by_scopes: bool },
+        /// A macro body may be scoped {} or not scoped []
+        Body {
+            bounded_by_scopes: bool,
+        },
     }
     let mut mode: Mode = Mode::Normal;
+    // Tracks scopes inside of a macro body
     let mut internal_scope_tracker = 0;
+    // Tracks scopes over all the tokens
     let mut global_scope_tracker = 0;
     let mut cur_macro: Option<Macro> = None;
 

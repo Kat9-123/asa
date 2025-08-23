@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::asm_details;
 use crate::asm_error;
 use crate::asm_error_no_terminate;
@@ -8,7 +6,9 @@ use crate::asm_warn;
 use crate::terminate;
 use crate::tokens;
 use crate::tokens::*;
+
 use colored::Colorize;
+use std::collections::HashMap;
 
 /// Labels may be defined inside of instructions using the following syntax:
 /// a -= (label -> 0). This routine converts these definitions into single tokens
@@ -22,14 +22,14 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
         {
             let name = match &tokens[i + 1].variant {
                 TokenVariant::Label { name } => name,
-                _ => asm_error!(&tokens[i + 1].info, "Unexpected token, expected a LABEL"),
+                _ => asm_error!(&tokens[i + 1].info, "Unexpected token, expected a literal"),
             };
             let data: IntOrString = match &tokens[i + 3].variant {
                 TokenVariant::DecLiteral { value } => IntOrString::Int(*value),
                 TokenVariant::Label { name } => IntOrString::Str(name.clone()),
                 _ => asm_error!(
                     &tokens[i + 3].info,
-                    "Unexpected token, expected a LABEL or LITERAL"
+                    "Unexpected token, expected a label or literal"
                 ),
             };
 
@@ -71,7 +71,7 @@ pub fn assign_addresses_to_labels(tokens: &[Token]) -> Vec<HashMap<String, (usiz
 
         current_scope.insert(name.clone(), (address, info.clone()));
     }
-
+    // Every element is a scope, every scope has a hashmap with labels defined in that scope
     let mut scopes: Vec<HashMap<String, (usize, Info)>> = vec![HashMap::new()];
     let mut address: usize = 0;
     // Stack maintaining the indices for the scopes. Top is the current one. They
@@ -121,13 +121,15 @@ pub fn assign_addresses_to_labels(tokens: &[Token]) -> Vec<HashMap<String, (usiz
 /// This routine also resolves relatives.
 pub fn resolve_labels_and_relatives(
     tokens: &mut [Token],
+    // Every HashMap in this array is a scope. The hashmap contains the labels defined in that scope
     scoped_label_table: &[HashMap<String, (usize, Info)>],
 ) {
+    /// Search the scopes from the deepest one for a definition of the requested label.
     fn find_label(
         name: &String,
         scoped_label_table: &[HashMap<String, (usize, Info)>],
         current_scope_indexes: &[usize],
-        #[allow(unused_variables)] info: &Info, // Maybe I'm missing something, but this variable is most definitely used.
+        info: &Info,
     ) -> (usize, Info) {
         for scope in current_scope_indexes.iter().rev() {
             if let Some(x) = scoped_label_table[*scope].get(name) {
@@ -200,10 +202,10 @@ pub fn resolve_labels_and_relatives(
 }
 
 /*
-    _ASM    _ASM    &1
-    *ID*ptr *ID*ptr &1
-    ptr     _ASM    &1
-    _ASM    *ID*ptr &1
+    _ASM    _ASM    $1
+    *ID*ptr *ID*ptr $1
+    ptr     _ASM    $1
+    _ASM    *ID*ptr $1
 */
 fn make_deref_instructions(
     info: &Info,
@@ -259,7 +261,10 @@ fn make_deref_instructions(
     deref
 }
 
-/// Messy
+/// The * operator is used to deref a label
+/// Ex: *ptr -= a
+/// Messy but functional. The whole *id* shtick isn't ideal. Could have just used scopes, and use the macro system
+/// for the copy instead of make_deref_instructions
 pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 

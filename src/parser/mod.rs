@@ -23,7 +23,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     if log::max_level() >= LevelFilter::Debug {
         log::debug!("Found macros:");
         for i in &macros {
-            println!("{}", i.1);
+            println!("{:?}", i.1);
         }
         println!();
     }
