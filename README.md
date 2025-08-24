@@ -12,6 +12,7 @@ This Subleq assembler uses a custom assembly-like language, called Sublang, that
 * Optional typing system
 * Fully fledged standard lib including functions and high level control flow constructs like If or While
 * Fine grained control over your code and the assembler
+* Module and inclusion system
 * 16-bit
 
 ## What is Subleq?
@@ -42,15 +43,12 @@ These can be achieved by respectively having `A = -1`, `B = -1` and `C = -1`. IN
 
 
 ## Installation
-`cargo install asa`
+`cargo install asa` or download the binary from the releases tab
 
 ## Usage
 ```bash
 asa MySubleq.sbl
 ```
-
-## Debugger
-
 
 
 

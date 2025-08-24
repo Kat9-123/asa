@@ -36,7 +36,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
                 println!();
                 continue;
             }
-            print!("{:?}  ", token);
+            print!("{token:?}  ");
         }
         println!();
     }
@@ -51,7 +51,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
                 println!();
                 continue;
             }
-            print!("{:?}  ", token);
+            print!("{token:?}  ");
         }
         println!();
     }
@@ -61,7 +61,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     if log::max_level() >= LevelFilter::Debug {
         log::debug!("Fixed");
         for statement in &tokens {
-            println!("{:?}", statement);
+            println!("{statement:?}");
         }
         println!();
     }
@@ -71,7 +71,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     if log::max_level() >= LevelFilter::Debug {
         log::debug!("Label Table");
 
-        println!("{:?}", scoped_label_table);
+        println!("{scoped_label_table:?}");
         println!();
     }
     resolve_labels_and_relatives(&mut tokens, &scoped_label_table);
@@ -80,7 +80,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         log::debug!("Resolved Labels");
 
         for statement in &tokens {
-            println!("{:?}", statement);
+            println!("{statement:?}");
         }
     }
 

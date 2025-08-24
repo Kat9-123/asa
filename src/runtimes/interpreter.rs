@@ -8,6 +8,8 @@ use std::{
 
 use crate::runtimes::debugger::get_key;
 
+/// Returns the a result with either the complete program output, or a runtime error,
+/// the total executions executed, and the time spent on IO
 pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Duration) {
     let mut prev_pc: usize = 0xFFFF;
     let mut pc = 0;
@@ -32,6 +34,7 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                 return (Err(RuntimeError::BOutOfRange(pc)), total_ran, io_time);
             }
 
+            // Output char
             (_, IO_ADDR) => {
                 result = mem[a];
                 let ch = result as u8 as char;
@@ -41,6 +44,7 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                 print!("{ch}");
                 io_time += timer.elapsed();
             }
+            // Output int
             (_, DEBUG_ADDR) => {
                 result = mem[a];
                 let ch = (result as i16).to_string();
@@ -50,6 +54,7 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
                 println!("{ch}");
                 io_time += timer.elapsed();
             }
+            // Input char
             (IO_ADDR, _) => {
                 let timer = Instant::now();
 

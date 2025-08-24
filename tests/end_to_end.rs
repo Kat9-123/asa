@@ -16,7 +16,7 @@ fn test_at_path(path: &str) {
             continue;
         }
 
-        info!("Name: {}", p);
+        info!("Name: {p}");
         println!("{}", "-".repeat(80));
 
         let (target, input_file_type, _module) =
@@ -65,5 +65,5 @@ fn basic() {
 }
 #[test]
 fn sublib() {
-    test_at_path("./subleq/libs/Sublib/tests");
+    test_at_path("./subleq/libs/sublib/tests");
 }

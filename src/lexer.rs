@@ -13,6 +13,7 @@ use std::path::{self, Path, PathBuf};
 use log::error;
 use unescape::unescape;
 thread_local! {
+    // Array of all included files
     pub static FILES: RefCell<Vec<PathBuf>> = const { RefCell::new(vec![]) };
 }
 
@@ -367,7 +368,6 @@ fn include(
             terminate!();
         }
     }
-    //                        println!("{}", path.display());
 
     let exists = FILES.with_borrow_mut(|files| {
         if !files.contains(&path) {

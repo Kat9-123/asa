@@ -1,6 +1,5 @@
 use crate::lexer;
 use crate::runtimes::RuntimeError;
-use crate::tokens::combine_info_and_origin_info;
 use crate::{tokens::Info, tokens::Token};
 use colored::{Color, Colorize};
 use core::fmt;
@@ -8,7 +7,8 @@ use std::cell::RefCell;
 use std::fs;
 
 thread_local!(
-    /// The type/level of the current feedback message
+    /// The type/level of the current feedback message, used by sub messages
+    /// to check if they have a sufficient level
     static FEEDBACK_TYPE: RefCell<log::Level> = const { RefCell::new(log::Level::Debug) });
 
 #[derive(PartialEq, Clone, Copy)]
@@ -124,7 +124,7 @@ macro_rules! asm_details {
 #[macro_export]
 macro_rules! asm_trace {
     ($origin_info:expr) => {{
-        for i in $origin_info.iter().rev().skip(0) {
+        for i in $origin_info.iter().rev() {
             $crate::feedback::_asm_msg(
                 $crate::feedback::Type::Trace,
                 "".to_string(),
@@ -207,16 +207,15 @@ macro_rules! println_silenceable {
     };
 }
 
+/// Gives last origin_info item, or info otherwise
 pub fn origin_info_or_info(tok: &Token) -> &Info {
     tok.origin_info.last().unwrap_or(&tok.info)
-    //&tok.info
 }
 
 fn get_file_contents(index: usize) -> String {
     let path = lexer::FILES.with_borrow(|v| v[index].clone());
     fs::read_to_string(&path).unwrap_or_else(|_| {
-        log::error!("Error reading file for file preview: {}", path.display());
-        terminate!();
+        crate::error!("Error reading file for file preview: {}", path.display());
     })
 }
 
@@ -329,12 +328,8 @@ pub fn _asm_msg(
     };
     print!("{prefix}");
 
-    for _ in 0..start - 1 {
-        print!(" ");
-    }
-    for _ in 0..length {
-        print!("{}", "~".stylise(msg_type));
-    }
+    print!("{}", " ".repeat((start - 1) as usize));
+    print!("{}", "~".stylise(msg_type).repeat(length as usize));
     println!();
 
     if msg_type == Type::Trace {
@@ -375,9 +370,8 @@ pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
         if index >= tokens.len() {
             return;
         }
-        let all_info = combine_info_and_origin_info(&tokens[index]);
-        asm_error_no_terminate!(&all_info[0], "{message}");
-        asm_trace!(all_info); // Bug with GameOfLife.sbl and Trace.sbl
+        asm_error_no_terminate!(&tokens[index].info, "{message}");
+        asm_trace!(&tokens[index].origin_info); // Bug with GameOfLife.sbl and Trace.sbl
     } else {
         log::error!("{message}. PC: {index}");
     }

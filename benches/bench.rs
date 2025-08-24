@@ -3,12 +3,12 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use std::fs;
 
 fn assembler(c: &mut Criterion) {
-    let contents = fs::read_to_string("./subleq/libs/Sublib/tests/JumpIfTest.sbl").unwrap();
+    let contents = fs::read_to_string("./subleq/libs/sublib/tests/JumpIfTest.sbl").unwrap();
     c.bench_function("assembler normal", |b| {
         b.iter(|| {
             assembler::assemble(
                 &contents,
-                "./subleq/libs/Sublib/tests/ControlTest.sbl".to_owned(),
+                "./subleq/libs/sublib/tests/ControlTest.sbl".to_owned(),
             )
         })
     });
@@ -19,7 +19,7 @@ fn assembler(c: &mut Criterion) {
 }
 
 fn runtimes(c: &mut Criterion) {
-    let path = "./subleq/libs/Sublib/tests/JumpIfTest.sbl";
+    let path = "./subleq/libs/sublib/tests/JumpIfTest.sbl";
     let contents = fs::read_to_string(path).unwrap();
 
     let (mut mem, toks) = assembler::assemble(&contents, path.to_owned());

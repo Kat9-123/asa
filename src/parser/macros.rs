@@ -33,6 +33,7 @@ impl fmt::Debug for Macro {
         Ok(())
     }
 }
+
 /// Grab all macro definitions, returns the tokens without macro definitions and a
 /// map with macros
 pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
@@ -325,9 +326,15 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
                 }
                 return;
             }
-            symbols::MACRO_TYPE_PREFIX => {
+            symbols::BRACED_TYPE_PREFIX => {
                 if !matches!(token.variant, TokenVariant::BraceOpen) {
                     wrong_type(token, argument_info, "braced");
+                }
+                return;
+            }
+            symbols::MACRO_TYPE_PREFIX => {
+                if !matches!(token.variant, TokenVariant::BraceOpen) {
+                    wrong_type(token, argument_info, "macro call");
                 }
                 return;
             }

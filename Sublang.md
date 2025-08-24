@@ -6,7 +6,7 @@ Sublang is a bare bones assembly languages consisting of four main elements:
 * Syntax sugar
 
 
-### Subleq
+## Subleq
 
 ```clojure
 1 2 3 ; This is interpreted as standard subleq: mem[2] -= mem[1] jump to 3 if LEQ otherwise it goes to the next instruction.
@@ -66,8 +66,8 @@ The assembler has a simple type-checker, which can be disabled.
 * `l_value` literal value
 * `s_value` scoped value
 * `a_value` anything, no type checking
-* `m_value` a macro call passed as argument, must be braced.
-
+* `b_value` a braced value
+* `m_value` a macro call passed as argument, must be braced. It's the same as `b_value`
 Currently types are only checked checked for macro parameters.
 
 ### Naming conventions

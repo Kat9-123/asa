@@ -25,6 +25,8 @@ fn main() {
 
     // Assembly or file reading
     let (mut mem, tokens) = files::process_input_file(&target, input_file_type);
+
+    // Output
     files::to_file(&mem, output_file);
 
     if args::get().disable_execution {
@@ -39,6 +41,7 @@ fn main() {
     if args::get().debugger {
         if let Some(tokens) = tokens {
             debugger::run_with_debugger(&mut mem, &tokens);
+            return;
         } else {
             log::error!("Can't run an SBLX or BIN file with the debugger");
         }
@@ -47,6 +50,8 @@ fn main() {
     let timer = Instant::now();
     let (result, total_ran, io_time) = interpreter::interpret(&mut mem);
     let elapsed = timer.elapsed();
+
+    // Stats
     let compute_time = elapsed - io_time;
     println_silenceable!("\n{}", "-".repeat(80));
     if let Err(e) = result {

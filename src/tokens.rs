@@ -1,8 +1,14 @@
+use std::cmp::PartialEq;
 use std::{fmt, fs::File, io::prelude::*};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LabelOffset {
     Char(char),
+    Int(i32),
+}
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum IntOrString {
+    Str(String),
     Int(i32),
 }
 
@@ -13,30 +19,6 @@ pub struct Info {
     pub line_number: i32,
     pub file: usize,
     pub sourceline_suffix: Option<String>,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum IntOrString {
-    Str(String),
-    Int(i32),
-}
-use std::cmp::PartialEq;
-
-impl PartialEq for Token {
-    fn eq(&self, other: &Self) -> bool {
-        // HACK
-        self.variant == other.variant
-            && self.info.start_char == other.info.start_char
-            && self.info.line_number == other.info.line_number
-            && self.info.file == other.info.file
-    }
-}
-
-#[derive(Clone)]
-pub struct Token {
-    pub info: Info,
-    pub variant: TokenVariant,
-    pub origin_info: Vec<Info>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -71,6 +53,55 @@ pub enum TokenVariant {
     Asterisk,
 }
 
+#[derive(Clone)]
+pub struct Token {
+    pub info: Info,
+    pub variant: TokenVariant,
+    pub origin_info: Vec<Info>,
+}
+
+impl Token {
+    /// Size in subleq memory of a token.
+    pub fn size(&self) -> usize {
+        use TokenVariant::*;
+        match self.variant {
+            DecLiteral { .. } | Relative { .. } | Label { .. } | BracedLabelDefinition { .. } => 1,
+
+            HexLiteral { .. } | CharLiteral { .. } | StrLiteral { .. } => {
+                unreachable!("These variants should already have been processed")
+            }
+
+            _ => 0,
+        }
+    }
+
+    /// Create a new token with the given token variant, but with the info
+    /// of the given token
+    pub fn with_info(token_variant: TokenVariant, token: &Token) -> Self {
+        Token {
+            info: token.info.clone(),
+            origin_info: token.origin_info.clone(),
+            variant: token_variant,
+        }
+    }
+}
+
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        // HACK
+        self.variant == other.variant
+            && self.info.start_char == other.info.start_char
+            && self.info.line_number == other.info.line_number
+            && self.info.file == other.info.file
+    }
+}
+
+impl fmt::Debug for Token {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{:?}", self.variant)
+    }
+}
+
 /// Only really used for debugging
 impl fmt::Display for Token {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -103,7 +134,7 @@ impl fmt::Display for Token {
     }
 }
 
-/// Used for debugging
+/// Used for debugging, dumps tokens to an sbl file
 pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
     let mut buf: String = String::new();
     let mut tabs: String = String::new();
@@ -130,6 +161,9 @@ pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Used for testing. It makes a list of tokens from a list of TokenVariants with an ID
+/// Info and Origin info are set to defaults, except for start_char, which is repurposed to be an ID,
+/// used by test cases to check from which input the tokens the output tokens came from.
 pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -> Vec<Token> {
     token_variants
         .iter()
@@ -145,47 +179,4 @@ pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -
             origin_info: Default::default(),
         })
         .collect()
-}
-impl Token {
-    /// Size in subleq memory of a token.
-    pub fn size(&self) -> usize {
-        use TokenVariant::*;
-        match self.variant {
-            DecLiteral { .. } | Relative { .. } | Label { .. } | BracedLabelDefinition { .. } => 1,
-
-            HexLiteral { .. } | CharLiteral { .. } | StrLiteral { .. } => {
-                unreachable!("These variants should already have been processed")
-            }
-
-            _ => 0,
-        }
-    }
-
-    /// Create a new token with the given token variant, but with the info
-    /// of the given token
-    pub fn with_info(token_variant: TokenVariant, token: &Token) -> Self {
-        Token {
-            info: token.info.clone(),
-            origin_info: token.origin_info.clone(),
-            variant: token_variant,
-        }
-    }
-}
-
-pub fn combine_info_and_origin_info(token: &Token) -> Vec<Info> {
-    let mut all_info = token.origin_info.clone();
-    if let Some(last) = token.origin_info.first() {
-        if *last != token.info {
-            all_info.push(token.info.clone());
-        }
-    } else {
-        all_info.push(token.info.clone())
-    }
-    all_info
-}
-
-impl fmt::Debug for Token {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{:?}, {}", self.variant, self.info.start_char)
-    }
 }

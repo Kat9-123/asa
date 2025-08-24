@@ -14,6 +14,7 @@ use crossterm::{
 use std::fs;
 use std::io::{self};
 use std::num::Wrapping;
+use std::path::PathBuf;
 
 enum DataType {
     Char,
@@ -55,7 +56,14 @@ fn revert_historic_instruction(
 fn val_to_string(val: u16, data_type: DataType) -> String {
     match data_type {
         DataType::Char => {
-            format!("'{}'", val as u8 as char)
+            let c = val as u8 as char;
+            let length = val.to_string().chars().count(); // Doesn't actually work in some cases
+            // println!("AAAAAA{length: >6}AAAAAAAAAA");
+            if length > 1 {
+                format!("'{c}'")
+            } else {
+                " ''".to_owned()
+            }
         }
         DataType::Int => format!("{}", val as i16),
         DataType::Hex => format!("{val:X}"),
@@ -71,11 +79,12 @@ fn address_to_string(addr: u16, mem: &[u16], data_type: DataType) -> String {
     }
 }
 
-fn get_file_contents(index: usize) -> String {
-    fs::read_to_string(lexer::FILES.with_borrow(|v| v[index].clone()))
-        .expect("Should have been able to read the file")
+fn get_file_contents(path: &PathBuf) -> String {
+    fs::read_to_string(path)
+        .unwrap_or_else(|_| crate::error!("Debugger couldn't read file: {}", path.display()))
 }
 
+/// Display file preview and instruction that is being ran
 fn display(
     info: &Info,
     pc: usize,
@@ -84,10 +93,25 @@ fn display(
     mem: &[u16],
     current_error: &Option<RuntimeError>,
 ) {
-    if lexer::FILES.with_borrow(|f| f.is_empty()) {
-        return;
-    }
-    let contents = get_file_contents(info.file);
+    let file = lexer::FILES.with_borrow(|files| {
+        if !files.is_empty() {
+            // Cant just use .get() because the internal value has to be cloned.
+            Some(files[info.file].clone())
+        } else {
+            None
+        }
+    });
+
+    let file = match file {
+        None => return,
+        Some(f) => f,
+    };
+    println!(
+        "[ESC] exit debug mode  [UP/k] up  [DOWN/j] down  [LEFT/h] previous instruction
+[RIGHT/l] next instruction  [x] halt  [m] toggle memory mode\n"
+    );
+    println!("{}:{: <100} ", file.display(), info.line_number);
+    let contents = get_file_contents(&file);
 
     let lines = contents.lines().collect::<Vec<&str>>();
 
@@ -96,7 +120,7 @@ fn display(
 
     // There is probably a cleaner way to do this
     let desired_start_line = info.line_number - 1 - UPPER_SIZE;
-    let desired_end_line = info.line_number - 1 + LOWER_SIZE + 1; //.min(lines.len() as i32 - 1); // 10
+    let desired_end_line = info.line_number - 1 + LOWER_SIZE + 1;
 
     let actual_start_line = desired_start_line.max(0);
     let actual_end_line = desired_end_line.min(lines.len() as i32 - 1);
@@ -105,6 +129,7 @@ fn display(
     let end_line =
         (actual_end_line + (actual_start_line - desired_start_line)).min(lines.len() as i32 - 1);
 
+    // File preview
     for i in start_line..end_line {
         if i != info.line_number - 1 {
             println!(
@@ -126,33 +151,35 @@ fn display(
             );
         }
     }
+
+    // Instruction preview
     if pc + 2 >= mem.len() {
         println!("Out of bounds");
         return;
     }
 
     println!("PC: {pc: <100X} ");
-    println!(" a: {: >4X},  b: {: >4X}", mem[pc], mem[pc + 1]);
+    println!("a: {: >4X}  b: {: >4X}", mem[pc], mem[pc + 1]);
 
     println!(
-        "{: >6} - {: >6} = {: >6} ",
+        " {: >6} - {: >6} = {: >6} ",
         address_to_string(mem[pc + 1], mem, DataType::Int),
         address_to_string(mem[pc], mem, DataType::Int),
         val_to_string(result, DataType::Int)
     );
     println!(
-        "{: >6} - {: >6} = {: >6} ",
+        " {: >6} - {: >6} = {: >6} ",
         address_to_string(mem[pc + 1], mem, DataType::Hex),
         address_to_string(mem[pc], mem, DataType::Hex),
         val_to_string(result, DataType::Hex)
     );
     println!(
-        "{: >6} - {: >6} = {: >6} ",
+        " {: >6} - {: >6} = {: >6} ",
         address_to_string(mem[pc + 1], mem, DataType::Char),
         address_to_string(mem[pc], mem, DataType::Char),
         val_to_string(result, DataType::Char)
     );
-    println!(" c: {: <100} ", val_to_string(new_pc as u16, DataType::Hex));
+    println!("c: {: <100} ", val_to_string(new_pc as u16, DataType::Hex));
 }
 
 pub fn get_key() -> KeyCode {
@@ -175,13 +202,11 @@ fn debug<T: FnMut() -> KeyCode>(
     mut in_debugging_mode: bool,
     mut input: T,
 ) {
-    //execute!(io::stdout(), EnterAlternateScreen);
     let mut pc = 0;
     let mut instruction_history: Vec<InstructionHistoryItem> = Vec::new();
     let mut io_buffer: String = String::new();
     let mut current_depth: usize = 0;
     let mut stdout = io::stdout();
-    //enable_raw_mode();
     stdout
         .execute(terminal::Clear(terminal::ClearType::All))
         .unwrap();
@@ -253,10 +278,7 @@ fn debug<T: FnMut() -> KeyCode>(
 
         if in_debugging_mode {
             stdout.execute(crossterm::cursor::MoveTo(0, 0)).unwrap();
-            println!(
-                "[ESC] exit debug mode  [UP/k]  [DOWN/j]  [LEFT/h] previous instruction  [RIGHT/l] next instruction
-                [x] halt  [m] toggle memory mode"
-            );
+
             let origin_info = &tokens[pc].origin_info;
             let info = if origin_info.is_empty() {
                 &tokens[pc].info
@@ -276,7 +298,6 @@ fn debug<T: FnMut() -> KeyCode>(
                 current_depth = current_depth
                     .min(origin_info.len() - 1)
                     .min(deepest_in_file_depth);
-                println!("{current_depth}");
 
                 if current_depth == origin_info.len() - 1 {
                     &tokens[pc].info
@@ -291,11 +312,6 @@ fn debug<T: FnMut() -> KeyCode>(
                     skip_interaction = true;
                 }
             } */
-            lexer::FILES.with_borrow(|files| {
-                if !files.is_empty() {
-                    println!("{}:{}", files[info.file].display(), info.line_number)
-                }
-            });
 
             // asm_instruction!(info, "depth Instruction");
             if !mem_mode {
@@ -310,8 +326,6 @@ fn debug<T: FnMut() -> KeyCode>(
                 .unwrap();
 
             println!("{io_buffer: <100}");
-            // dbg!(&instruction_history);
-            // Only works on windows??
 
             match input() {
                 KeyCode::Char('m') => {

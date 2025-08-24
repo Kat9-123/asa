@@ -40,6 +40,7 @@ pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token
 
     toks
 }
+
 /// Handle the assignment syntax sugar like, x = 0, y = x, z = 10.
 /// Inserts macros in their stead
 pub fn handle_assignments(tokens: &[Token]) -> Vec<Token> {
@@ -147,15 +148,6 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
         if i + 1 < tokens.len()
             && let TokenVariant::Subleq = &tokens[i + 1].variant
         {
-            /*  doesn't work, shouldn't trigger for ZERO -= ZERO...
-            if let TokenVariant::Label {name} = &tokens[i].variant {
-                if name.len() > 1 {
-                    if name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
-                        asm_info!(&tokens[i].info, "Attempting to write to a label notated as being constant");
-                    }
-                }
-            }
-             */
             if i + 3 < tokens.len()
                 && let TokenVariant::Linebreak = &tokens[i + 3].variant
             {
@@ -188,7 +180,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                     let mut split_name = name.split('?');
                     if !split_name.next_back().unwrap().starts_with('.') {
                         asm_info!(
-                            &tokens[i + 3].info, //origin_info_or_info(&tokens[i + 3]),
+                            &tokens[i + 3].info,
                             "Labels which are jump targets should be prefixed with a '.'"
                         );
                     }
