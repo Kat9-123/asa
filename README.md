@@ -1,4 +1,4 @@
-<img src="/assets/logo.png" width="80"/>
+<img src="https://github.com/Kat9-123/asa/raw/HEAD/assets/logo.png" width="80"/>
 
 
 # Advanced Subleq Assembler

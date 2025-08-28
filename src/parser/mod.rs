@@ -4,9 +4,7 @@ mod literals;
 mod macros;
 mod other;
 
-use log::Level;
 use log::LevelFilter;
-use log::warn;
 
 use crate::parser::labels::*;
 use crate::parser::literals::*;

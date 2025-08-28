@@ -18,7 +18,7 @@ pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
                 println!();
                 continue;
             }
-            print!("{:?}, ", i);
+            print!("{i:?}, ");
         }
     }
 

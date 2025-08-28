@@ -330,7 +330,7 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
     );
     log::debug!("Included files");
     if log::max_level() >= LevelFilter::Debug {
-        FILES.with_borrow(|files| println!("{:#?}", files));
+        FILES.with_borrow(|files| println!("{files:#?}"));
     }
     result
 }
