@@ -336,10 +336,10 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
 }
 
 fn fix_include_path(path: &mut PathBuf) {
-    // When trying to import a folder, it looks for a file name lib.sbl in the folder
+    // When trying to import a folder, it looks for a file named Lib.sbl in the folder
 
     if path.is_dir() {
-        path.push("lib");
+        path.push("Lib");
     }
 
     if path.extension().is_none() {
