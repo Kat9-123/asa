@@ -263,8 +263,7 @@ fn make_deref_instructions(
 
 /// The * operator is used to deref a label
 /// Ex: *ptr -= a
-/// Messy but functional. The whole *id* shtick isn't ideal. Could have just used scopes, and use the macro system
-/// for the copy instead of make_deref_instructions
+/// Messy but functional. The whole *id* shtick isn't ideal. Could have just used scopes
 pub fn expand_derefs(tokens: &[Token]) -> Vec<Token> {
     const INSERTED_INSTRUCTIONS_SIZE: usize = 17;
 

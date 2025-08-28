@@ -11,8 +11,9 @@ p_string -> &"Hello, Sublang!\n"
     Or using the standard lib
 **
 @PrintStdLib P_STRING? {
-    p_local = P_STRING?
-    char = 0
+    != p_local P_STRING?
+    !=0 char
+    
     !Loop {
         !DerefAndCopy p_local char
         !IfFalse char {

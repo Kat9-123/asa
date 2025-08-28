@@ -70,12 +70,15 @@ pub struct Args {
     /// Suppresses all assembler output except for errors, overrides --feedback-level. Program output will still be shown.
     #[arg(short, long, default_value_t = false)]
     pub silent: bool,
+
+    /// Shows more notes and warning. Recommended for release builds
+    #[arg(short, long, default_value_t = false)]
+    pub pedantic: bool,
 }
 
 pub fn get() -> &'static Args {
     ARGS.get().unwrap_or_else(|| {
-        log::error!("No arguments have been parsed");
-        crate::terminate!();
+        crate::error!("No arguments have been parsed");
     })
 }
 

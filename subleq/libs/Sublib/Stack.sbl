@@ -6,7 +6,7 @@
 ]
 
 @Stack::Push p_stack? val? {
-    n_val = 0
+    !=0 n_val
     !Inc p_stack?
 
 

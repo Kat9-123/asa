@@ -1,8 +1,28 @@
-#sublib/ASM
 !ASM::Breakpoint
-a = -1
-Z -= Z -1
+!J .main
+#sublib
+#sublib/Control
 
 
-Z -> 0
-_ASM -> 0
+.err ->
+    !IO::PrintLnLit "Appel"
+    !Halt
+
+@TestIf m_true_conditional? L_A? L_B? {
+    != a L_A?
+    != b L_B?
+
+    !If (m_true_conditional? a b) {
+
+        !J .fin
+    }
+    !J .err
+
+    .fin ->
+
+
+}
+
+.main ->
+!TestIf (!Neq) 0 -1
+!Halt

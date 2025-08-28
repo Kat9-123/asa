@@ -4,7 +4,7 @@
 ]
 
 @Not a? {
-    result = 0
+    !=0 result
 
     !RepeatLit 16 {
         !LShift1 result

@@ -94,7 +94,7 @@
 @Repeat times? s_body? [
     {
     times? -= ZERO .fin
-    i = times?
+    != i times?
     .SUBLIB_continue ->
     .loop ->
 
@@ -136,4 +136,43 @@
         W -= W .loop
     .SUBLIB_break ->
     }
+]
+
+
+
+**
+    name? = 0
+**
+@=0 name? [
+    name? -= name? $2
+    name? -> 0
+]
+
+**
+    name? = L_LIT?
+**
+@=L name? L_LIT? [
+    _ASM -= _ASM
+    name? -= name? $3
+    name? -> 0
+    {
+        n_lit -> L_LIT?
+        _ASM -= n_lit
+        name? -= _ASM
+    }
+]
+
+
+
+**
+    name? = target?
+**
+@= name? target? [
+    _ASM -= _ASM $2
+    name? -> 0
+    name? -= name?
+ 
+    _ASM -= target?
+    name? -= _ASM
+
 ]

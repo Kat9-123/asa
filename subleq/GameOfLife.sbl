@@ -7,7 +7,7 @@
 ; (100 + 2) ** 2
 @GRID_SIZE_WITH_SURROUNDING [10404]
 
-@MakeBuffer [&0 * !GRID_SIZE_WITH_SURROUNDING]
+@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING]
 
 **
     target? += *p_pointer?
@@ -27,7 +27,7 @@
     X -> l_x?
     Y -> l_y?
     . ->
-    index = GRID_PTR_0
+    != index GRID_PTR_0
     !Add index GRID_WIDTH
     !AddLit index 3
     !Add index X
@@ -120,12 +120,12 @@ THREE -> 3
 
 
 !Routine::Def .GetNeighbours {
-    neighbour_count = 0
-    p_neighbour = 0
-    current_cell_state = 0
+    !=0 neighbour_count
+    !=0 p_neighbour
+    !=0 current_cell_state
 
-    p_cell = p_front_buffer
-    p_back_cell = p_back_buffer
+    != p_cell p_front_buffer
+    != p_back_cell p_back_buffer
 
 
     !IterOverDoubleBuffer p_cell p_back_cell {
@@ -201,6 +201,7 @@ THREE -> 3
                 *p_back_cell -= N_ONE       
             }
         }
+        0x9000 -= 0x9000
         ;!ASM::Breakpoint
 
 
@@ -221,10 +222,10 @@ THREE -> 3
 }
 
 !Routine::Def .Draw {
-    p_cell = p_front_buffer
+    != p_cell p_front_buffer
     !IterOverGrid p_cell {
-        n_cur = 0
-        cur = 0
+        !=0 n_cur
+        !=0 cur
 
         n_cur -= *p_cell
         cur -= n_cur
@@ -259,6 +260,9 @@ THREE -> 3
     !Set 0 2
     !Set 1 2
     **
+
+
+
     !RepeatLit 200 {
         !Routine::Call .Draw
         !Routine::Call .GetNeighbours

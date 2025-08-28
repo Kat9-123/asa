@@ -34,8 +34,6 @@ pub enum TokenVariant {
     Unscope,
     CharLiteral { value: char },
     StrLiteral { value: String },
-    Equals,
-
     MacroDeclaration { name: String },
     MacroBodyStart,
     MacroBodyEnd,
@@ -128,7 +126,6 @@ impl fmt::Display for Token {
             Linebreak => "\n".to_string(),
             BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
             Asterisk => "*".to_string(),
-            Equals => "=".to_string(),
         };
         write!(fmt, "{s}")
     }

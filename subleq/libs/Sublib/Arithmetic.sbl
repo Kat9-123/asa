@@ -1,6 +1,6 @@
 **
  ; Some very basic arithmetic routines
- ; mostly in the form: a = a * b, where * is some generic operator
+ ; mostly in the form: a = a o b, where 'o' is some generic operator
 **
 
 
@@ -12,7 +12,7 @@
     val? += l_lit?
 **
 @AddLit val? l_lit? {
-    n_val = 0
+    !=0 n_val
 
     n_val       -= LITERAL
     val?        -= n_val
@@ -40,9 +40,9 @@
 **
 @Mul a? B? {
 
-    acc = 0
-    n_a = 0
-    c_b = B?
+    !=0 acc
+    !=0 n_a
+    != c_b B?
 
     n_a -= a?
 

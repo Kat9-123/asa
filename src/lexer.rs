@@ -51,7 +51,7 @@ pub fn generic_sanitisation(text: &str) -> String {
 }
 
 fn is_valid_macro_name(c: char) -> bool {
-    c.is_alphanumeric() || c == '_' || c == ':'
+    !c.is_whitespace() && !matches!(c, '(' | ')' | '{' | '}' | '[' | ']')
 }
 fn is_valid_label_name(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == ':' || c == '?' || c == '.'
@@ -85,7 +85,6 @@ fn updated_context(
             '}' => (Context::None, None, Some(TokenVariant::Unscope)),
             '[' => (Context::None, None, Some(TokenVariant::MacroBodyStart)),
             ']' => (Context::None, None, Some(TokenVariant::MacroBodyEnd)),
-            '=' => (Context::None, None, Some(TokenVariant::Equals)),
 
             '(' => (Context::None, None, Some(TokenVariant::BraceOpen)),
             ')' => (Context::None, None, Some(TokenVariant::BraceClose)),

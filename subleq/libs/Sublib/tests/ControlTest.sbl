@@ -11,7 +11,7 @@ LINEBREAK -> '\n'
 i -> 0
 p -> 0
 @Mac m_copy? {
-    p = 0
+    !=0 p 
 
     !While (!Neq p TWO) {
         m_copy? i
@@ -31,8 +31,8 @@ p -> 0
     !Halt
 
 @TestIf m_true_conditional? L_A? L_B? {
-    a = L_A?
-    b = L_B?
+    != a L_A?
+    != b L_B?
 
     !If (m_true_conditional? a b) {
 
@@ -57,7 +57,7 @@ p -> 0
     }
 
     ;!TestIf (!Eq) 10 10
-    !TestIf (!Neq) 0 -1
+    ;!TestIf (!Neq) 0 -1
     ;!TestIf (!Geq) 20 10
     ;!TestIf (!Leq) -10 -9
     ;!TestIf (!Ge) 0 0x8000

@@ -10,15 +10,14 @@ use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
-use crate::tokens::dump_tokens;
+//use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
     let mut tokens = tokens;
 
     char_and_hex_to_dec_and_check_scopes(&mut tokens);
-    let tokens = handle_assignments(&tokens);
-
+    //
     let tokens = grab_braced_label_definitions(tokens);
     let (mut tokens, macros) = read_macros(&tokens);
 
@@ -42,6 +41,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         }
         println!();
     }
+
     let tokens = convert_strings(tokens);
     let tokens = expand_mults(&tokens);
     let tokens = expand_derefs(&tokens);
@@ -57,7 +57,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         }
         println!();
     }
-    dump_tokens(&tokens);
+    //dump_tokens(&tokens);
 
     let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
     // From this point forwards, memory addresses are fixed.

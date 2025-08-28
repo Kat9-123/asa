@@ -403,17 +403,19 @@ pub fn insert_macros(
                             current_macro = Some(x);
                             caller_info = Some(token.info.clone());
                             mode = Mode::Args;
-                            if name == "ASM::Breakpoint" {
-                                asm_info!(
-                                    &token.info,
-                                    "Breakpoints are non-canonical and specific to this assembler"
-                                );
-                            }
-                            if name == "ASM::Debug" {
-                                asm_info!(
-                                    &token.info,
-                                    "Debug prints are non-canonical and specific to this assembler"
-                                );
+                            if args::exist() {
+                                if name == "ASM::Breakpoint" && args::get().pedantic {
+                                    asm_info!(
+                                        &token.info,
+                                        "Breakpoints are non-canonical and specific to this assembler"
+                                    );
+                                }
+                                if name == "ASM::Debug" && args::get().pedantic {
+                                    asm_info!(
+                                        &token.info,
+                                        "Debug prints are non-canonical and specific to this assembler"
+                                    );
+                                }
                             }
                         }
                     }
@@ -445,7 +447,7 @@ pub fn insert_macros(
 
                 if let TokenVariant::Linebreak = token.variant {
                     asm_error_no_terminate!(
-                        &token.info,
+                        &caller_info.unwrap(),
                         "Expected {} args, found {}",
                         current_macro_safe.params.len(),
                         param_to_arg_map.len(),
@@ -454,6 +456,7 @@ pub fn insert_macros(
                     asm_hint!(
                         "Scopes containing newlines are allowed. Multiple scopes as arguments must be chained with }} and {{ on the same line"
                     );
+                    asm_details!(&token.info, "Expected the argument(s) here");
                     terminate!();
                 }
                 macro_argument_type_check(parameter_info, token, parameter_name);
