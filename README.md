@@ -2,7 +2,7 @@
 
 
 # Advanced Subleq Assembler
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Kat9-123/asa/ci.yml?branch=master&style=flat-square)]
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Kat9-123/asa/ci.yml?branch=master&style=flat-square)](https://github.com/Kat9-123/asa/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/asa?style=flat-square)](https://crates.io/crates/asa)
 [![Sublang](https://img.shields.io/badge/Sublang-documentation-blue)](https://github.com/Kat9-123/asa/blob/master/Sublang.md)
 [![Coverage Status](https://img.shields.io/coveralls/github/Kat9-123/asa/master?style=flat-square)](https://coveralls.io/github/Kat9-123/asa?branch=master)
