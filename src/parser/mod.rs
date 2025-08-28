@@ -4,13 +4,15 @@ mod literals;
 mod macros;
 mod other;
 
+use log::Level;
 use log::LevelFilter;
+use log::warn;
 
 use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
-//use crate::tokens::dump_tokens;
+use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
@@ -57,7 +59,10 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         }
         println!();
     }
-    //dump_tokens(&tokens);
+
+    if log::max_level() >= LevelFilter::Debug {
+        dump_tokens(&tokens).unwrap_or_else(|e| log::warn!("Failed to dump tokens. {e}"));
+    }
 
     let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
     // From this point forwards, memory addresses are fixed.

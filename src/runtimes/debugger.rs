@@ -58,7 +58,6 @@ fn val_to_string(val: u16, data_type: DataType) -> String {
         DataType::Char => {
             let c = val as u8 as char;
             let length = val.to_string().chars().count(); // Doesn't actually work in some cases
-            // println!("AAAAAA{length: >6}AAAAAAAAAA");
             if length > 1 {
                 format!("'{c}'")
             } else {
@@ -107,8 +106,8 @@ fn display(
         Some(f) => f,
     };
     println!(
-        "[ESC] exit debug mode  [UP/k] up  [DOWN/j] down  [LEFT/h] previous instruction
-[RIGHT/l] next instruction  [x] halt  [m] toggle memory mode\n"
+        "[ESC] exit debug mode       [UP/k] up  [DOWN/j] down  [LEFT/h] previous instruction
+[RIGHT/l] next instruction  [x] halt   [m] toggle memory mode\n"
     );
     println!("{}:{: <100} ", file.display(), info.line_number);
     let contents = get_file_contents(&file);

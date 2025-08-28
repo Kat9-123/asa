@@ -239,7 +239,7 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFi
             .unwrap(),
     )
     .unwrap_or_else(|| {
-        crate::error!("Target file has an invalid file extension");
+        crate::error!("Can't assemble a file with this file extension");
     });
     (target, input_file_type, module)
 }

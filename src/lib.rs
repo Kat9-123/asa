@@ -1,3 +1,6 @@
+//! Advanced Subleq Assembler
+//!
+
 pub mod args;
 pub mod assembler;
 pub mod codegen;

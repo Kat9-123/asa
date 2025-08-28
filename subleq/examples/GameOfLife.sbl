@@ -1,13 +1,38 @@
-
+**
+ ; An example of a somewhat advanced Sublang application. Runs 20 iterations of
+ ; Conway's Game of Life, starting with the pattern:
+ ;
+ ;    ##
+ ;     ##
+ ;     #
+ ;
+ ; The internal grid representation is padded with one cell on each side of the
+ ; effective grid, to handle border cases easily
+**
 !J .main
 #sublib
 #sublib/Routines.sbl
 #sublib/Control.sbl
 
-; (100 + 2) ** 2
-@GRID_SIZE_WITH_SURROUNDING [10404]
+TWO   -> 2
+THREE -> 3
 
-@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDING]
+GRID_WIDTH  -> 100
+GRID_HEIGHT -> 100
+; (100 + 2) ** 2
+@GRID_SIZE_WITH_SURROUNDINGS [10404]
+
+GRID_PTR_0 -> !MakeBuffer
+GRID_PTR_1 -> !MakeBuffer 
+
+buffer_selector -> 0
+p_front_buffer  -> 0
+p_back_buffer   -> 0
+
+
+
+; Pointer to empty buffer of size GRID_SIZE_WITH_SURROUNDINGS
+@MakeBuffer [& 0 * !GRID_SIZE_WITH_SURROUNDINGS]
 
 **
     target? += *p_pointer?
@@ -18,10 +43,9 @@
     target? -= Z
 }
 
-
-
-
-
+**
+    Set a cell to alive
+**
 @Set l_x? l_y? {
     !J .
     X -> l_x?
@@ -43,7 +67,7 @@
 }
 
 
-@IterOverDoubleBuffer p_front_cell? p_back_cell? s_cell? s_line? {
+@IterOverDoubleBuffer p_front_cell? p_back_cell? s_cell? {
     !Add p_front_cell? GRID_WIDTH
     !AddLit p_front_cell? 3
 
@@ -58,13 +82,12 @@
             !Inc p_front_cell?
             !Inc p_back_cell?
         }
-        s_line?
 
         !AddLit p_front_cell? 2
         !AddLit p_back_cell? 2
     }
 }
-{
+
 @IterOverGrid p_cell? s_cell? s_line? {
 
     !Add p_cell? GRID_WIDTH
@@ -79,42 +102,10 @@
         s_line?
     }
 }
-}
-
-GRID_PTR_0 -> !MakeBuffer
-
-GRID_PTR_1 -> !MakeBuffer 
-
-buffer_selector -> 0
-p_front_buffer -> 0;  GRID_PTR_0 is this legal?
-p_back_buffer -> 0; GRID_PTR_1 
-GRID_WIDTH -> 100
-GRID_HEIGHT -> 100
-TWO -> 2
-THREE -> 3
 
 
-** Fix the notes issue
-@Set l_x? l_y? l_value? {
-    !J .
-    VAL -> l_value?
-    X -> l_x?
-    Y -> l_y?
-    . ->
-    index = GRID_PTR_0
-    !Add index GRID_WIDTH
-    !AddLit index 3
-    !Add index l_x?
 
-    !Repeat l_y? {
-        !Add index GRID_WIDTH
-        !AddLit index 2
-    }
 
-    *index -= *index
-    *index -= N_ONE 
-
-}**
 
 
 
@@ -124,7 +115,7 @@ THREE -> 3
     !=0 p_neighbour
     !=0 current_cell_state
 
-    != p_cell p_front_buffer
+    != p_cell      p_front_buffer
     != p_back_cell p_back_buffer
 
 
@@ -201,12 +192,12 @@ THREE -> 3
                 *p_back_cell -= N_ONE       
             }
         }
-        ;!ASM::Breakpoint
 
 
 
-    } {}
+    }
 }
+
 !Routine::Def .SwapBuffers {
     !IfTrueElse buffer_selector {
         !Cpy GRID_PTR_0 p_front_buffer
@@ -227,7 +218,7 @@ THREE -> 3
         !=0 cur
 
         n_cur -= *p_cell
-        cur -= n_cur
+        cur   -=  n_cur
         !IfTrueElse cur {
           !IO::PutCharLit '%'
         } {
@@ -243,8 +234,7 @@ THREE -> 3
 }
 
 .main -> {
-    ;0x9000 -= 0x9000
-   ; i = 0
+
     !Cpy GRID_PTR_0 p_front_buffer
     !Cpy GRID_PTR_1 p_back_buffer
     !Set 54 54
@@ -252,18 +242,20 @@ THREE -> 3
     !Set 55 55
     !Set 56 55
     !Set 55 56
-    **
+
+
+    ** ;Glider
     !Set 0 0
     !Set 1 1
     !Set 2 1
     !Set 0 2
     !Set 1 2
     **
-    !RepeatLit 20 {
+    !RepeatLit 20 { ; Change this value, or change it to !Loop
         !Routine::Call .GetNeighbours
         !Routine::Call .SwapBuffers
-     ;   !ASM::Debug i
-       ; !Inc i
+        ;!Routine::Call .Draw ; Draw each iteration
+        ;!IO::Pause ; Wait for user input
     }
     !Routine::Call .Draw
 

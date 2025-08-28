@@ -98,7 +98,11 @@ macro_rules! asm_error {
 macro_rules! error {
     ($($arg:tt)*) => {
         {
-            log::error!($($arg)*);
+            #[cfg(debug_assertions)]
+            log::error!("{} ({}:{})", format!($($arg)*), file!(), line!());
+            #[cfg(not(debug_assertions))]
+            log::error!("{}", format!($($arg)*), );
+
             std::process::exit(1);
         }
     };

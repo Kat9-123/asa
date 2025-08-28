@@ -83,7 +83,7 @@ The assembler has a simple type-checker, which can be disabled.
 * `s_value` scoped value
 * `a_value` anything, no type checking
 * `b_value` a braced value
-* `m_value` a macro call passed as argument, must be braced. It's the same as `b_value`
+* `m_value` a macro call passed as argument, must be braced. In practice it's the same as `b_value`
 Currently types are only checked for macro parameters.
 
 ## Naming conventions
@@ -294,37 +294,6 @@ label label label
 ```
 ### Dereference operator
 
-### Assignment
-The '=' can be used to declare a label, and assign it a value. The value may be a literal or another label. every time the assignment is executed the value is reset to the given value
-```clojure
-label = 10
-; =>
-_ASM -= _ASM
-label -= label $3
-label -> 0
-{
-    n_lit -> 10
-    _ASM -= n_lit
-    label -= _ASM
-}
-
-; Zero is a special case
-label2 = 0
-; =>
-label2 -= label2 $2
-label2 -> 0
-
-
-; Another label
-label3 = label2
-; =>
-_ASM -= _ASM $2
-label3 -> 0
-label3 -= label3
-
-_ASM -= label2
-label3 -= _ASM
-```
 
 
 ## Style guide

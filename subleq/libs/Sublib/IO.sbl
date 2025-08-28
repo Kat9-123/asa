@@ -27,7 +27,12 @@
 }
 
 @IO::GetChar to? {
-    to? -= !IO ; not quite sure
+    to? -= !IO
+}
+
+@IO::Pause {
+    !IO::PrintLit ". . .\n"
+    _ -= !IO
 }
 
 

@@ -4,7 +4,7 @@ Z -= 0x0000
 
 Z -> & 0xEEEE
 
-
+{
 @A l_b? c end {
     **
     @B {
@@ -14,7 +14,7 @@ Z -> & 0xEEEE
     l_b? -= c end
     end ->
 }
-
+}
 @B [
     a -> 10
 ]
