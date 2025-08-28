@@ -1,6 +1,3 @@
-use simple_logger::SimpleLogger;
-use std::time::Instant;
-
 use asa::{
     args::{self},
     feedback::asm_runtime_error,
@@ -9,6 +6,8 @@ use asa::{
     runtimes::{debugger, interpreter},
     utils,
 };
+use simple_logger::SimpleLogger;
+use std::time::Instant;
 
 fn main() {
     // Setup

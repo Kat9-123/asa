@@ -1,5 +1,4 @@
-//! Advanced Subleq Assembler
-//!
+#![doc = include_str!("../README.md")]
 
 pub mod args;
 pub mod assembler;
