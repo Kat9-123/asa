@@ -354,20 +354,24 @@ fn include(
 ) -> Option<Vec<Token>> {
     let mut path = base_dir.to_path_buf().join(name);
     fix_include_path(&mut path);
-
     if !path.is_file() {
         let libs_path = if args::exist() {
             &args::get().libs_path
         } else {
             "./subleq/libs"
         };
-        path = Path::new(libs_path).to_path_buf().join(name);
-        fix_include_path(&mut path);
-        if !path.is_file() {
-            log::error!("File to include not found {path:?}");
+        let mut new_path = Path::new(libs_path).to_path_buf().join(name);
+        fix_include_path(&mut new_path);
+        if !new_path.is_file() {
+            log::error!(
+                "File to include not found locally: {} or in the libraries folder: {}",
+                path.display(),
+                new_path.display()
+            );
             log::info!("Make sure the library path is correctly set using the '-l' argument");
             terminate!();
         }
+        path = new_path;
     }
 
     let exists = FILES.with_borrow_mut(|files| {

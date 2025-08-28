@@ -1,3 +1,4 @@
+//! Miscellaneous parsing, like syntax sugar
 use crate::{
     asm_error, asm_info,
     tokens::{LabelOffset, Token, TokenVariant},

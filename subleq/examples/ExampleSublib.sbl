@@ -1,25 +1,28 @@
 ; This is how Sublang could should be written, making extensive use of macros
-!PrintStdLib p_string
-!Halt
-
-
-p_string -> &"Hello, Sublang!\n"
+!J .main ; Jump to main
 #sublib
 #sublib/Control
+
+p_string -> &"Hello, Sublang!\n"
 
 **
     Or using the standard lib
 **
 @PrintStdLib P_STRING? {
-    != p_local P_STRING?
-    !=0 char
+    != p_local P_STRING? ; p_local = P_STRING?
+    !=0 char ; char = 0
     
     !Loop {
-        !DerefAndCopy p_local char
+        !DerefAndCopy p_local char ; char = *p_local
         !IfFalse char {
             !Break
         }
         !IO -= char
         !Inc p_local
     }
+}
+
+.main -> {
+    !PrintStdLib p_string
+    !Halt
 }

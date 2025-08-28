@@ -1,3 +1,4 @@
+//! Management of input and output files
 use std::{
     env,
     fs::{self, File},

@@ -50,11 +50,13 @@ pub enum TokenVariant {
 
     Asterisk,
 }
-
 #[derive(Clone)]
 pub struct Token {
+    /// Origin of the token
     pub info: Info,
     pub variant: TokenVariant,
+    /// Origin info is used to trace a token's origin through macro calls, every time it
+    /// is used as an argument, an Info gets appended to this vec.
     pub origin_info: Vec<Info>,
 }
 
@@ -161,8 +163,8 @@ pub fn dump_tokens(tokens: &[Token]) -> std::io::Result<()> {
 }
 
 /// Used for testing. It makes a list of tokens from a list of TokenVariants with an ID
-/// Info and Origin info are set to defaults, except for start_char, which is repurposed to be an ID,
-/// used by test cases to check from which input the tokens the output tokens came from.
+/// Info and Origin info are set to defaults and are irrelevant for testing, except for start_char, which is repurposed to be an ID,
+/// used by test cases to check from which input the output tokens came from.
 pub fn tokens_from_token_variant_vec(token_variants: Vec<(i32, TokenVariant)>) -> Vec<Token> {
     token_variants
         .iter()

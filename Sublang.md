@@ -276,9 +276,22 @@ P -= Z
 ...
 ; But of course beware of the contents of the included file
 ```
-If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'Sublib'). And in that folder create a Lib.sbl. Whenever the 'Sublib' folder is imported, this is automatically resolved to 'Sublib/Lib.sbl'. In this .sbl file you may include any other files you might need.
+If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'sublib'). And in that folder create a Lib.sbl file. Whenever the 'sublib' folder is imported, this is automatically resolved to 'sublib/Lib.sbl'. In this .sbl file you may include any other files you might need. Includes are initially resolved relative to the file
+that is including, and if the target isn't found in the *LIBS* folder, defined using the `-l` command line argument.
 
-See subleq/libs/Sublib for an example.
+
+```clojure
+; ./subleq/MyFile.sbl
+#math/FastSqrt
+```
+The order in which files are checked is as follows. The first one that exists will be included.
+* `./subleq/math/FastSqrt/Lib.sbl`
+* `./subleq/math/FastSqrt.sbl`
+* `LIBS/math/FastSqrt/Lib.sbl`
+* `LIBS/math/FastSqrt.sbl`
+
+
+See subleq/libs/sublib for an example.
 
 ## Syntax sugar
 ### Mult operator
@@ -314,8 +327,12 @@ Sublib is the standard library. It has a range of very basic features (Prelude.s
 ## Examples
 ### Basic
 ```clojure
-!Print p_string ; Macro call
-Z -= Z -1 ; Halt
+!Print p_string
+
+
+Z -= Z -1 ; Jumping to -1 halts
+; equivalent to !Halt
+
 
 
 p_string -> &"Hello, World!\n"
@@ -329,21 +346,21 @@ N_ONE -> -1
 
 
     ; Copy the pointer into the local ptr
-    Z   -= Z
-    Z   -= P_STRING?
+    Z -= Z
+    Z -= P_STRING?
     ptr -= Z
 
     Z -= Z
     .loop -> 
         char -= char ; Clear char
-        Z    -= (ptr -> 0) ; Z -= *ptr
+        Z -= (ptr -> 0) ; Z -= *ptr
     
-        char -= Z .fin ; Flip the character, since it is negtative, and jump if
+        char -= Z .fin ; Flip the character, since it is negative, and jump if
                        ; result is LEQ (i.e. finish if it is a NULL)
-        -1   -= char ; Writes the character to the screen
+        -1 -= char ; Writes the character to the screen
 
-        ptr  -= N_ONE ; Increment the pointer
-        Z    -= Z .loop ; Infinite loop
+        ptr -= N_ONE ; Increment the pointer
+        Z -= Z .loop ; Infinite loop
 
     char -> 0 ; This point is never reached, so it is safe to define the
               ; label 'char' here. It is very important to keep in mind
@@ -354,29 +371,28 @@ N_ONE -> -1
 
     .fin ->
 }
-
-
 ```
 
 ### Sublib
 
 ```clojure
 ; This is how Sublang could should be written, making extensive use of macros
-
-p_string -> &"Hello, World!\n"
-
+!J .main ; Jump to main
 #sublib
 #sublib/Control
+
+p_string -> &"Hello, Sublang!\n"
 
 **
     Or using the standard lib
 **
 @PrintStdLib P_STRING? {
-    p_local = P_STRING?
-    char = 0
+    != p_local P_STRING? ; p_local = P_STRING?
+    !=0 char ; char = 0
+    
     !Loop {
-        !DerefAndCopy p_local char
-        !IfNot char {
+        !DerefAndCopy p_local char ; char = *p_local
+        !IfFalse char {
             !Break
         }
         !IO -= char
@@ -384,4 +400,19 @@ p_string -> &"Hello, World!\n"
     }
 }
 
+.main -> {
+    !PrintStdLib p_string
+    !Halt
+}
+
+```
+```clojure
+; Or you can just use one of the Print macros from sublib/IO
+!J .main
+#sublib
+
+main -> {
+    IO::PrintLnLit "Hello, Sublib!"
+    !Halt
+}
 ```
