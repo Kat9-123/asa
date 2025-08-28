@@ -245,7 +245,6 @@ fn generate_macro_body(
     context: Vec<Info>,
 ) -> Vec<Token> {
     let mut body: Vec<Token> = Vec::new();
-    // println_debug!("{:?}", label_map);
 
     for base_body_token in &current_macro.body {
         match &base_body_token.variant {

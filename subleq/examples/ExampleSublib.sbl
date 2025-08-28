@@ -1,0 +1,24 @@
+; This is how Sublang could should be written, making extensive use of macros
+!PrintStdLib p_string
+!Halt
+
+
+p_string -> &"Hello, Sublang!\n"
+#sublib
+#sublib/Control
+
+**
+    Or using the standard lib
+**
+@PrintStdLib P_STRING? {
+    p_local = P_STRING?
+    char = 0
+    !Loop {
+        !DerefAndCopy p_local char
+        !IfFalse char {
+            !Break
+        }
+        !IO -= char
+        !Inc p_local
+    }
+}

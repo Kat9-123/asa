@@ -1,3 +1,4 @@
+//! Parses a vector of tokens
 mod labels;
 mod literals;
 mod macros;
@@ -9,6 +10,7 @@ use crate::parser::labels::*;
 use crate::parser::literals::*;
 use crate::parser::macros::*;
 use crate::parser::other::*;
+use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
@@ -55,6 +57,7 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
         }
         println!();
     }
+    dump_tokens(&tokens);
 
     let mut tokens = fix_instructions_and_collapse_label_definitions(&tokens);
     // From this point forwards, memory addresses are fixed.

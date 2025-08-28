@@ -110,7 +110,7 @@ function_stack -> !Stack::Create 128
    ; !ASM::Debug c
     !IO::PrintLn a
 
-    !IfElse c {
+    !IfTrueElse c {
         !Func::Call FUNtest {d FALSE }
     } **Else** {
         !IO::PrintLnLit "FIN"

@@ -1,6 +1,6 @@
-//! Converts a string into a vector of tokens.
+//! Converts a string into a vector of tokens, resolving includes along the way
 
-use crate::{args, println_debug, terminate};
+use crate::{args, terminate};
 use crate::{
     asm_error, asm_error_no_terminate, asm_hint,
     tokens::{Info, LabelOffset, Token, TokenVariant},
@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::path::{self, Path, PathBuf};
 
-use log::error;
+use log::{LevelFilter, error};
 use unescape::unescape;
 thread_local! {
     // Array of all included files
@@ -330,7 +330,9 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
         &base_dir,
     );
     log::debug!("Included files");
-    FILES.with_borrow(|files| println_debug!("{:#?}", files));
+    if log::max_level() >= LevelFilter::Debug {
+        FILES.with_borrow(|files| println!("{:#?}", files));
+    }
     result
 }
 

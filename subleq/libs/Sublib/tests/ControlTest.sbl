@@ -13,11 +13,11 @@ p -> 0
 @Mac m_copy? {
     p = 0
 
-    !While::Neq p TWO {
+    !While (!Neq p TWO) {
         m_copy? i
 
-        !While::Ge i ZERO { ;::Ge i ZERO {
-            !If::Neq SNEG ONE {
+        !While (!Ge i ZERO) { ;::Ge i ZERO {
+            !If (!Neq SNEG ONE) {
                 !IO -= a
             }
             !Dec i
@@ -26,17 +26,41 @@ p -> 0
         !Inc p
     }
 }
+.err ->
+    !IO::PrintLnLit "FAILED"
+    !Halt
+
+@TestIf m_true_conditional? L_A? L_B? {
+    a = L_A?
+    b = L_B?
+
+    !If (m_true_conditional? a b) {
+
+        !J .fin
+    }
+    !J .err
+
+    .fin ->
+
+
+}
 
 .main -> {
-    !If::Eq SNEG SNEG {
+    !If (!Eq SNEG SNEG) {
 
         !Mac (!CopyLit 3)   ; 'curried' macro
     }
     !IO -= LINEBREAK
-    !If::Ge ZERO SNEG {
+    !If (!Ge ZERO SNEG) {
 
         !Mac (!CopyLit 2)   ; 'curried' macro
     }
 
+    ;!TestIf (!Eq) 10 10
+    !TestIf (!Neq) 0 -1
+    ;!TestIf (!Geq) 20 10
+    ;!TestIf (!Leq) -10 -9
+    ;!TestIf (!Ge) 0 0x8000
+    ;!TestIf (!Le) 0 10
     !Halt
 }

@@ -36,8 +36,8 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
 
             // Output char
             (_, IO_ADDR) => {
-                result = mem[a];
-                let ch = result as u8 as char;
+                let ch = mem[a] as u8 as char;
+                result = -(mem[a] as i16) as u16;
                 io_buffer.push(ch);
 
                 let timer = Instant::now();
@@ -46,8 +46,9 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
             }
             // Output int
             (_, DEBUG_ADDR) => {
-                result = mem[a];
-                let ch = (result as i16).to_string();
+                let ch = (mem[a] as i16).to_string();
+                result = -(mem[a] as i16) as u16;
+
                 io_buffer.push_str(&ch);
 
                 let timer = Instant::now();

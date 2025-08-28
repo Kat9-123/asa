@@ -32,7 +32,7 @@ a -= b 0x0000
 '\0' -= 0 c
 ```
 
-### Labels and Literals
+## Labels and Literals
 ```clojure
 a -> 123 ; Decimal
 b -> 0x4C6 ; Hex
@@ -43,7 +43,7 @@ d -> 'P' ; Character literals
     a -= b .label   ; Repeats as long as (a -= b) <= 0
 ```
 
-### Scopes
+## Scopes
 Scoping works like in most other languages. Note: Only labels are affected by scopes, macro definitions in scopes will still be globally accessible
 ```clojure
 Z -> 123
@@ -59,7 +59,23 @@ Y -= Z ; 0 - 123
 ```
 
 
-### Types
+## IO
+```clojure
+
+char -> 'a'
+input -> 0
+W -> 0
+
+-1 -= char ; Prints 'a' to the screen
+
+input -= -1
+-1 -= input ; Echoes back users input
+
+W -= W -1 ; Halts execution
+
+```
+
+## Types
 The assembler has a simple type-checker, which can be disabled.
 
 * `value` normal label
@@ -68,13 +84,13 @@ The assembler has a simple type-checker, which can be disabled.
 * `a_value` anything, no type checking
 * `b_value` a braced value
 * `m_value` a macro call passed as argument, must be braced. It's the same as `b_value`
-Currently types are only checked checked for macro parameters.
+Currently types are only checked for macro parameters.
 
-### Naming conventions
+## Naming conventions
 * `@MyMacro` macros in CamelCase
 * `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
 * `MyModule.sbl` modules (files) are in CamelCase
-#### Labels
+### Labels
 * `p_value` pointer (not type-checked)
 * `p_p_value` pointer to pointer (not type-checked)
 * `n_value` negated value (not type-checked)
@@ -85,8 +101,8 @@ Currently types are only checked checked for macro parameters.
 * `Module::SubModule::value`
 
 
-### Macros
-#### Definition
+## Macros
+### Definition
 ```clojure
 @Name {
     ...
@@ -107,7 +123,7 @@ Currently types are only checked checked for macro parameters.
 ]
 ; This, however, is dangerous when label definitions take place in the macro, so it is generally discouraged.
 
-; There may be linebreaks between parameters
+; Linebreaks are allowed between parameters
 
 @Name a?
       b?
@@ -119,15 +135,15 @@ Currently types are only checked checked for macro parameters.
 }
 
 ```
-#### Expanding
+### Expanding
 ```clojure
 !Name
 ; With arguments
 !Name2 a b c
-; There may NOT be linebreaks between arguments
+; Linebreaks are  allowed between arguments
 ```
 
-#### Hygiene
+### Hygiene
 Macros are hygienic. Variables won't be shadowed.
 ```clojure
 ; Macros
@@ -145,7 +161,7 @@ a -> 0
 }
 ```
 
-#### Macro arguments
+### Macro arguments
 You may pass scopes as macro arguments
 
 ```clojure
@@ -160,7 +176,7 @@ You may pass scopes as macro arguments
     { a -= b }
 }
 
-; If a macro takes multiple scopes they can be chained as follow:
+; If a macro takes multiple scopes, they can be chained as follows:
 !Mac {
     ...
 } {
@@ -203,8 +219,8 @@ This means that you can 'curry' macros (using that term loosely)
 
 ```
 
-### Pointers
-#### Referencing
+## Pointers
+### Referencing
 To create a pointer to a value, the relative address syntax `$1` must be used to get the address of the next token
 ```clojure
 ptr -> $1 0x1234 ; This takes up two words of memory, one for the pointer and one for the value
@@ -217,7 +233,7 @@ ptr -> &123
 ; & is equivalent to $1
 ```
 
-#### Dereferencing
+### Dereferencing
 ```clojure
 ; Generic sequence for dereferencing. The value that 'b' points to will be subtracted from 'a'
 !Copy ptr b
@@ -241,10 +257,10 @@ a -= (*ID*ptr -> 0)
 ; *ID*ptr is a safe and automatically generated name
 
 ```
-Remember that because of how Subleq works, what are called 'Labels' here, are also just pointers! But since Subleq dereferences them, we can think of them as values. But mind that literals need indirection `a -= 10` doesn't subtract 10 from a
+Remember that because of how Subleq works, what are called 'Labels' here, are also just pointers! But since Subleq dereferences them, we can think of them as values. But keep in mind that literals require indirection `a -= 10` doesn't subtract 10 from a
 
 
-### Inclusions
+## Inclusions
 The `#` symbol may be used to include another .sbl file anywhere
 ```Clojure
 #MySblFile.sbl
@@ -264,8 +280,8 @@ If you want to create a module (a set of .sbl files in a folder) you must create
 
 See subleq/libs/Sublib for an example.
 
-### Syntax sugar
-#### Mult operator
+## Syntax sugar
+### Mult operator
 When the '*' is placed before a literal ?? The previous token is repeated n times
 ```clojure
 label * 3 ; =>
@@ -276,9 +292,9 @@ label label label
 
 ; mind that 3 * label will dereference `label`!
 ```
-#### Dereference operator
+### Dereference operator
 
-#### Assignment
+### Assignment
 The '=' can be used to declare a label, and assign it a value. The value may be a literal or another label. every time the assignment is executed the value is reset to the given value
 ```clojure
 label = 10
@@ -322,5 +338,81 @@ For many more examples see the standard library, called Sublib
 
 
 
-# Sublib
-Sublib is the standard library. It has a range of very basic features (Base.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.
+## Sublib
+Sublib is the standard library. It has a range of very basic features (Prelude.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.
+
+
+## Examples
+### Basic
+```clojure
+!Print p_string ; Macro call
+Z -= Z -1 ; Halt
+
+
+p_string -> &"Hello, World!\n"
+Z -> 0 ; Temp register
+N_ONE -> -1
+
+**
+    Pure no dependency implementation
+**
+@Print P_STRING? {
+
+
+    ; Copy the pointer into the local ptr
+    Z   -= Z
+    Z   -= P_STRING?
+    ptr -= Z
+
+    Z -= Z
+    .loop -> 
+        char -= char ; Clear char
+        Z    -= (ptr -> 0) ; Z -= *ptr
+    
+        char -= Z .fin ; Flip the character, since it is negtative, and jump if
+                       ; result is LEQ (i.e. finish if it is a NULL)
+        -1   -= char ; Writes the character to the screen
+
+        ptr  -= N_ONE ; Increment the pointer
+        Z    -= Z .loop ; Infinite loop
+
+    char -> 0 ; This point is never reached, so it is safe to define the
+              ; label 'char' here. It is very important to keep in mind
+              ; that, in this case the zero, will be put in memory in
+              ; this exact place and, if execution crosses it, it will
+              ; be interpreted as an instruction. To define values in between
+              ; instructions, use the '=' operator
+
+    .fin ->
+}
+
+
+```
+
+### Sublib
+
+```clojure
+; This is how Sublang could should be written, making extensive use of macros
+
+p_string -> &"Hello, World!\n"
+
+#sublib
+#sublib/Control
+
+**
+    Or using the standard lib
+**
+@PrintStdLib P_STRING? {
+    p_local = P_STRING?
+    char = 0
+    !Loop {
+        !DerefAndCopy p_local char
+        !IfNot char {
+            !Break
+        }
+        !IO -= char
+        !Inc p_local
+    }
+}
+
+```

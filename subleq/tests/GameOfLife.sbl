@@ -86,37 +86,12 @@ GRID_PTR_0 -> !MakeBuffer
 GRID_PTR_1 -> !MakeBuffer 
 
 buffer_selector -> 0
-p_front_buffer -> 0;  GRID_PTR_0 is this legal?
-p_back_buffer -> 0; GRID_PTR_1 
+p_front_buffer -> 0
+p_back_buffer -> 0
 GRID_WIDTH -> 100
 GRID_HEIGHT -> 100
 TWO -> 2
 THREE -> 3
-
-
-** Fix the notes issue
-@Set l_x? l_y? l_value? {
-    !J .
-    VAL -> l_value?
-    X -> l_x?
-    Y -> l_y?
-    . ->
-    index = GRID_PTR_0
-    !Add index GRID_WIDTH
-    !AddLit index 3
-    !Add index l_x?
-
-    !Repeat l_y? {
-        !Add index GRID_WIDTH
-        !AddLit index 2
-    }
-
-    *index -= *index
-    *index -= N_ONE 
-
-}**
-
-
 
 
 !Routine::Def .GetNeighbours {
@@ -201,7 +176,6 @@ THREE -> 3
                 *p_back_cell -= N_ONE       
             }
         }
-        ;!ASM::Breakpoint
 
 
 
@@ -259,13 +233,15 @@ THREE -> 3
     !Set 0 2
     !Set 1 2
     **
-    !RepeatLit 200 {
-        !Routine::Call .Draw
+
+    !RepeatLit 20 {
         !Routine::Call .GetNeighbours
         !Routine::Call .SwapBuffers
      ;   !ASM::Debug i
        ; !Inc i
     }
+    !Routine::Call .Draw
+
 
     !Halt
 

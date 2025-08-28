@@ -91,9 +91,11 @@
     to? -= Z
 }
 
-@Repeat times? s_body? {
+@Repeat times? s_body? [
+    {
     times? -= ZERO .fin
     i = times?
+    .SUBLIB_continue ->
     .loop ->
 
         s_body?
@@ -101,10 +103,14 @@
         i -= ONE .fin
         W -= W .loop
     .fin ->
-}
+    .SUBLIB_break ->
+    }
+]
 
-@RepeatLit l_times? s_body? {
+@RepeatLit l_times? s_body? [
+    {
     !Cpy L_TIMES i
+    .SUBLIB_continue ->
     .loop ->
         s_body?
 
@@ -114,5 +120,20 @@
     i -> 0
     L_TIMES -> l_times?
     .fin ->
-}
+    .SUBLIB_break ->
+    }
+]
 
+@Break    [!J .SUBLIB_break   ]
+@Continue [!J .SUBLIB_continue]
+
+
+@Loop s_body? [
+    {
+    .SUBLIB_continue ->
+    .loop ->
+        s_body?
+        W -= W .loop
+    .SUBLIB_break ->
+    }
+]

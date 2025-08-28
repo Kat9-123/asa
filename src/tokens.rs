@@ -135,13 +135,15 @@ impl fmt::Display for Token {
 }
 
 /// Used for debugging, dumps tokens to an sbl file
-pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
+pub fn dump_tokens(tokens: &[Token]) -> std::io::Result<()> {
     let mut buf: String = String::new();
     let mut tabs: String = String::new();
     let mut prev_newline = true;
     for tok in tokens {
         if tok.variant == TokenVariant::Unscope {
-            tabs.pop();
+            for _ in 0..4 {
+                tabs.pop();
+            }
         }
         if prev_newline {
             buf.push_str(&tabs);
@@ -153,10 +155,10 @@ pub fn dump_tokens(file_name: &str, tokens: &[Token]) -> std::io::Result<()> {
         buf.push_str(&tok.to_string());
         buf.push(' ');
         if tok.variant == TokenVariant::Scope {
-            tabs.push('\t');
+            tabs.push_str("    ");
         }
     }
-    let mut file = File::create(file_name)?;
+    let mut file = File::create("dump.sbl")?;
     file.write_all(buf.as_bytes())?;
     Ok(())
 }

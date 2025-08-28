@@ -43,7 +43,7 @@ fn main() {
             debugger::run_with_debugger(&mut mem, &tokens);
             return;
         } else {
-            log::error!("Can't run an SBLX or BIN file with the debugger");
+            log::error!("Can't run .SBLX or .BIN files with the debugger");
         }
         return;
     }

@@ -1,3 +1,5 @@
+//! Generate a vec of executable words from a vector of tokens
+
 use crate::{
     asm_error, asm_warn, terminate,
     tokens::{Token, TokenVariant},

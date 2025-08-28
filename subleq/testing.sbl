@@ -1,76 +1,8 @@
-W W .main
-
-_ASM -> 0
-
 #sublib/ASM
+!ASM::Breakpoint
+a = -1
+Z -= Z -1
 
 
-@Repeat l_times? s_body? {
-    Z -= Z
-    Z -= L_TIMES
-    i -= Z
-
-    .loop ->
-        s_body?
-
-        i -= ONE .fin
-        W -= W .loop
-
-    i -> 0
-    L_TIMES -> l_times?
-    .fin ->
-}
-
-
-@Flip body1? s_body2? {
-    s_body2?
-
-    body1?
-
-
-}
-
-@Skip
-[
-    a ->
-    $2
-]
-
-P -> ''
-
-W -> 0
 Z -> 0
-A -> 'A'
-B -> 'B'
-ONE -> 1
-LINE_BREAK -> 0xA
-
-@M  {
-    W -= W
-}
-
-
-@O a b {
-    a -= b
-}
-
-.main -> {
-    !Repeat 2 {
-        !Repeat 3 {
-            !Flip {
-                0xFFFF -= A
-            } {
-                !O 0 0x9000
-                0xFFFF -= B
-                W W !Skip
-                0xBEEF
-            }
-        }
-        -1 -= LINE_BREAK
-    }
-
-    !M
-}
-
-
-
+_ASM -> 0

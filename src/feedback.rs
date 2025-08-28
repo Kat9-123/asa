@@ -1,3 +1,4 @@
+//! Generates and prints friendly feedback messages for the user
 use crate::lexer;
 use crate::runtimes::RuntimeError;
 use crate::{tokens::Info, tokens::Token};
@@ -181,23 +182,7 @@ macro_rules! asm_hint {
         }
     };
 }
-#[macro_export]
-macro_rules! println_debug {
-    ($($arg:tt)*) => {
-        if log::max_level() == log::LevelFilter::Debug {
-            println!($($arg)*);
-        }
-    };
-}
 
-#[macro_export]
-macro_rules! print_debug {
-    ($($arg:tt)*) => {
-        if log::max_level() == log::LevelFilter::Debug {
-            print!($($arg)*);
-        }
-    };
-}
 #[macro_export]
 macro_rules! println_silenceable {
     ($($arg:tt)*) => {

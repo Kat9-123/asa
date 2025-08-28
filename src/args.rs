@@ -74,7 +74,7 @@ pub struct Args {
 
 pub fn get() -> &'static Args {
     ARGS.get().unwrap_or_else(|| {
-        log::error!("No arguments parsed");
+        log::error!("No arguments have been parsed");
         crate::terminate!();
     })
 }

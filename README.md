@@ -50,5 +50,10 @@ These can be achieved by respectively having `A = -1`, `B = -1` and `C = -1`. IN
 asa MySubleq.sbl
 ```
 
+## Syntax highlighting
+See https://github.com/Kat9-123/sublang-highlighting
+
+## Project status
+This project is functionally complete, but the documentation for the assembler, Sublang and Sublib is still lacking. As is the Sublib itself, which isn't finished yet
 
 

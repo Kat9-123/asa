@@ -67,3 +67,8 @@ fn basic() {
 fn sublib() {
     test_at_path("./subleq/libs/sublib/tests");
 }
+
+#[test]
+fn examples() {
+    test_at_path("./subleq/examples");
+}

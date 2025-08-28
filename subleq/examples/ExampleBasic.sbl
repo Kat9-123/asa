@@ -1,0 +1,47 @@
+!Print p_string
+
+
+Z -= Z -1 ; Jumping to -1 halts
+; equivalent to !Halt
+
+
+
+p_string -> &"Hello, World!\n"
+Z -> 0 ; Temp register
+N_ONE -> -1
+
+**
+    Pure no dependency implementation
+**
+@Print P_STRING? {
+
+
+    ; Copy the pointer into the local ptr
+    Z -= Z
+    Z -= P_STRING?
+    ptr -= Z
+
+    Z -= Z
+    .loop -> 
+        char -= char ; Clear char
+        Z -= (ptr -> 0) ; Z -= *ptr
+    
+        char -= Z .fin ; Flip the character, since it is negative, and jump if
+                       ; result is LEQ (i.e. finish if it is a NULL)
+        -1 -= char ; Writes the character to the screen
+
+        ptr -= N_ONE ; Increment the pointer
+        Z -= Z .loop ; Infinite loop
+
+    char -> 0 ; This point is never reached, so it is safe to define the
+              ; label 'char' here. It is very important to keep in mind
+              ; that, in this case the zero, will be put in memory in
+              ; this exact place and, if execution crosses it, it will
+              ; be interpreted as an instruction. To define values in between
+              ; instructions, use the '=' operator
+
+    .fin ->
+}
+
+
+

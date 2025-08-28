@@ -7,19 +7,23 @@
 
 
 
-@If value? body? {
-    value? -= ZERO .false
-    body?
-    .false ->
+@IfTrue value? body? {
+   value? -= ZERO .false
+   body?
+   .false ->
 }
 
-@_IfBase m_conditional? s_body? {
-    !Flip (m_conditional?) .false
-    s_body?
-    .false ->
+@IfFalse value? s_body? {
+    value? -= ZERO .body
+    !J .fin
+    
+
+    .body ->
+        s_body?
+    .fin ->
 }
 
-@IfElse value? s_true? s_false? {
+@IfTrueElse value? s_true? s_false? {
     value? -= ZERO .false
     s_true?
     !J .fin
@@ -31,7 +35,17 @@
     .fin ->
 }
 
-@_IfElseBase m_conditional? s_true? s_false? {
+
+
+@If m_conditional? s_body? {
+    !Flip (m_conditional?) .false
+    s_body?
+    .false ->
+}
+
+
+
+@IfElse m_conditional? s_true? s_false? {
 
     m_conditional? .true
 
@@ -47,7 +61,7 @@
 }
 
 
-@_WhileBase m_conditional? s_body? {
+@While m_conditional? s_body? {
 
     .repeat ->
         s_body?
@@ -55,21 +69,8 @@
 
 }
 
-@JIF:GeZero a? .target? {
-    a -= ZERO .fin
-    !J .target?
-    .fin ->
-}
 
-@While::Ge a? b? s_body? {
-    !_WhileBase (!JumpIf::Ge a? b? ) { s_body? }
-}
-
-@If::GeZero a? s_body? {
-    !_IfBase (!JIF:GeZero a?) { s_body? }
-}
-
-@While::GeZero A? s_body? {
+@WhileTrue A? s_body? {
 .repeat ->
     A? -= ZERO .fin
 
@@ -80,35 +81,11 @@
 }
 
 
-@If::Eq a? b? s_body? { !_IfBase (!JumpIf::Eq a? b?) s_body? }
-@If::Geq a? b? s_body? { !_IfBase (!JumpIf::Geq a? b?) s_body? }
-@If::Leq a? b? s_body? { !_IfBase (!JumpIf::Leq a? b?) s_body? }
+@Eq  a? b? .addr? [!JumpIf::Eq  a? b? .addr?]
+@Neq a? b? .addr? [!JumpIf::Neq a? b? .addr?]
 
+@Leq a? b? .addr? [!JumpIf::Leq a? b? .addr?]
+@Geq a? b? .addr? [!JumpIf::Geq a? b? .addr?]
 
-
-@While::Neq a? b? s_body? {
-    !_WhileBase (!JumpIf::Neq a? b?) s_body?
-}
-
-
-
-@If::Neq a? b? s_body? {
-    !JumpIf::Eq a? b? .false
-    s_body?
-    .false ->
-}
-
-
-@IfElse::Eq a? b? s_true? s_false? {
-    !_IfElseBase (!Eq a? b? ) s_true? s_false?
-}
-@IfElse::Neq a? b? true? false? {
-    !_IfElseBase (!JumpIf::Eq a? b? ) true? false?
-}
-
-
-@If::Ge a? b? s_body? [ !_IfBase (!JumpIf::Ge a? b?) s_body? ]
-
-
-
-@Eq a? b? .addr? [!JumpIf::Eq a? b? .addr?]
+@Le  a? b? .addr? [!JumpIf::Le  a? b? .addr?]
+@Ge  a? b? .addr? [!JumpIf::Ge  a? b? .addr?]
