@@ -9,8 +9,11 @@ use crate::{codegen, lexer, parser};
 
 pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
     println_silenceable!("Assembling {}", path);
+
     let timer = Instant::now();
+
     let tokens = lexer::tokenise(text.to_owned(), path);
+
     if log::max_level() >= LevelFilter::Debug {
         log::debug!("Tokens:");
         for i in &tokens {
@@ -23,8 +26,8 @@ pub fn assemble(text: &str, path: String) -> (Vec<u16>, Vec<Token>) {
     }
 
     let tokens = parser::parse(tokens);
-
     let (mem, tokens) = codegen::generate(tokens);
+
     println_silenceable!("\nAssembled in: {:.3?}", timer.elapsed());
     println_silenceable!(
         "Size: {}/{}, {:.4}%",

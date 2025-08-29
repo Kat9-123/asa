@@ -13,11 +13,9 @@ use crate::parser::other::*;
 use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 
-pub fn parse(tokens: Vec<Token>) -> Vec<Token> {
-    let mut tokens = tokens;
-
+pub fn parse(mut tokens: Vec<Token>) -> Vec<Token> {
     char_and_hex_to_dec_and_check_scopes(&mut tokens);
-    //
+
     let tokens = grab_braced_label_definitions(tokens);
     let (mut tokens, macros) = read_macros(&tokens);
 

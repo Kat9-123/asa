@@ -8,6 +8,9 @@ pub fn with_thousands(s: String) -> String {
         .join(",")
 }
 
+/// A vector from which items can be safely consumed whilst it
+/// is being iterated over. Use a while !iter_vec.finished() loop to
+/// iterate over it
 pub struct IterVec<'a, T> {
     vec: &'a Vec<T>,
     index: usize,

@@ -26,13 +26,14 @@ fn main() {
     let (mut mem, tokens) = files::process_input_file(&target, input_file_type);
 
     // Output
-    files::to_file(&mem, output_file);
-
-    if args::get().disable_execution {
-        return;
+    if let Some(output) = output_file {
+        files::to_file(&mem, output);
     }
 
     // Execution
+    if args::get().disable_execution {
+        return;
+    }
     println_silenceable!("Running...");
 
     println_silenceable!("{}", "-".repeat(80));

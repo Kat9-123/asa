@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::path::{self, Path, PathBuf};
 
-use log::{LevelFilter, error};
+use log::LevelFilter;
 use unescape::unescape;
 thread_local! {
     // Array of all included files
@@ -59,8 +59,10 @@ fn is_valid_label_name(c: char) -> bool {
 
 /*
     This code really should be updated to use utils::IterVec, would make is significantly cleaner
-    but it works and I can't really be bothered
+    but it works, is readable enough and I can't really be bothered
 */
+/// Update the state machine. Returns a new context, possibly the character that should be added
+/// to the buffer and possibly a token if enough information has been gathered
 fn updated_context(
     context: &Context,
     buffer: &str,
@@ -320,8 +322,9 @@ fn updated_context(
 pub fn tokenise(text: String, path: String) -> Vec<Token> {
     FILES.set(vec![Path::new(&path).to_path_buf()]);
 
-    let binding = Path::new(&path).to_path_buf();
-    let base_dir = path::absolute(binding.parent().unwrap()).unwrap();
+    // Includes are resolved relative to the file being assembled
+    let base_dir = path::absolute(Path::new(&path).to_path_buf().parent().unwrap()).unwrap();
+
     let result = recursive_tokenisation(
         text,
         0,
@@ -337,11 +340,11 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
 
 fn fix_include_path(path: &mut PathBuf) {
     // When trying to import a folder, it looks for a file named Lib.sbl in the folder
-
     if path.is_dir() {
         path.push("Lib");
     }
 
+    // Imports in sublang don't need an extension but the filesystem does
     if path.extension().is_none() {
         path.set_extension("sbl");
     }
@@ -381,10 +384,10 @@ fn include(
         }
         true
     });
+
     if !exists {
         let contents = fs::read_to_string(&path).unwrap_or_else(|_| {
-            error!("Couldn't include the file: '{path:?}'");
-            terminate!();
+            crate::error!("Couldn't include the file: '{path:?}'");
         });
         Some(recursive_tokenisation(
             contents,

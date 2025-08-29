@@ -216,14 +216,6 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
                     if internal_scope_tracker != 0 {
                         continue;
                     }
-                    /*
-                    if let TokenVariant::Linebreak = macro_body[1].variant {
-                        macro_body.remove(1);
-                    }
-                    if let TokenVariant::Linebreak = macro_body[macro_body.len() - 2].variant {
-                        macro_body.remove(macro_body.len() - 2);
-                    }
-                     */
 
                     macros.insert(mac.name.clone(), cur_macro.unwrap());
                     cur_macro = None;

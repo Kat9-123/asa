@@ -36,11 +36,12 @@ impl fmt::Display for FeedbackLevel {
     }
 }
 
-/// Advanced Subleq Assembler
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    /// File to assemble or execute. If not given it will search for ./Main.sbl in the
+    /// File to assemble or execute.
+    ///
+    /// If not given it will search for ./Main.sbl in the
     /// current working directory.
     ///
     ///  If it's a folder it will look for ./folder/Main.sbl
@@ -48,8 +49,9 @@ pub struct Args {
     /// If a file with a .SBL extension is given it will be assembled. .BIN or .SBLX files will be executed
     pub target: Option<String>,
 
-    /// Level of assembler and runtime feedback. Debug is used for assembler debugging and also generates
-    /// a dump.sbl file during the assembly process
+    /// Level of assembler and runtime feedback. Debug is used for assembler debugging!
+    ///
+    /// It also generates a dump.sbl file during the assembly process
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
 
@@ -70,6 +72,7 @@ pub struct Args {
     pub disable_type_checking: bool,
 
     /// Output file, if not given no output be will generated.
+    ///
     /// If given the file type can be:
     ///
     /// * Nothing in which case a .bin file with the module name will be generated

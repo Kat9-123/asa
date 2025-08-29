@@ -94,6 +94,7 @@ macro_rules! asm_error {
     };
 }
 
+/// Error message for an error that doesn't originate from a token
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {
@@ -116,6 +117,7 @@ macro_rules! asm_info {
         }
     };
 }
+/// A sub message for extra details
 #[macro_export]
 macro_rules! asm_details {
     ($info:expr, $($arg:tt)*) => {
@@ -126,6 +128,7 @@ macro_rules! asm_details {
     };
 }
 
+/// A type of sub message used for macro traces
 #[macro_export]
 macro_rules! asm_trace {
     ($origin_info:expr) => {{
@@ -139,15 +142,6 @@ macro_rules! asm_trace {
             );
         }
     }};
-}
-
-#[macro_export]
-macro_rules! asm_instruction {
-    ($info:expr, $($arg:tt)*) => {
-        {
-            $crate::feedback::_asm_instruction(format!($($arg)*), $info, file!(), line!());
-        }
-    };
 }
 
 #[macro_export]
@@ -175,7 +169,7 @@ macro_rules! asm_warn {
         }
     };
 }
-
+/// Display a small hint message under an asm_msg
 #[macro_export]
 macro_rules! asm_hint {
     ($($arg:tt)*) => {
@@ -194,11 +188,6 @@ macro_rules! println_silenceable {
             println!($($arg)*);
         }
     };
-}
-
-/// Gives last origin_info item, or info otherwise
-pub fn origin_info_or_info(tok: &Token) -> &Info {
-    tok.origin_info.last().unwrap_or(&tok.info)
 }
 
 fn get_file_contents(index: usize) -> String {
@@ -360,7 +349,7 @@ pub fn asm_runtime_error(e: RuntimeError, tokens: &Option<Vec<Token>>) {
             return;
         }
         asm_error_no_terminate!(&tokens[index].info, "{message}");
-        asm_trace!(&tokens[index].origin_info); // Bug with GameOfLife.sbl and Trace.sbl
+        asm_trace!(&tokens[index].origin_info);
     } else {
         log::error!("{message}. PC: {index}");
     }

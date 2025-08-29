@@ -235,7 +235,7 @@ ptr -> &123
 
 ### Dereferencing
 ```clojure
-; Generic sequence for dereferencing. The value that 'b' points to will be subtracted from 'a'
+; Generic sequence for dereferencing. The value that 'ptr' points to will be subtracted from 'a'
 !Copy ptr b
 a -= (b -> 0)
 ; If 'ptr' is constant the following is also legal. Note: ptr doesn't have to be constant but this syntax will give unexpected results if it isn't
@@ -293,9 +293,9 @@ The order in which files are checked is as follows. The first one that exists wi
 
 See subleq/libs/sublib for an example.
 
-## Syntax sugar
+## Miscellaneous Syntax sugar
 ### Mult operator
-When the '*' is placed before a literal ?? The previous token is repeated n times
+When the '*' is placed before a literal `n`, The previous token is repeated `n` times
 ```clojure
 label * 3 ; =>
 label label label
@@ -305,7 +305,6 @@ label label label
 
 ; mind that 3 * label will dereference `label`!
 ```
-### Dereference operator
 
 
 
@@ -392,11 +391,11 @@ p_string -> &"Hello, Sublang!\n"
     
     !Loop {
         !DerefAndCopy p_local char ; char = *p_local
-        !IfFalse char {
+        !IfFalse char { ; False is LEQ 0 and True is GE 0
             !Break
         }
         !IO -= char
-        !Inc p_local
+        !Inc p_local ; Increment
     }
 }
 

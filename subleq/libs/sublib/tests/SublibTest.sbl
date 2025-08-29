@@ -1,13 +1,13 @@
 !J .main
-string2 -> &"is cool! " 0
+string2 -> &"is cool! "
 
 
-#sublib
 
-string -> &"Subleq " 0
+
+string -> &"Subleq "
 
 i -> 1
-
+#sublib
 .main ->
     !IO::Print string
     !IO::Print string2

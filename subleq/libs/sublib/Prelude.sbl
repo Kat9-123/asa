@@ -91,6 +91,10 @@
     to? -= Z
 }
 
+
+@Break    [!J .SUBLIB_break   ]
+@Continue [!J .SUBLIB_continue]
+
 @Repeat times? s_body? [
     {
     times? -= ZERO .fin
@@ -124,8 +128,7 @@
     }
 ]
 
-@Break    [!J .SUBLIB_break   ]
-@Continue [!J .SUBLIB_continue]
+
 
 
 @Loop s_body? [

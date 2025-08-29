@@ -151,11 +151,7 @@ pub fn from_bytes(data: &[u8]) -> Vec<u16> {
     u16data
 }
 
-pub fn to_file(data: &[u16], output: Option<OutputFile>) {
-    let output = match output {
-        Some(out) => out,
-        None => return,
-    };
+pub fn to_file(data: &[u16], output: OutputFile) {
     let bytes = match output.file_type {
         OutputFileType::Plaintext => to_text(data).as_bytes().to_vec(),
         OutputFileType::Binary => to_bytes(data),

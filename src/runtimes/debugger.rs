@@ -1,5 +1,5 @@
 use crate::lexer;
-use crate::runtimes::RuntimeError;
+use crate::runtimes::{RuntimeError, get_key};
 use crate::symbols::{DEBUG_ADDR, IO_ADDR};
 use crate::{
     mem_view,
@@ -8,7 +8,7 @@ use crate::{
 use colored::Colorize;
 use crossterm::{
     ExecutableCommand,
-    event::{Event, KeyCode, KeyEventKind, read},
+    event::KeyCode,
     terminal::{self},
 };
 use std::fs;
@@ -181,16 +181,6 @@ fn display(
     println!("c: {: <100} ", val_to_string(new_pc as u16, DataType::Hex));
 }
 
-pub fn get_key() -> KeyCode {
-    loop {
-        if let Ok(Event::Key(event)) = read() {
-            if event.kind == KeyEventKind::Press {
-                return event.code;
-            }
-        }
-    }
-}
-
 pub fn run_with_debugger(mem: &mut [u16], tokens: &[Token]) {
     debug(mem, tokens, false, get_key);
 }
@@ -213,6 +203,7 @@ fn debug<T: FnMut() -> KeyCode>(
     let mut mem_mode: bool = false;
     let mut current_error: Option<RuntimeError> = None;
     loop {
+        // Run the instruction but don't apply it yet
         if pc + 2 >= mem.len() {
             current_error = Some(RuntimeError::COutOfRange(pc));
         }
@@ -282,7 +273,6 @@ fn debug<T: FnMut() -> KeyCode>(
             let info = if origin_info.is_empty() {
                 &tokens[pc].info
             } else {
-                //&origin_info[origin_info.len() - 1].1 };
                 let file_name = &origin_info[0].file; // Suboptimal
 
                 let mut deepest_in_file_depth = 999_999;
@@ -305,21 +295,11 @@ fn debug<T: FnMut() -> KeyCode>(
                 }
             };
 
-            /*
-            if let Some(prev) = &prev_info {
-                if info == prev {
-                    skip_interaction = true;
-                }
-            } */
-
-            // asm_instruction!(info, "depth Instruction");
             if !mem_mode {
                 display(info, pc, new_pc, result, mem, &current_error);
-            //                if let Some(..) = &current_error {}
             } else {
                 mem_view::draw_mem(mem, pc);
             }
-            //mem_view::draw_mem(mem, pc);
             stdout
                 .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
                 .unwrap();
@@ -364,7 +344,7 @@ fn debug<T: FnMut() -> KeyCode>(
         if io == IOOperation::Halt {
             break;
         }
-
+        // Actually apply the instruction
         if current_error.is_none() || matches!(current_error, Some(RuntimeError::Breakpoint(..))) {
             instruction_history.push(InstructionHistoryItem {
                 pc,
@@ -378,7 +358,6 @@ fn debug<T: FnMut() -> KeyCode>(
         }
         current_error = None;
     }
-    //execute!(io::stdout(), LeaveAlternateScreen);
 }
 
 #[cfg(test)]

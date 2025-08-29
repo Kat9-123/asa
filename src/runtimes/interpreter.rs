@@ -6,10 +6,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::runtimes::debugger::get_key;
+use crate::runtimes::get_key;
 
-/// Returns the a result with either the complete program output, or a runtime error,
-/// the total executions executed, and the time spent on IO
+/// Returns the a result with either the complete program output, or a runtime error, as well as
+/// the total executions executed, and the time spent on IO. Breakpoints are considered fatal
 pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Duration) {
     let mut prev_pc: usize = 0xFFFF;
     let mut pc = 0;

@@ -191,6 +191,7 @@ p_back_buffer   -> 0
             !If (!Eq neighbour_count THREE) {
                 *p_back_cell -= N_ONE       
             }
+            0x900 -= 0x9000
         }
 
 
