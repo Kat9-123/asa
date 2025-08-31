@@ -11,7 +11,7 @@
 
 
 
-This Subleq assembler assembles a custom language, called Sublang, into Subleq
+This Subleq assembler assembles a custom language, called [Sublang](https://github.com/Kat9-123/asa/blob/master/Sublang.md), into Subleq
 
 
 ## Features
@@ -20,7 +20,8 @@ This Subleq assembler assembles a custom language, called Sublang, into Subleq
 * Powerful macros
 * Syntax sugar for common constructs like dereferencing
 * Optional typing system
-* Fully fledged standard lib including functions and high level control flow constructs like If or While
+* Fully fledged standard lib including routines and 
+  high level control flow constructs like If or While
 * Fine grained control over your code and the assembler
 * Module and inclusion system
 * 16-bit
@@ -67,5 +68,3 @@ See <https://github.com/Kat9-123/sublang-highlighting>
 
 ## Project status
 This project is functionally complete, but the documentation for the assembler, Sublang and Sublib is still lacking. As is the Sublib itself, which isn't finished yet
-
-

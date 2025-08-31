@@ -1,7 +1,0 @@
-#ASM
-@Mac l_appel? {
-    a = l_appel?
-    !ASM::Breakpoint
-}
-
-!Mac 10

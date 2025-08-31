@@ -13,7 +13,7 @@ Z -> 0 ; Temp register
 N_ONE -> -1 ; Store the literal negative one
 
 **
-    Pure no dependency implementation
+    Pure no dependency implementation of print
 **
 @Print P_STRING? {
 
@@ -46,3 +46,5 @@ N_ONE -> -1 ; Store the literal negative one
 
     .fin ->
 }
+
+
