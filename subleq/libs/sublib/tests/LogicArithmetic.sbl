@@ -15,7 +15,7 @@ q -> 39
 z -> 93
 
 .main ->
-    !=L w 3782
+    w = 3782
     !Mod w z
     !Assert::EqToLit w 62
 

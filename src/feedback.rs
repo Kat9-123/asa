@@ -164,8 +164,12 @@ macro_rules! asm_error_no_terminate {
 macro_rules! asm_warn {
     ($info:expr, $($arg:tt)*) => {
         {
-            $crate::feedback::_asm_msg($crate::feedback::Type::Warn, format!($($arg)*), $info, file!(), line!());
-
+            if ($crate::args::exist() && !$crate::args::get().warnings_are_errors) || !$crate::args::exist() {
+                $crate::feedback::_asm_msg($crate::feedback::Type::Warn, format!($($arg)*), $info, file!(), line!());
+            } else {
+                $crate::feedback::_asm_msg($crate::feedback::Type::Error, format!($($arg)*), $info, file!(), line!());
+                std::process::exit(1);
+            }
         }
     };
 }

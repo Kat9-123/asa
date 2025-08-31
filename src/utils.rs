@@ -28,7 +28,14 @@ impl<'a, T> IterVec<'a, T> {
         self.index += 1;
         &self.vec[self.index - 1]
     }
-    pub fn get(&self, offset: i32) -> &T {
+    pub fn consume_n(&mut self, n: usize) {
+        self.index += n;
+    }
+    /// Checks if the IterVec contains AT LEAST n more tokens
+    pub fn contains_n_more(&self, n: usize) -> bool {
+        (self.index + n) < self.vec.len()
+    }
+    pub fn get_relative(&self, offset: i32) -> &T {
         &self.vec[(self.index as i32 + offset) as usize]
     }
     pub fn finished(&self) -> bool {

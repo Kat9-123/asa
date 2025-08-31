@@ -1,14 +1,16 @@
-!Print p_string
+; Very basic Sublang, without using the standard library Sublib
+; Output: Hello, World!
+
+!Print p_string ; Call the macro Print
 
 
-Z -= Z -1 ; Jumping to -1 halts
-; equivalent to !Halt
+Z -= Z -1 ; Jumping to -1 halts, equivalent to !Halt
 
 
 
 p_string -> &"Hello, World!\n"
 Z -> 0 ; Temp register
-N_ONE -> -1
+N_ONE -> -1 ; Store the literal negative one
 
 **
     Pure no dependency implementation
@@ -16,21 +18,23 @@ N_ONE -> -1
 @Print P_STRING? {
 
 
-    ; Copy the pointer into the local ptr
-    Z -= Z
-    Z -= P_STRING?
-    ptr -= Z
+    ; Copy the pointer into the local variable ptr, because we don't want to 
+    ; modify the original pointer
+    Z   -= Z ; clear Z
+    Z   -= P_STRING? ; Z = -P_STRING?
+    ptr -= Z ; ptr = -Z = --P_STRING? = P_STRING?
 
     Z -= Z
     .loop -> 
         char -= char ; Clear char
-        Z -= (ptr -> 0) ; Z -= *ptr
+        Z -= (ptr -> 0) ; Z -= *ptr, dereferences ptr to get the actual character
     
         char -= Z .fin ; Flip the character, since it is negative, and jump if
-                       ; result is LEQ (i.e. finish if it is a NULL)
-        -1 -= char ; Writes the character to the screen
+                       ; result is LEQ zero (i.e. finish if it is a ZERO/NULL)
+        -1 -= char ; Writes the character to the screen. -1 is a special register used
+                   ; for IO operations
 
-        ptr -= N_ONE ; Increment the pointer
+        ptr -= N_ONE ; Increment the pointer to go to the next character
         Z -= Z .loop ; Infinite loop
 
     char -> 0 ; This point is never reached, so it is safe to define the

@@ -12,11 +12,11 @@
     val? += l_lit?
 **
 @AddLit val? l_lit? {
-    !=0 n_val
+    n_val = 0
 
-    n_val       -= LITERAL
-    val?        -= n_val
-    n_val       -= n_val             .fin
+    n_val -= LITERAL
+    val?  -= n_val
+    n_val -= n_val .fin
 
     LITERAL -> l_lit?
 
@@ -40,15 +40,15 @@
 **
 @Mul a? B? {
 
-    !=0 acc
-    !=0 n_a
-    != c_b B?
+    acc = 0
+    n_a = 0
+    c_b = B?
 
     n_a -= a?
 
 
     .loop ->    ; this loops one too many times
-        c_b  -= ZERO .fin
+        c_b   -= ZERO .fin
         acc   -= n_a
         !Dec c_b
         !J .loop

@@ -51,7 +51,7 @@ p_back_buffer   -> 0
     X -> l_x?
     Y -> l_y?
     . ->
-    != index GRID_PTR_0
+    index = GRID_PTR_0
     !Add index GRID_WIDTH
     !AddLit index 3
     !Add index X
@@ -111,12 +111,12 @@ p_back_buffer   -> 0
 
 
 !Routine::Def .GetNeighbours {
-    !=0 neighbour_count
-    !=0 p_neighbour
-    !=0 current_cell_state
+    neighbour_count = 0
+    p_neighbour = 0
+    current_cell_state = 0
 
-    != p_cell      p_front_buffer
-    != p_back_cell p_back_buffer
+    p_cell = p_front_buffer
+    p_back_cell = p_back_buffer
 
 
     !IterOverDoubleBuffer p_cell p_back_cell {
@@ -189,9 +189,8 @@ p_back_buffer   -> 0
         } {
             ; Dead
             !If (!Eq neighbour_count THREE) {
-                *p_back_cell -= N_ONE       
+                *p_back_cell -= N_ONE
             }
-            0x900 -= 0x9000
         }
 
 
@@ -213,10 +212,10 @@ p_back_buffer   -> 0
 }
 
 !Routine::Def .Draw {
-    != p_cell p_front_buffer
+    p_cell = p_front_buffer
     !IterOverGrid p_cell {
-        !=0 n_cur
-        !=0 cur
+        n_cur = 0
+        cur = 0
 
         n_cur -= *p_cell
         cur   -=  n_cur
@@ -228,7 +227,6 @@ p_back_buffer   -> 0
         }
     } {
        !IO::PutCharLit '\n'
-
     }
 
    !IO::PutCharLit '\n'

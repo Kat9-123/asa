@@ -26,18 +26,6 @@
     }
 ]
 
-**
-    name? = -L_N_LIT?
-**
-@ASM::AssignNLit name? L_N_LIT? [
-    name? -= name? $3
-    name? -> 0
-    {
-        n_lit -> L_N_LIT?
-        name? -= n_lit
-
-    }
-]
 
 **
     name? = target?
@@ -66,7 +54,4 @@
 
 @ASM::Debug x? {
     -2 -= x?
-}
-@ASM::Perf {
-    !J !PERF_ADDR
 }

@@ -1,25 +1,26 @@
 # Introduction to Sublang
-Sublang is a bare bones assembly languages consisting of four main elements:
-* The SUBLEQ instruction
-* Labels
-* Macros
-* Syntax sugar
+Sublang is a bare bones assembly-like language consisting of four main elements:
+* The **SUBLEQ** instruction
+* **Labels** to refer to areas of memory easily
+* **Macros** for code reuse
+* **Syntax sugar** for common constructs
 
 
 ## Subleq
-
+<!-- Clojure highlighting is used as an approximation for Sublang -->
 ```clojure
-1 2 3 ; This is interpreted as standard subleq: mem[2] -= mem[1] jump to 3 if LEQ otherwise it goes to the next instruction.
+1 2 3 ; This is interpreted as standard subleq: mem[2] -= mem[1] jump to 3 if LEQ otherwise it goes to the next instruction. 
 ; This syntax is valid, but pointless.
 
 ; memory addresses and instructions may be labeled
 a -> 1
 b -> 2
+
 c ->
-    a -= b ; SUBLEQ: Subtract b from a
+    a -= b ; This syntax is used for the SUBLEQ instruction: Subtract b from a
     a -= b c ; Subtract b from a and jump to c if the result is less than or equal to zero
 
-; If no `c` argument is given, the next instruction will always be executed, even if the result is LEQ
+; If no `c` argument is given, the next instruction will always be executed, even if the result is LEQ to zero
 ; So these two are equivalent
 a -= b
 a -= b $1 ; `$1` gives a relative address with offset one
@@ -30,6 +31,10 @@ b a $1 ; This syntax works but is not recommended, since it makes it harder for 
 ; Other examples, literals and labels may freely be combined
 a -= b 0x0000
 '\0' -= 0 c
+
+**
+    Block comment
+**
 ```
 
 ## Labels and Literals
@@ -75,6 +80,24 @@ W -= W -1 ; Halts execution
 
 ```
 
+
+
+## Naming conventions
+* `@MyMacro` macros in PascalCase
+* `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
+* `MyFile.sbl` files in PascalCase
+* `module` modules (folders) in snake_case
+### Labels
+* `p_value` pointer (not type-checked)
+* `p_p_value` pointer to pointer (not type-checked)
+* `n_value` negated value (not type-checked)
+* `value?`  macro argument in definition
+* `.value` a label to jump to
+* `CONST_VALUE` constant, can be applied to all of the above and should be applied to macro arguments, but NOT to literals (l_name), since they are always constant by definition
+* `Namespace::label` or `Namespace::Macro` for namespacing
+* `Namespace::SubNamespace::label`
+
+
 ## Types
 The assembler has a simple type-checker, which can be disabled.
 
@@ -85,21 +108,6 @@ The assembler has a simple type-checker, which can be disabled.
 * `b_value` a braced value
 * `m_value` a macro call passed as argument, must be braced. In practice it's the same as `b_value`
 Currently types are only checked for macro parameters.
-
-## Naming conventions
-* `@MyMacro` macros in CamelCase
-* `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
-* `MyModule.sbl` modules (files) are in CamelCase
-### Labels
-* `p_value` pointer (not type-checked)
-* `p_p_value` pointer to pointer (not type-checked)
-* `n_value` negated value (not type-checked)
-* `value?`  macro argument in definition
-* `.value` label to jump to
-* `CONST_VALUE` constant, can be applied to all of the above and should be applied to macro arguments, but NOT to literals (l_name), since they are always constant by definition
-* `Module::Value` or `!Module::Macro` namespacing
-* `Module::SubModule::value`
-
 
 ## Macros
 ### Definition
@@ -140,7 +148,7 @@ Currently types are only checked for macro parameters.
 !Name
 ; With arguments
 !Name2 a b c
-; Linebreaks are  allowed between arguments
+; Linebreaks are NOT allowed between arguments
 ```
 
 ### Hygiene
@@ -165,7 +173,7 @@ a -> 0
 You may pass scopes as macro arguments
 
 ```clojure
-!Mac s_my_scope? {
+@Mac s_my_scope? {
     s_my_scope?
 }
 
@@ -295,7 +303,7 @@ See subleq/libs/sublib for an example.
 
 ## Miscellaneous Syntax sugar
 ### Mult operator
-When the '*' is placed before a literal `n`, The previous token is repeated `n` times
+When the '*' is placed before a literal `n`, the previous token is repeated `n` times
 ```clojure
 label * 3 ; =>
 label label label
@@ -306,10 +314,48 @@ label label label
 ; mind that 3 * label will dereference `label`!
 ```
 
+### Assignments
+The `=` operator can be used to both declare a label and assign it a value every time execution passes it. You can assign a label to another label or a literal
+```clojure
+
+.loop ->
+    a = 2 ; a will be set to 2 every iteration of the loop
+    a -= a .loop
+
+; Label to literal
+a = 2 
+; is equivalent to
+_ASM -= _ASM
+a -= a .assign
+a -> 0 ; declaration
+.assign -> {
+    lit -> 2
+    _ASM -= lit
+    name? -= _ASM
+}
+
+; Label to zero (special optimised case)
+b = 0
+; is equivalent to
+b -= b .fin
+b -> 0 ; declaration
+.fin ->
+
+; Label to Label
+b = a
+_ASM -= _ASM .assign
+b -> 0 ; declaration
+.assign ->
+b -= b
+_ASM -= a
+b -= _ASM
+
+; Note that there is a small memory and performance cost to assignments
+```
 
 
 ## Style guide
-Just make sure it looks good :), or follow the style of the Sublib
+Adhere to the naming conventions and type system and make sure it looks good :), ideally you should follow the style of the Sublib
 
 ## Namespacing
 The format `Namespace::Macro` or `Namespace::label` should be used. This is solely a naming convention and not enforced in any way. This means that module authors must decide what namespace their macros or labels should have. This is obviously bad design, but it is simple.
@@ -326,17 +372,19 @@ Sublib is the standard library. It has a range of very basic features (Prelude.s
 ## Examples
 ### Basic
 ```clojure
-!Print p_string
+; Very basic Sublang, without using the standard library Sublib
+; Output: Hello, World!
+
+!Print p_string ; Call the macro Print
 
 
-Z -= Z -1 ; Jumping to -1 halts
-; equivalent to !Halt
+Z -= Z -1 ; Jumping to -1 halts, equivalent to !Halt
 
 
 
 p_string -> &"Hello, World!\n"
 Z -> 0 ; Temp register
-N_ONE -> -1
+N_ONE -> -1 ; Store the literal negative one
 
 **
     Pure no dependency implementation
@@ -344,21 +392,23 @@ N_ONE -> -1
 @Print P_STRING? {
 
 
-    ; Copy the pointer into the local ptr
-    Z -= Z
-    Z -= P_STRING?
-    ptr -= Z
+    ; Copy the pointer into the local variable ptr, because we don't want to 
+    ; modify the original pointer
+    Z   -= Z ; clear Z
+    Z   -= P_STRING? ; Z = -P_STRING?
+    ptr -= Z ; ptr = -Z = --P_STRING? = P_STRING?
 
     Z -= Z
     .loop -> 
         char -= char ; Clear char
-        Z -= (ptr -> 0) ; Z -= *ptr
+        Z -= (ptr -> 0) ; Z -= *ptr, dereferences ptr to get the actual character
     
         char -= Z .fin ; Flip the character, since it is negative, and jump if
-                       ; result is LEQ (i.e. finish if it is a NULL)
-        -1 -= char ; Writes the character to the screen
+                       ; result is LEQ zero (i.e. finish if it is a ZERO/NULL)
+        -1 -= char ; Writes the character to the screen. -1 is a special register used
+                   ; for IO operations
 
-        ptr -= N_ONE ; Increment the pointer
+        ptr -= N_ONE ; Increment the pointer to go to the next character
         Z -= Z .loop ; Infinite loop
 
     char -> 0 ; This point is never reached, so it is safe to define the
@@ -376,26 +426,28 @@ N_ONE -> -1
 
 ```clojure
 ; This is how Sublang could should be written, making extensive use of macros
-!J .main ; Jump to main
+; Output: Hello, Sublang!
+
+!J .main ; Jump to .main
 #sublib
 #sublib/Control
 
 p_string -> &"Hello, Sublang!\n"
 
 **
-    Or using the standard lib
+   Using the standard lib
 **
 @PrintStdLib P_STRING? {
-    != p_local P_STRING? ; p_local = P_STRING?
-    !=0 char ; char = 0
+    p_local = P_STRING?
+    char = 0
     
     !Loop {
         !DerefAndCopy p_local char ; char = *p_local
-        !IfFalse char { ; False is LEQ 0 and True is GE 0
+        !IfFalse char {
             !Break
         }
         !IO -= char
-        !Inc p_local ; Increment
+        !Inc p_local
     }
 }
 
@@ -403,7 +455,6 @@ p_string -> &"Hello, Sublang!\n"
     !PrintStdLib p_string
     !Halt
 }
-
 ```
 ```clojure
 ; Or you can just use one of the Print macros from sublib/IO

@@ -41,6 +41,7 @@ pub enum TokenVariant {
 
     Namespace { name: String },
 
+    Equals,
     BraceOpen,
     BraceClose,
 
@@ -128,6 +129,7 @@ impl fmt::Display for Token {
             Linebreak => "\n".to_string(),
             BracedLabelDefinition { name, .. } => format!("({name} -> ..)"),
             Asterisk => "*".to_string(),
+            Equals => "=".to_string(),
         };
         write!(fmt, "{s}")
     }

@@ -300,9 +300,10 @@ enum TokenOrTokenVec {
 
 fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name: &str) {
     fn wrong_type(tok: &Token, arg_info: &Info, expected: &str) {
-        asm_info!(&tok.info, "Expected a '{}' as argument ", expected);
+        asm_error_no_terminate!(&tok.info, "Expected a '{}' as argument ", expected);
         asm_hint!("See the documentation for information on the typing system");
         asm_details!(arg_info, "Macro definition");
+        terminate!();
     }
 
     if args::exist() && args::get().disable_type_checking {
@@ -389,7 +390,17 @@ pub fn insert_macros(
                     let mac = macros.get(name);
                     match mac {
                         None => {
-                            asm_error!(&token.info, "No declaration found for the macro '{name}'.");
+                            asm_error_no_terminate!(
+                                &token.info,
+                                "No declaration found for the macro '{name}'."
+                            );
+                            if name.starts_with("ASM::") {
+                                asm_hint!(
+                                    "This is an assembler macro. Please include the ASM module."
+                                );
+                                asm_hint!("Add '#ASM' or '#sublib' somewhere in your code");
+                            }
+                            terminate!();
                         }
                         Some(x) => {
                             current_macro = Some(x);

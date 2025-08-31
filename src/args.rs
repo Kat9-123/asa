@@ -90,6 +90,10 @@ pub struct Args {
     /// Shows more notes and warning. Recommended for release builds
     #[arg(short, long, default_value_t = false)]
     pub pedantic: bool,
+
+    /// Treat warnings as errors
+    #[arg(short = 'w', long, default_value_t = false)]
+    pub warnings_are_errors: bool,
 }
 
 pub fn get() -> &'static Args {

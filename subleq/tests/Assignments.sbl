@@ -5,12 +5,18 @@ _ASM -> 0
 Z -> 0
 
 
+@Mac l_lit? {
+    test = l_lit?
+    !Assert::EqToLit test 40
+}
+
 .main -> {
-    !=L a 1230 
-    != b a
-    !=L c 0
-    !Assert::EqToLit a 1230
-    !Assert::EqToLit b 1230
+    a = -1230 
+    b = a
+    c = 0
+    !Assert::EqToLit a -1230
+    !Assert::EqToLit b -1230
     !Assert::EqToLit c 0
+    !Mac 40
     !Halt   
 }

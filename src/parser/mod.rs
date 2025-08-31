@@ -17,6 +17,7 @@ pub fn parse(mut tokens: Vec<Token>) -> Vec<Token> {
     char_and_hex_to_dec_and_check_scopes(&mut tokens);
 
     let tokens = grab_braced_label_definitions(tokens);
+    let tokens = handle_assignments(&tokens);
     let (mut tokens, macros) = read_macros(&tokens);
 
     if log::max_level() >= LevelFilter::Debug {

@@ -12,6 +12,7 @@ use std::path::{self, Path, PathBuf};
 
 use log::LevelFilter;
 use unescape::unescape;
+
 thread_local! {
     // Array of all included files
     pub static FILES: RefCell<Vec<PathBuf>> = const { RefCell::new(vec![]) };
@@ -82,6 +83,7 @@ fn updated_context(
             c if c.is_ascii_alphabetic() || c == '_' || c == '.' => (Context::Label, Some(c), None),
 
             '*' => (Context::AsteriskOrBlockComment, None, None),
+            '=' => (Context::None, None, Some(TokenVariant::Equals)),
 
             '{' => (Context::None, None, Some(TokenVariant::Scope)),
             '}' => (Context::None, None, Some(TokenVariant::Unscope)),
@@ -319,6 +321,8 @@ fn updated_context(
     }
 }
 
+/// Takes a string, recursively solves includes and tokenises everything whilst
+/// keeping track of the metadata of each token, like the file it originates from
 pub fn tokenise(text: String, path: String) -> Vec<Token> {
     FILES.set(vec![Path::new(&path).to_path_buf()]);
 

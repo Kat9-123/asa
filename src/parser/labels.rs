@@ -141,9 +141,7 @@ pub fn resolve_labels_and_relatives(
             asm_hint!(
                 "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
             );
-            asm_hint!(
-                "Add the definition '_ASM -> 0' somewhere in your code, or import the standard lib"
-            );
+            asm_hint!("Add '_ASM -> 0', '#ASM' or '#sublib' anywhere in your code");
         }
         terminate!();
     }
