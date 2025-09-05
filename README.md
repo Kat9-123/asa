@@ -14,6 +14,7 @@
 This Subleq assembler assembles a custom language, called [Sublang](https://github.com/Kat9-123/asa/blob/master/Sublang.md), into Subleq
 
 
+
 ## Features
 * Interpreter and debugger
 * Friendly and detailed assembler feedback
@@ -25,6 +26,9 @@ This Subleq assembler assembles a custom language, called [Sublang](https://gith
 * Module and inclusion system
 * 16-bit
 * Extensive documentation
+
+## Syntax example
+<img src="https://github.com/Kat9-123/asa/raw/HEAD/assets/sublang.png">
 
 ## What is Subleq?
 Subleq or SUBtract and jump if Less than or EQual to zero is an assembly language that has only the `SUBLEQ` instruction, which has three operands: `A`, `B`, `C`.
