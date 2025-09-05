@@ -41,7 +41,7 @@ pub enum TokenVariant {
     MacroBodyEnd,
     MacroCall { name: String },
 
-    Namespace { name: String },
+    Inclusion { path: String },
 
     Equals,
     BraceOpen,
@@ -127,7 +127,7 @@ impl fmt::Display for Token {
             MacroBodyStart => "[".to_string(),
             MacroBodyEnd => "]".to_string(),
             MacroCall { name } => format!("!{name}"),
-            Namespace { name } => format!("#{name}"),
+            Inclusion { path } => format!("#{path}"),
             BraceOpen => "(".to_string(),
             BraceClose => ")".to_string(),
             Linebreak => "\n".to_string(),

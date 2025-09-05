@@ -40,7 +40,7 @@ enum Context {
     MacroCall,
     Relative,
 
-    Namespace,
+    Inclusion,
 
     AsteriskOrBlockComment,
     PossibleBlockCommentEnd,
@@ -103,7 +103,7 @@ fn updated_context(
 
             '@' => (Context::MacroDeclaration, None, None),
             '!' => (Context::MacroCall, None, None),
-            '#' => (Context::Namespace, None, None),
+            '#' => (Context::Inclusion, None, None),
 
             '?' => {
                 asm_error_no_terminate!(info, "Unexpected character");
@@ -132,15 +132,15 @@ fn updated_context(
             '\n' => (Context::DontConsume, None, None),
             _ => (Context::LineComment, None, None),
         },
-        Context::Namespace => match cur_char {
+        Context::Inclusion => match cur_char {
             '\n' => (
                 Context::DontConsume,
                 None,
-                Some(TokenVariant::Namespace {
-                    name: buffer.to_owned(),
+                Some(TokenVariant::Inclusion {
+                    path: buffer.to_owned(),
                 }),
             ),
-            _ => (Context::Namespace, Some(cur_char), None),
+            _ => (Context::Inclusion, Some(cur_char), None),
         },
 
         Context::SubleqOrNegativeOrLabelArrow => match cur_char {
@@ -440,8 +440,8 @@ fn recursive_tokenisation(
             }
 
             if let Some(var) = &variant_to_add {
-                if let TokenVariant::Namespace { name } = var {
-                    if let Some(mut toks) = include(name, currently_imported, base_dir) {
+                if let TokenVariant::Inclusion { path } = var {
+                    if let Some(mut toks) = include(path, currently_imported, base_dir) {
                         result_tokens.append(&mut toks);
                     }
                 }
@@ -455,7 +455,7 @@ fn recursive_tokenisation(
                     origin_info: vec![],
                 };
 
-                if let TokenVariant::Namespace { .. } = token.variant {
+                if let TokenVariant::Inclusion { .. } = token.variant {
                 } else {
                     // Consecutive newlines do not carry any information
 

@@ -35,7 +35,7 @@ a -= b 0x0000
 **
     Block comment.
     Important NOTE: Labeled values take up space in memory and will be
-    executed if passed so:
+    executed if passed
 **
 a -> 2
 4 10 5 ; will be executed as 2 4 10, NOT 4 10 5. To prevent this, jump over any
@@ -51,21 +51,6 @@ d -> 'P' ; Character literals
 
 .label ->
     a -= b .label   ; Repeats as long as (a -= b) <= 0
-```
-
-## Scopes
-Scoping works like in most other languages. Note: Only labels are affected by scopes, macro definitions in scopes will still be globally accessible
-```clojure
-Z -> 123
-X -> 456
-Y -> 0
-{
-    Z -> 789
-    {
-        X -= Z  ; 456 - 789
-    }
-}
-Y -= Z ; 0 - 123
 ```
 
 
@@ -85,34 +70,25 @@ W -= W -1 ; Halts execution
 
 ```
 
+## Scopes
+Scoping works like in most other languages. Note: Only labels are affected by scopes, macro definitions in scopes will still be globally accessible
+```clojure
+Z -> 123
+X -> 456
+Y -> 0
+{
+    Z -> -789
+    {
+        X -= Z  ; 456 - -789
+    }
+}
+Y -= Z ; 0 - 123
+```
 
 
-## Naming conventions
-* `@MyMacro` macros in PascalCase
-* `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
-* `MyFile.sbl` files in PascalCase
-* `module` modules (folders) in snake_case
-### Labels
-* `p_value` pointer (not type-checked)
-* `p_p_value` pointer to pointer (not type-checked)
-* `n_value` negated value (not type-checked)
-* `value?`  macro argument in definition
-* `.value` a label to jump to
-* `CONST_VALUE` constant, can be applied to all of the above and should be applied to macro arguments, but NOT to literals (l_name), since they are always constant by definition
-* `Namespace::label` or `Namespace::Macro` for namespacing
-* `Namespace::SubNamespace::label`
 
 
-## Types
-The assembler has a simple type-checker, which can be disabled.
 
-* `value` normal label
-* `l_value` literal value
-* `s_value` scoped value
-* `a_value` anything, no type checking
-* `b_value` a braced value
-* `m_value` a macro call passed as argument, must be braced. In practice it's the same as `b_value`
-Currently types are only checked for macro parameters.
 
 ## Macros
 ### Definition
@@ -160,12 +136,12 @@ Currently types are only checked for macro parameters.
 Macros are hygienic. Variables won't be shadowed.
 ```clojure
 ; Macros
-a -> 0
 @MyMacro b {
     a -= b
     a -> 123
 }
 
+a -> 0
 !MyMacro a
 ; Is completely fine, and will become the following:
 {
@@ -174,7 +150,7 @@ a -> 0
 }
 ```
 
-### Macro arguments
+### Compound macro arguments
 You may pass scopes as macro arguments
 
 ```clojure
@@ -231,6 +207,17 @@ This means that you can 'curry' macros (using that term loosely)
 }
 
 ```
+
+
+### Types
+The assembler has a simple type-checker for macro arguments, which can be disabled.
+
+* `value` normal label
+* `l_value` literal value
+* `s_value` scoped value
+* `b_value` a braced value
+* `m_value` a macro call passed as argument, must be braced. In practice it's the same as `b_value`
+* `a_value` anything, no type checking
 
 ## Pointers
 ### Referencing
@@ -289,8 +276,7 @@ P -= Z
 ...
 ; But of course beware of the contents of the included file
 ```
-If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'sublib'). And in that folder create a Lib.sbl file. Whenever the 'sublib' folder is imported, this is automatically resolved to 'sublib/Lib.sbl'. In this .sbl file you may include any other files you might need. Includes are initially resolved relative to the file
-that is including, and if the target isn't found in the *LIBS* folder, defined using the `-l` command line argument.
+If you want to create a module (a set of .sbl files in a folder) you must create a folder with the name of the module (for example 'sublib') and in that folder create a Lib.sbl file. Whenever the 'sublib' folder is imported, this is automatically resolved to 'sublib/Lib.sbl'. In this .sbl file you may include any other files you might need. Includes are initially resolved relative to the file being assembled, and otherwise they are searched for in the *LIBS* folder, defined using the `-l` command line argument.
 
 
 ```clojure
@@ -308,7 +294,7 @@ See subleq/libs/sublib for an example.
 
 ## Miscellaneous Syntax sugar
 ### Mult operator
-When the '*' is placed before a literal `n`, the previous token is repeated `n` times
+When the '*' is placed before a literal `n`, the previous token is repeated `n` times.
 ```clojure
 label * 3 ; =>
 label label label
@@ -320,7 +306,7 @@ label label label
 ```
 
 ### Assignments
-The `=` operator can be used to both declare a label and assign it a value every time execution passes it. You can assign a label to another label or a literal
+The `=` operator can be used to both declare a label and assign it a value every time execution passes it. You can assign a label to another label or a literal.
 ```clojure
 
 .loop ->
@@ -370,14 +356,29 @@ Sublib is the standard library. It has a range of very basic features (Prelude.s
 ## Style guide
 Adhere to the naming conventions and type system and make sure it looks good :), ideally you should follow the style of the Sublib
 
+### Naming conventions
+* `@MyMacro` macros in PascalCase
+* `my_label` labels in snake_case, with the exception of single character 'registers', like `Z` or `W`
+* `p_value` pointer (not type-checked)
+* `p_p_value` pointer to pointer (not type-checked)
+* `n_value` negated value (not type-checked)
+* `value?` macro parameters
+* `.value` a label to jump to
+* `CONST_VALUE` constant, can be applied to all of the above and should be applied to macro arguments, but NOT to literals (l_name), since they are always constant by definition
+* `Namespace::label` or `Namespace::Macro` for namespacing
+* `Namespace::SubNamespace::label`
+* `MyFile.sbl` files in PascalCase
+* `module` modules (folders) in snake_case
+
+
 ## Assembler specific additions to Subleq
-The assembler's runtimes will treat a jump to `-2` as a breakpoint and `-2 -= a` as printing `a` as a signed integer. Note that these features are non-canonical. They should be accessed using `ASM::Breakpoint` and `ASM::Debug` from the `ASM` library. When pedantic mode is turned on, the assembler will notify that these features wont work for other subleq interpreters
+The assembler's runtimes will treat a jump to `-2` as a breakpoint and `-2 -= a` as printing `a` as a signed integer. Note that these features are non-canonical. They should be accessed using `ASM::Breakpoint` and `ASM::Debug` from the `ASM` library. When pedantic mode is turned on, the assembler will notify that these features wont work for other subleq interpreters.
 
 ## Runtimes
 ### Interpreter
-The interpreter is the default runtime for subleq. When an error is encountered it exits and prints a trace. To halt the program when it running press CTRL-C but when it is prompting for input, press DELETE
+The interpreter is the default runtime for subleq. When an error is encountered it exits and prints a trace. To halt the program when it running press CTRL-C but when it is prompting for input, press DELETE.
 ### Debugger
-To run a program with the debugger, add the `-d` command line flag. Debugging will only start when an error or breakpoint is encountered
+To run a program with the debugger, add the `-d` command line flag. Interactive debugging will only start when an error or breakpoint is encountered.
 
 ## Examples
 ### Basic
