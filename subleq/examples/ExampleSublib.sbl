@@ -1,7 +1,6 @@
 ; This is how Sublang could should be written, making extensive use of macros
 ; Output: Hello, Sublang!
 
-!J .main ; Jump to .main
 #sublib
 #sublib/Control
 
@@ -13,7 +12,7 @@ p_string -> &"Hello, Sublang!\n"
 @PrintStdLib P_STRING? {
     p_local = P_STRING?
     char = 0
-    
+
     !Loop {
         !DerefAndCopy p_local char ; char = *p_local
         !IfFalse char {
@@ -24,8 +23,8 @@ p_string -> &"Hello, Sublang!\n"
     }
 }
 
+; Executing starts here
 .main -> {
     !PrintStdLib p_string
     !Halt
 }
-

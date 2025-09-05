@@ -1,3 +1,4 @@
+//! Reads, typechecks and expands macros
 use crate::args;
 use crate::asm_details;
 use crate::asm_error;
@@ -190,6 +191,8 @@ pub fn read_macros(tokens: &[Token]) -> (Vec<Token>, HashMap<String, Macro>) {
 
                 TokenVariant::MacroBodyEnd if !bounded_by_scopes => {
                     let mac = cur_macro.as_mut().unwrap();
+
+                    // For macros not bound by scope we remove the newlines around [ and ]
                     if !mac.body.is_empty() {
                         if let TokenVariant::Linebreak = mac.body[0].variant {
                             mac.body.remove(0);
@@ -352,17 +355,13 @@ fn macro_argument_type_check(argument_info: &Info, token: &Token, argument_name:
         wrong_type(token, argument_info, "label");
     }
 }
-/*
-    There is an edge case if the macro is the final token, it won't be processed. This really doesn't matter
-    because the lexer always inserts a linebreak at the end of the file.
-*/
+
+/// Recursively (combined with generate_macro_body) expand all macro calls
 pub fn insert_macros(
     tokens: Vec<Token>,
     macros: &HashMap<String, Macro>,
     context: Vec<Info>,
 ) -> Vec<Token> {
-    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
-
     #[derive(Debug, PartialEq)]
     enum CompoundArgType {
         Braced,
@@ -374,6 +373,10 @@ pub fn insert_macros(
         Args,
         CompoundArg(CompoundArgType),
     }
+
+    let mut new_tokens: Vec<Token> = Vec::with_capacity(tokens.len());
+    let mut tokens = IterVec::new(&tokens);
+
     let mut scope_tracker = 0;
 
     let mut mode = Mode::Normal;
@@ -381,7 +384,7 @@ pub fn insert_macros(
     let mut param_to_arg_map: HashMap<String, TokenOrTokenVec> = HashMap::new();
     let mut caller_info: Option<Info> = None;
     let mut cur_param_name: String = String::new();
-    let mut tokens = IterVec::new(&tokens);
+
     while !tokens.finished() {
         let token = tokens.current();
         match &mode {
@@ -392,11 +395,11 @@ pub fn insert_macros(
                         None => {
                             asm_error_no_terminate!(
                                 &token.info,
-                                "No declaration found for the macro '{name}'."
+                                "No declaration found for the macro '{name}'"
                             );
                             if name.starts_with("ASM::") {
                                 asm_hint!(
-                                    "This is an assembler macro. Please include the ASM module."
+                                    "This is an assembler macro. Please include the ASM module"
                                 );
                                 asm_hint!("Add '#ASM' or '#sublib' somewhere in your code");
                             }
@@ -436,11 +439,11 @@ pub fn insert_macros(
                     let mut body =
                         generate_macro_body(current_macro_safe, macros, &param_to_arg_map, c);
                     new_tokens.append(&mut body);
+
                     caller_info = None;
                     mode = Mode::Normal;
                     current_macro = None;
                     param_to_arg_map = HashMap::new();
-
                     scope_tracker = 0;
 
                     continue;

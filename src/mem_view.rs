@@ -1,6 +1,8 @@
+//! Print the memory of a subleq program
 use colored::Colorize;
 
 /// Prints a pretty overview of the memory. The instruction, mem[A], mem[B] and mem[C] are highlighted
+#[cfg(not(tarpaulin_include))]
 pub fn draw_mem(mem: &[u16], pc: usize) {
     print!("----  ");
     for i in 0..16 {

@@ -20,10 +20,13 @@ pub fn grab_braced_label_definitions(tokens: Vec<Token>) -> Vec<Token> {
         if let TokenVariant::BraceOpen = &tokens[i].variant
             && let TokenVariant::LabelArrow { .. } = &tokens[i + 2].variant
         {
+            // The token before the arrow must be a label
             let name = match &tokens[i + 1].variant {
                 TokenVariant::Label { name } => name,
-                _ => asm_error!(&tokens[i + 1].info, "Unexpected token, expected a literal"),
+                _ => asm_error!(&tokens[i + 1].info, "Unexpected token, expected a label"),
             };
+
+            // The token after the arrow may be a label or a literal
             let data: IntOrString = match &tokens[i + 3].variant {
                 TokenVariant::DecLiteral { value } => IntOrString::Int(*value),
                 TokenVariant::Label { name } => IntOrString::Str(name.clone()),
@@ -136,12 +139,15 @@ pub fn resolve_labels_and_relatives(
                 return x.clone();
             }
         }
-        asm_error_no_terminate!(info, "No definition for label '{name}' found");
+        asm_error_no_terminate!(info, "No definition for the label '{name}' found");
         if name == "_ASM" {
             asm_hint!(
                 "For some features, like dereferencing with the * operator, the assembler requires an _ASM label"
             );
             asm_hint!("Add '_ASM -> 0', '#ASM' or '#sublib' anywhere in your code");
+        }
+        if name == ".main" {
+            asm_hint!("Sublib assumes a .main label exists as the program's entry")
         }
         terminate!();
     }

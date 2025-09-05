@@ -33,8 +33,13 @@ a -= b 0x0000
 '\0' -= 0 c
 
 **
-    Block comment
+    Block comment.
+    Important NOTE: Labeled values take up space in memory and will be
+    executed if passed so:
 **
+a -> 2
+4 10 5 ; will be executed as 2 4 10, NOT 4 10 5. To prevent this, jump over any
+       ; label definitions, or use the assignment syntax
 ```
 
 ## Labels and Literals
@@ -354,8 +359,7 @@ b -= _ASM
 ```
 
 
-## Style guide
-Adhere to the naming conventions and type system and make sure it looks good :), ideally you should follow the style of the Sublib
+
 
 ## Namespacing
 The format `Namespace::Macro` or `Namespace::label` should be used. This is solely a naming convention and not enforced in any way. This means that module authors must decide what namespace their macros or labels should have. This is obviously bad design, but it is simple.
@@ -363,12 +367,8 @@ The format `Namespace::Macro` or `Namespace::label` should be used. This is sole
 ## Sublib
 Sublib is the standard library. It has a range of very basic features (Prelude.sbl, IO.sbl and Symbols.sbl) to quite advanced ones like functions and control flow.
 
-
-## Conclusion
-For many more examples see Sublib
-
-
-
+## Style guide
+Adhere to the naming conventions and type system and make sure it looks good :), ideally you should follow the style of the Sublib
 
 
 ## Examples
@@ -389,22 +389,22 @@ Z -> 0 ; Temp register
 N_ONE -> -1 ; Store the literal negative one
 
 **
-    Pure no dependency implementation
+    Pure no dependency implementation of print
 **
 @Print P_STRING? {
 
 
-    ; Copy the pointer into the local variable ptr, because we don't want to 
+    ; Copy the pointer into the local variable ptr, because we don't want to
     ; modify the original pointer
     Z   -= Z ; clear Z
     Z   -= P_STRING? ; Z = -P_STRING?
     ptr -= Z ; ptr = -Z = --P_STRING? = P_STRING?
 
     Z -= Z
-    .loop -> 
+    .loop ->
         char -= char ; Clear char
         Z -= (ptr -> 0) ; Z -= *ptr, dereferences ptr to get the actual character
-    
+
         char -= Z .fin ; Flip the character, since it is negative, and jump if
                        ; result is LEQ zero (i.e. finish if it is a ZERO/NULL)
         -1 -= char ; Writes the character to the screen. -1 is a special register used
@@ -430,19 +430,18 @@ N_ONE -> -1 ; Store the literal negative one
 ; This is how Sublang could should be written, making extensive use of macros
 ; Output: Hello, Sublang!
 
-!J .main ; Jump to .main
 #sublib
 #sublib/Control
 
 p_string -> &"Hello, Sublang!\n"
 
 **
-   Using the standard lib
+   Print a string using macros from standard lib
 **
 @PrintStdLib P_STRING? {
     p_local = P_STRING?
     char = 0
-    
+
     !Loop {
         !DerefAndCopy p_local char ; char = *p_local
         !IfFalse char {
@@ -453,6 +452,7 @@ p_string -> &"Hello, Sublang!\n"
     }
 }
 
+; Executing starts here
 .main -> {
     !PrintStdLib p_string
     !Halt
@@ -460,11 +460,19 @@ p_string -> &"Hello, Sublang!\n"
 ```
 ```clojure
 ; Or you can just use one of the Print macros from sublib/IO
-!J .main
 #sublib
 
-main -> {
+.main -> {
     IO::PrintLnLit "Hello, Sublib!"
     !Halt
 }
 ```
+
+### Conway's Game of Life
+[./subleq/examples/GameOfLife.sbl](github.com/Kat9-123/asa/tree/master/subleq/examples/GameOfLife.sbl)
+
+
+
+
+## Conclusion
+For many more examples see Sublib or the end-to-end tests, though they are messy and not idiomatic

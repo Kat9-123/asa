@@ -128,10 +128,9 @@
     }
 ]
 
-
-
-
-@Loop s_body? [
+@Loop s_body? [ ; We use these these braces because
+                ; the .Sublib::... labels need to be accessible
+                ; by the body
     {
     .Sublib::continue ->
     .loop ->

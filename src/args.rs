@@ -1,9 +1,12 @@
+//! Parses command line arguments
 use core::fmt;
 
 use clap::Parser;
 use once_cell::sync::OnceCell;
 
 static ARGS: OnceCell<Args> = OnceCell::new();
+
+/// Wrapper type for log::LevelFilter
 #[derive(clap::ValueEnum, Clone, Debug, Default)]
 pub enum FeedbackLevel {
     Debug,
@@ -46,12 +49,14 @@ pub struct Args {
     ///
     ///  If it's a folder it will look for ./folder/Main.sbl
     ///
-    /// If a file with a .SBL extension is given it will be assembled. .BIN or .SBLX files will be executed
+    /// If a file with a .SBL extension is given it will be assembled.
+    ///
+    /// .BIN or .SBLX files will be executed
     pub target: Option<String>,
 
-    /// Level of assembler and runtime feedback. Debug is used for assembler debugging!
+    /// Level of assembler and runtime feedback. DEBUG is used for assembler debugging!
     ///
-    /// It also generates a dump.sbl file during the assembly process
+    /// When at DEBUG level a dump.sbl file is generated during the assembly process
     #[arg(short,long, default_value_t = FeedbackLevel::Note)]
     pub feedback_level: FeedbackLevel,
 
@@ -71,7 +76,7 @@ pub struct Args {
     #[arg(short = 't', long, default_value_t = false)]
     pub disable_type_checking: bool,
 
-    /// Output file, if not given no output be will generated.
+    /// Output file for assembled subleq, if not given no output be will generated.
     ///
     /// If given the file type can be:
     ///

@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "asa"
-version = "0.9.0"
+version = "1.0.0"
 dependencies = [
  "clap",
  "colored 3.0.0",

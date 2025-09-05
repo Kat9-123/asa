@@ -1,4 +1,4 @@
-//! Miscellaneous parsing, like syntax sugar
+//! Miscellaneous parsing, like for syntax sugar
 use crate::{
     asm_error, asm_info,
     symbols::LITERAL_TYPE_PREFIX,
@@ -44,7 +44,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
             i += 1;
             continue;
         }
-
+        // Fix combine label arrows
         if i + 1 < tokens.len()
             && let TokenVariant::LabelArrow { offset } = &tokens[i + 1].variant
         {
@@ -73,16 +73,17 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
             i += 2;
             continue;
         }
-
+        // Fix subleq instructions
         if i + 1 < tokens.len()
             && let TokenVariant::Subleq = &tokens[i + 1].variant
         {
+            // Without C parameter
             if i + 3 < tokens.len()
                 && let TokenVariant::Linebreak = &tokens[i + 3].variant
             {
-                // Subleq has a and b flipped
+                // Add relative 1 as the jump for the instruction
                 let mut updated_info = tokens[i + 2].info.clone();
-                updated_info.start_char += updated_info.length + 2;
+                updated_info.start_char += updated_info.length + 1;
                 updated_info.length = 2;
                 updated_info.sourceline_suffix = Some("$1".to_string());
 
@@ -98,6 +99,7 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
                 i += 4;
                 continue;
             }
+            // With C parameter
             if i + 4 < tokens.len() {
                 // Subleq has a and b flipped
                 new_tokens.push(tokens[i + 2].clone());
@@ -127,7 +129,6 @@ pub fn fix_instructions_and_collapse_label_definitions(tokens: &[Token]) -> Vec<
 }
 
 /// Routine used for syntax sugar. Gives a macro call with it's arguments
-
 pub fn insert_asm_macro(macro_name: String, origin_tok: &Token, args: Vec<&Token>) -> Vec<Token> {
     let mut toks: Vec<Token> = Vec::new();
 
@@ -454,7 +455,7 @@ mod tests {
                     name: "a".to_owned(),
                 },
             ),
-            (6, TokenVariant::Relative { offset: 1 }),
+            (5, TokenVariant::Relative { offset: 1 }),
             (
                 6,
                 TokenVariant::Label {

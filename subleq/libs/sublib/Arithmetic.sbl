@@ -3,10 +3,7 @@
  ; mostly in the form: a = a o b, where 'o' is some generic operator
 **
 
-
 #sublib/Prelude
-
-
 
 **
     val? += l_lit?

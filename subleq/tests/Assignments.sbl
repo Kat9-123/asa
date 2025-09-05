@@ -18,5 +18,5 @@ Z -> 0
     !Assert::EqToLit b -1230
     !Assert::EqToLit c 0
     !Mac 40
-    !Halt   
+    !Halt
 }

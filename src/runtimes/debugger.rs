@@ -107,7 +107,7 @@ fn display(
     };
     println!(
         "[ESC] exit debug mode       [UP/k] up  [DOWN/j] down  [LEFT/h] previous instruction
-[RIGHT/l] next instruction  [x] halt   [m] toggle memory mode\n"
+[RIGHT/l] next instruction  [DELETE] halt   [m] toggle memory mode\n"
     );
     println!("{}:{: <100} ", file.display(), info.line_number);
     let contents = get_file_contents(&file);
@@ -314,7 +314,7 @@ fn debug<T: FnMut() -> KeyCode>(
                     mem_mode = !mem_mode;
                     continue;
                 }
-                KeyCode::Char('x') => return,
+                KeyCode::Delete => return,
                 KeyCode::Right => {}
                 KeyCode::Left | KeyCode::Char('h') => {
                     current_error = None;
@@ -400,7 +400,7 @@ mod tests {
                 KeyCode::Left,
                 KeyCode::Left,
                 KeyCode::Left,
-                KeyCode::Char('x'),
+                KeyCode::Delete,
             ];
             let mut iter = keys.into_iter();
 

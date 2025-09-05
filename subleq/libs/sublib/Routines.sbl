@@ -11,8 +11,6 @@ Routine::return_stack -> !Stack::Create 32
 
 
 @Routine::Call name? {
-
-
     !Stack::Push Routine::return_stack .return_address
 
     !J name?
@@ -26,6 +24,3 @@ Routine::return_stack -> !Stack::Create 32
 
     W -= W (return_addr -> 0x0000)
 }
-
-
-

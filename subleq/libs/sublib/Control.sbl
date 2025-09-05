@@ -2,7 +2,6 @@
  ; Simulation of 'normal' control flow like in normal programming languages
  ; includes the constructs: If, While, IfElse
 **
-
 #sublib
 
 
@@ -16,7 +15,6 @@
 @IfFalse value? s_body? {
     value? -= ZERO .body
     !J .fin
-    
 
     .body ->
         s_body?

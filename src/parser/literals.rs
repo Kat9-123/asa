@@ -1,3 +1,4 @@
+//! Converts all literals to signed integers
 use crate::asm_error;
 use crate::{terminate, tokens::*};
 

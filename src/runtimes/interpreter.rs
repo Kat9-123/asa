@@ -61,6 +61,7 @@ pub fn interpret(mem: &mut [u16]) -> (Result<String, RuntimeError>, u128, Durati
 
                 let c = match get_key() {
                     KeyCode::Char(x) => x,
+                    KeyCode::Delete => break,
                     _ => '\0',
                 };
                 io_time += timer.elapsed();

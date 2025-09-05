@@ -1,3 +1,4 @@
+//! Utility functions
 pub fn with_thousands(s: String) -> String {
     s.as_bytes()
         .rchunks(3)

@@ -1,3 +1,4 @@
+//! Contains the interpreter and the debugger
 use crossterm::{
     event::{Event, KeyCode, KeyEventKind, read},
     terminal::{disable_raw_mode, enable_raw_mode},
@@ -16,7 +17,7 @@ pub enum RuntimeError {
     COutOfRange(usize),
     Breakpoint(usize),
 }
-
+/// Get a single key (blocking)
 pub fn get_key() -> KeyCode {
     enable_raw_mode().unwrap();
     loop {

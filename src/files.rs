@@ -204,7 +204,8 @@ pub fn process_input_file(
     }
 }
 
-/// TODO Process the target argument for the assembler. It returns
+/// Process the target argument for the assembler. It returns the path of the target file
+/// the type of the input and the module (parent folder) name
 pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFileType, String) {
     let target = argument.unwrap_or_else(|| ".".to_string());
     let cwd = env::current_dir().unwrap();
@@ -219,6 +220,7 @@ pub fn get_target_and_module_name(argument: Option<String>) -> (PathBuf, InputFi
     .unwrap()
     .to_string_lossy()
     .to_string();
+
     let target = if target_path.is_dir() {
         target_path.push("Main.sbl");
         target_path

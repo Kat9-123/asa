@@ -5,6 +5,8 @@ use crate::{
     tokens::{Token, TokenVariant},
 };
 
+/// Returns both a list of executable words AND their corrosponding tokens,
+/// to be able to give runtime errors
 pub fn generate(tokens: Vec<Token>) -> (Vec<u16>, Vec<Token>) {
     let mut mem: Vec<u16> = Vec::with_capacity(tokens.len());
     let mut final_tokens: Vec<Token> = Vec::with_capacity(tokens.len());

@@ -9,7 +9,6 @@
  ; The internal grid representation is padded with one cell on each side of the
  ; effective grid, to handle border cases easily
 **
-!J .main
 #sublib
 #sublib/Routines.sbl
 #sublib/Control.sbl
@@ -215,15 +214,14 @@ p_back_buffer   -> 0
     p_cell = p_front_buffer
     !IterOverGrid p_cell {
         n_cur = 0
-        cur = 0
+        cur   = 0
 
         n_cur -= *p_cell
         cur   -=  n_cur
         !IfTrueElse cur {
-          !IO::PutCharLit '%'
+            !IO::PutCharLit '%'
         } {
-
-         !IO::PutCharLit '.'
+            !IO::PutCharLit '.'
         }
     } {
        !IO::PutCharLit '\n'

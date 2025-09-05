@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::fs;
 
 use log::{LevelFilter, info};
 use simple_logger::SimpleLogger;
@@ -9,38 +9,36 @@ fn test_at_path(path: &str) {
     let paths = fs::read_dir(path).unwrap();
 
     for path in paths {
-        let p = path.unwrap().path();
-        let p = p.to_str().unwrap();
-
-        if !&p.ends_with(".sbl") {
+        let input_file = path.unwrap().path();
+        let extension = input_file.extension();
+        if extension.is_none() || extension.unwrap() != "sbl" {
             continue;
         }
 
-        info!("Name: {p}");
+        info!("Name: {}", input_file.display());
         println!("{}", "-".repeat(80));
 
         let (target, input_file_type, _module) =
-            files::get_target_and_module_name(Some(p.to_owned()));
+            files::get_target_and_module_name(Some(input_file.to_string_lossy().to_string()));
         let (mut mem, tokens) = files::process_input_file(&target, input_file_type);
         let result = files::to_text(&mem);
-        let mut sblx_path = p[..p.len() - 4].to_string();
-        sblx_path.push_str(".sblx");
 
-        let mut out_path = p[..p.len() - 4].to_string();
-        out_path.push_str(".out");
+        let sblx_path = input_file.with_extension("sblx");
+        let out_path = input_file.with_extension("out");
 
-        let fp = Path::new(&sblx_path);
-
-        if fp.is_file() {
+        let sblx_is_file = sblx_path.is_file();
+        if sblx_is_file {
             let expected = fs::read_to_string(sblx_path).unwrap();
             assert_eq!(result, expected);
         }
 
-        let fp = Path::new(&out_path);
-        if !fp.is_file() {
+        if !out_path.is_file() {
+            if !sblx_is_file {
+                crate::error!("No .sblx or .out found for '{}'", input_file.display());
+            }
             continue;
         }
-        let expected_out = fs::read_to_string(fp).unwrap();
+        let expected_out = fs::read_to_string(out_path).unwrap();
         let expected_out = lexer::generic_sanitisation(&expected_out);
         let (result, ..) = runtimes::interpreter::interpret(&mut mem);
         let out = result.unwrap_or_else(|e| {
@@ -50,8 +48,6 @@ fn test_at_path(path: &str) {
         assert_eq!(out, expected_out);
 
         println!();
-
-        //   let should_be = fs::read_to_string(.unwrap();
     }
 }
 #[test]

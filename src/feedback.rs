@@ -117,6 +117,7 @@ macro_rules! asm_info {
         }
     };
 }
+
 /// A sub message for extra details
 #[macro_export]
 macro_rules! asm_details {
@@ -143,7 +144,7 @@ macro_rules! asm_trace {
         }
     }};
 }
-
+/// Terminate is used for FAILURES
 #[macro_export]
 macro_rules! terminate {
     () => {
@@ -151,6 +152,8 @@ macro_rules! terminate {
     };
 }
 
+/// Since the asm_error macro always terminates, sometimes we don't want that, if we
+/// want to write more information and then terminate for example
 #[macro_export]
 macro_rules! asm_error_no_terminate {
     ($info:expr, $($arg:tt)*) => {
@@ -167,12 +170,14 @@ macro_rules! asm_warn {
             if ($crate::args::exist() && !$crate::args::get().warnings_are_errors) || !$crate::args::exist() {
                 $crate::feedback::_asm_msg($crate::feedback::Type::Warn, format!($($arg)*), $info, file!(), line!());
             } else {
+                // If we treat warnings as errors
                 $crate::feedback::_asm_msg($crate::feedback::Type::Error, format!($($arg)*), $info, file!(), line!());
                 std::process::exit(1);
             }
         }
     };
 }
+
 /// Display a small hint message under an asm_msg
 #[macro_export]
 macro_rules! asm_hint {
@@ -184,7 +189,7 @@ macro_rules! asm_hint {
         }
     };
 }
-
+/// These prints will be silenced by the silence command line argument
 #[macro_export]
 macro_rules! println_silenceable {
     ($($arg:tt)*) => {
@@ -193,7 +198,8 @@ macro_rules! println_silenceable {
         }
     };
 }
-
+/// Read the contents of the file at the index in the FILES vector, which contains
+/// all assembled files
 fn get_file_contents(index: usize) -> String {
     let path = lexer::FILES.with_borrow(|v| v[index].clone());
     fs::read_to_string(&path).unwrap_or_else(|_| {
@@ -213,7 +219,7 @@ pub fn sub_message_level_check() -> bool {
 
 /// Prints a pretty error message for errors that happen during the assembly process.
 /// This function is only for errors which are caused by a Token. For other types of error,
-/// see error!()
+/// see error!(). It should generally only be used by the asm_ macros defined in this file
 ///
 /// Example:
 /// ERROR + ./subleq/testing.sbl:52:10

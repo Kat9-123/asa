@@ -18,17 +18,17 @@ N_ONE -> -1 ; Store the literal negative one
 @Print P_STRING? {
 
 
-    ; Copy the pointer into the local variable ptr, because we don't want to 
+    ; Copy the pointer into the local variable ptr, because we don't want to
     ; modify the original pointer
     Z   -= Z ; clear Z
     Z   -= P_STRING? ; Z = -P_STRING?
     ptr -= Z ; ptr = -Z = --P_STRING? = P_STRING?
 
     Z -= Z
-    .loop -> 
+    .loop ->
         char -= char ; Clear char
         Z -= (ptr -> 0) ; Z -= *ptr, dereferences ptr to get the actual character
-    
+
         char -= Z .fin ; Flip the character, since it is negative, and jump if
                        ; result is LEQ zero (i.e. finish if it is a ZERO/NULL)
         -1 -= char ; Writes the character to the screen. -1 is a special register used
@@ -46,5 +46,3 @@ N_ONE -> -1 ; Store the literal negative one
 
     .fin ->
 }
-
-

@@ -1,3 +1,4 @@
+//! Tokens emitted by the lexer and processed by the parser
 use std::cmp::PartialEq;
 use std::{fmt, fs::File, io::prelude::*};
 
@@ -12,6 +13,7 @@ pub enum IntOrString {
     Int(i32),
 }
 
+/// Contains the info of where a token came from in the original sublang
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Info {
     pub start_char: i32,
@@ -51,6 +53,7 @@ pub enum TokenVariant {
 
     Asterisk,
 }
+/// Wrapper type for a token variant and it's info
 #[derive(Clone)]
 pub struct Token {
     /// Origin of the token
@@ -104,6 +107,7 @@ impl fmt::Debug for Token {
 }
 
 /// Only really used for debugging
+#[cfg(not(tarpaulin_include))]
 impl fmt::Display for Token {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenVariant::*;
@@ -136,6 +140,7 @@ impl fmt::Display for Token {
 }
 
 /// Used for debugging, dumps tokens to an sbl file
+#[cfg(not(tarpaulin_include))]
 pub fn dump_tokens(tokens: &[Token]) -> std::io::Result<()> {
     let mut buf: String = String::new();
     let mut tabs: String = String::new();

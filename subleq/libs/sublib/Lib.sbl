@@ -1,4 +1,4 @@
-
+!J .main
 ; Basics
 #sublib/Prelude.sbl
 #sublib/Symbols.sbl

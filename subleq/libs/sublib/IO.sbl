@@ -10,16 +10,16 @@
         !=0 char
         !=0 n_char
 
-        n_char      -= (ptr -> 0) ; 0 -= 0
-        char        -= n_char
-        char        -= ZERO            .fin  ; Null so we fin
+        n_char -= (ptr -> 0) ; 0 -= 0
+        char   -= n_char
+        char   -= ZERO .fin  ; Null so we fin
 
-        !IO         -= char
+        !IO -= char
 
         !Inc ptr
 
 
-        Z           -= Z .loop
+        Z -= Z .loop
 
 
     .fin ->

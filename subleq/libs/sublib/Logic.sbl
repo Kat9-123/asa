@@ -10,11 +10,9 @@
         !LShift1 result
 
         !JumpIf::LeZero a? .msb_is_1
-    
-; .msb_is_0 ->
+
         !Inc result
 
-        ; msb_is_1
     .msb_is_1 ->
 
         !LShift1 a?

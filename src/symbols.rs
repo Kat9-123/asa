@@ -1,3 +1,4 @@
+//! Global constants
 pub const MACRO_TYPE_PREFIX: &str = "m_";
 pub const SCOPE_TYPE_PREFIX: &str = "s_";
 pub const LITERAL_TYPE_PREFIX: &str = "l_";

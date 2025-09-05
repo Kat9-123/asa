@@ -1,3 +1,4 @@
+//! Dispatches the lexer, parser and code generator
 use std::time::Instant;
 
 use log::LevelFilter;

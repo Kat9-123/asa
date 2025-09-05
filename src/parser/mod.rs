@@ -13,11 +13,27 @@ use crate::parser::other::*;
 use crate::tokens::dump_tokens;
 use crate::tokens::{Token, TokenVariant};
 
+#[cfg(not(tarpaulin_include))]
+fn debug_print_tokens(tokens: &[Token], message: &str) {
+    if log::max_level() >= LevelFilter::Debug {
+        log::debug!("{message}");
+        for token in tokens {
+            if let TokenVariant::Linebreak = token.variant {
+                println!();
+                continue;
+            }
+            print!("{token:?}  ");
+        }
+        println!();
+    }
+}
+
 pub fn parse(mut tokens: Vec<Token>) -> Vec<Token> {
     char_and_hex_to_dec_and_check_scopes(&mut tokens);
 
     let tokens = grab_braced_label_definitions(tokens);
     let tokens = handle_assignments(&tokens);
+
     let (mut tokens, macros) = read_macros(&tokens);
 
     if log::max_level() >= LevelFilter::Debug {
@@ -29,33 +45,14 @@ pub fn parse(mut tokens: Vec<Token>) -> Vec<Token> {
     }
 
     tokens = insert_macros(tokens, &macros, vec![]);
-    if log::max_level() >= LevelFilter::Debug {
-        log::debug!("Inserted macros:");
-        for token in &tokens {
-            if let TokenVariant::Linebreak = token.variant {
-                println!();
-                continue;
-            }
-            print!("{token:?}  ");
-        }
-        println!();
-    }
+
+    debug_print_tokens(&tokens, "Inserted macros:");
 
     let tokens = convert_strings(tokens);
     let tokens = expand_mults(&tokens);
     let tokens = expand_derefs(&tokens);
 
-    if log::max_level() >= LevelFilter::Debug {
-        log::debug!("Derefs and Literals");
-        for token in &tokens {
-            if let TokenVariant::Linebreak = token.variant {
-                println!();
-                continue;
-            }
-            print!("{token:?}  ");
-        }
-        println!();
-    }
+    debug_print_tokens(&tokens, "Derefs and Literals:");
 
     if log::max_level() >= LevelFilter::Debug {
         dump_tokens(&tokens).unwrap_or_else(|e| log::warn!("Failed to dump tokens. {e}"));

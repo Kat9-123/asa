@@ -20,8 +20,7 @@ This Subleq assembler assembles a custom language, called [Sublang](https://gith
 * Powerful macros
 * Syntax sugar for common constructs like dereferencing
 * Optional typing system
-* Fully fledged standard lib including routines and 
-  high level control flow constructs like If or While
+* Fully fledged standard library including routines and high level control flow constructs like If or While
 * Fine grained control over your code and the assembler
 * Module and inclusion system
 * 16-bit
@@ -38,6 +37,7 @@ would just be
 
 A very basic subleq interpreter written in Python would look as follows
 ```Python
+pc = 0
 while True:
     a = mem[pc]
     b = mem[pc + 1]

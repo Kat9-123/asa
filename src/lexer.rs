@@ -7,8 +7,8 @@ use crate::{
 };
 use colored::Colorize;
 use std::cell::RefCell;
-use std::fs;
 use std::path::{self, Path, PathBuf};
+use std::{env, fs};
 
 use log::LevelFilter;
 use unescape::unescape;
@@ -327,7 +327,8 @@ pub fn tokenise(text: String, path: String) -> Vec<Token> {
     FILES.set(vec![Path::new(&path).to_path_buf()]);
 
     // Includes are resolved relative to the file being assembled
-    let base_dir = path::absolute(Path::new(&path).to_path_buf().parent().unwrap()).unwrap();
+    let base_dir = path::absolute(Path::new(&path).to_path_buf().parent().unwrap())
+        .unwrap_or_else(|_| env::current_dir().unwrap());
 
     let result = recursive_tokenisation(
         text,
