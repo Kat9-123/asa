@@ -370,6 +370,14 @@ Sublib is the standard library. It has a range of very basic features (Prelude.s
 ## Style guide
 Adhere to the naming conventions and type system and make sure it looks good :), ideally you should follow the style of the Sublib
 
+## Assembler specific additions to Subleq
+The assembler's runtimes will treat a jump to `-2` as a breakpoint and `-2 -= a` as printing `a` as a signed integer. Note that these features are non-canonical. They should be accessed using `ASM::Breakpoint` and `ASM::Debug` from the `ASM` library. When pedantic mode is turned on, the assembler will notify that these features wont work for other subleq interpreters
+
+## Runtimes
+### Interpreter
+The interpreter is the default runtime for subleq. When an error is encountered it exits and prints a trace. To halt the program when it running press CTRL-C but when it is prompting for input, press DELETE
+### Debugger
+To run a program with the debugger, add the `-d` command line flag. Debugging will only start when an error or breakpoint is encountered
 
 ## Examples
 ### Basic
